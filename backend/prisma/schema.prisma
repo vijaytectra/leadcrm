@@ -1,0 +1,409 @@
+// datasource and generator
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "sqlite"
+    url      = "file:./dev.db"
+}
+
+model Tenant {
+    id                 String             @id @default(cuid())
+    slug               String             @unique
+    name               String
+    email              String?
+    phone              String?
+    address            String?
+    subscriptionTier   SubscriptionTier   @default(STARTER)
+    subscriptionStatus SubscriptionStatus @default(ACTIVE)
+    subscriptionStart  DateTime?
+    subscriptionEnd    DateTime?
+    maxLeads           Int                @default(500)
+    maxTeamMembers     Int                @default(2)
+    createdAt          DateTime           @default(now())
+    updatedAt          DateTime           @updatedAt
+
+    users          User[]
+    leads          Lead[]
+    forms          Form[]
+    payments       Payment[]
+    applications   Application[]
+    documents      Document[]
+    communications Communication[]
+    auditLogs      AuditLog[]
+    feeStructures  FeeStructure[]
+    subscriptions  Subscription[]
+    appointments   Appointment[]
+}
+
+enum SubscriptionTier {
+    STARTER
+    PRO
+    MAX
+}
+
+enum SubscriptionStatus {
+    ACTIVE
+    INACTIVE
+    SUSPENDED
+    EXPIRED
+}
+
+model User {
+    id           String    @id @default(cuid())
+    tenantId     String
+    email        String    @unique
+    passwordHash String
+    firstName    String?
+    lastName     String?
+    phone        String?
+    role         Role
+    isActive     Boolean   @default(true)
+    lastLoginAt  DateTime?
+    createdAt    DateTime  @default(now())
+    updatedAt    DateTime  @updatedAt
+
+    tenant          Tenant           @relation(fields: [tenantId], references: [id])
+    leadNotes       LeadNote[]
+    assignedLeads   Lead[]           @relation("LeadAssignee")
+    refreshTokens   RefreshToken[]
+    applications    Application[]    @relation("ApplicationAssignee")
+    documents       Document[]       @relation("DocumentVerifier")
+    communications  Communication[]  @relation("CommunicationSender")
+    auditLogs       AuditLog[]       @relation("AuditLogUser")
+    appointments    Appointment[]    @relation("AppointmentAssignee")
+    performanceLogs PerformanceLog[]
+}
+
+enum Role {
+    SUPER_ADMIN
+    INSTITUTION_ADMIN
+    TELECALLER
+    DOCUMENT_VERIFIER
+    FINANCE_TEAM
+    ADMISSION_TEAM
+    ADMISSION_HEAD
+    STUDENT
+    PARENT
+}
+
+model Lead {
+    id         String     @id @default(cuid())
+    tenantId   String
+    name       String
+    email      String?
+    phone      String?
+    source     String?
+    status     LeadStatus @default(NEW)
+    score      Int        @default(0)
+    assigneeId String?
+    createdAt  DateTime   @default(now())
+    updatedAt  DateTime   @updatedAt
+
+    tenant      Tenant       @relation(fields: [tenantId], references: [id])
+    assignee    User?        @relation("LeadAssignee", fields: [assigneeId], references: [id])
+    notes       LeadNote[]
+    application Application?
+}
+
+enum LeadStatus {
+    NEW
+    CONTACTED
+    QUALIFIED
+    INTERESTED
+    APPLICATION_STARTED
+    DOCUMENTS_SUBMITTED
+    UNDER_REVIEW
+    ADMITTED
+    ENROLLED
+    REJECTED
+    LOST
+}
+
+model LeadNote {
+    id        String   @id @default(cuid())
+    leadId    String
+    userId    String
+    note      String
+    createdAt DateTime @default(now())
+
+    lead Lead @relation(fields: [leadId], references: [id])
+    user User @relation(fields: [userId], references: [id])
+}
+
+model Form {
+    id              String   @id @default(cuid())
+    tenantId        String
+    title           String
+    requiresPayment Boolean  @default(false)
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    tenant      Tenant           @relation(fields: [tenantId], references: [id])
+    fields      FormField[]
+    submissions FormSubmission[]
+}
+
+model FormField {
+    id       String  @id @default(cuid())
+    formId   String
+    type     String // e.g., text, number, email, select
+    label    String
+    options  Json?
+    required Boolean @default(false)
+    order    Int
+
+    form Form @relation(fields: [formId], references: [id])
+}
+
+model FormSubmission {
+    id          String   @id @default(cuid())
+    formId      String
+    data        Json
+    userContact String?
+    status      String   @default("SUBMITTED")
+    createdAt   DateTime @default(now())
+
+    form    Form     @relation(fields: [formId], references: [id])
+    payment Payment? @relation("SubmissionPayment")
+}
+
+model Payment {
+    id                   String   @id @default(cuid())
+    tenantId             String
+    applicationId        String?  @unique
+    submissionId         String?  @unique
+    gateway              String   @default("cashfree")
+    amount               Int
+    platformFee          Int      @default(50) // ₹50 platform fee
+    institutionAmount    Int // Amount after platform fee deduction
+    status               String   @default("CREATED")
+    gatewayTransactionId String?
+    gatewayResponse      Json?
+    raw                  Json?
+    createdAt            DateTime @default(now())
+    updatedAt            DateTime @updatedAt
+
+    tenant      Tenant          @relation(fields: [tenantId], references: [id])
+    application Application?    @relation("ApplicationPayment", fields: [applicationId], references: [id])
+    submission  FormSubmission? @relation("SubmissionPayment", fields: [submissionId], references: [id])
+}
+
+model RefreshToken {
+    id        String   @id @default(cuid())
+    userId    String
+    tokenHash String
+    revoked   Boolean  @default(false)
+    createdAt DateTime @default(now())
+    expiresAt DateTime
+
+    user User @relation(fields: [userId], references: [id])
+
+    @@index([userId])
+}
+
+// Application Management Models
+model Application {
+    id           String            @id @default(cuid())
+    tenantId     String
+    leadId       String?           @unique
+    studentName  String
+    studentEmail String?
+    studentPhone String?
+    parentName   String?
+    parentEmail  String?
+    parentPhone  String?
+    course       String?
+    status       ApplicationStatus @default(SUBMITTED)
+    assigneeId   String?
+    submittedAt  DateTime          @default(now())
+    updatedAt    DateTime          @updatedAt
+
+    tenant       Tenant        @relation(fields: [tenantId], references: [id])
+    lead         Lead?         @relation(fields: [leadId], references: [id])
+    assignee     User?         @relation("ApplicationAssignee", fields: [assigneeId], references: [id])
+    documents    Document[]
+    payments     Payment[]     @relation("ApplicationPayment")
+    appointments Appointment[]
+}
+
+enum ApplicationStatus {
+    SUBMITTED
+    UNDER_REVIEW
+    DOCUMENTS_PENDING
+    DOCUMENTS_VERIFIED
+    PAYMENT_PENDING
+    PAYMENT_COMPLETED
+    ADMITTED
+    REJECTED
+    ENROLLED
+}
+
+// Document Management Models
+model Document {
+    id              String         @id @default(cuid())
+    tenantId        String
+    applicationId   String?
+    fileName        String
+    filePath        String
+    fileType        String
+    fileSize        Int
+    status          DocumentStatus @default(UPLOADED)
+    verifierId      String?
+    verifiedAt      DateTime?
+    rejectedAt      DateTime?
+    rejectionReason String?
+    createdAt       DateTime       @default(now())
+    updatedAt       DateTime       @updatedAt
+
+    tenant      Tenant       @relation(fields: [tenantId], references: [id])
+    application Application? @relation(fields: [applicationId], references: [id])
+    verifier    User?        @relation("DocumentVerifier", fields: [verifierId], references: [id])
+}
+
+enum DocumentStatus {
+    UPLOADED
+    UNDER_REVIEW
+    VERIFIED
+    REJECTED
+    RESUBMITTED
+}
+
+// Communication Models
+model Communication {
+    id          String              @id @default(cuid())
+    tenantId    String
+    senderId    String
+    recipient   String
+    type        CommunicationType
+    subject     String?
+    content     String
+    status      CommunicationStatus @default(SENT)
+    sentAt      DateTime            @default(now())
+    deliveredAt DateTime?
+    readAt      DateTime?
+
+    tenant Tenant @relation(fields: [tenantId], references: [id])
+    sender User   @relation("CommunicationSender", fields: [senderId], references: [id])
+}
+
+enum CommunicationType {
+    EMAIL
+    SMS
+    WHATSAPP
+    CALL
+    NOTIFICATION
+}
+
+enum CommunicationStatus {
+    SENT
+    DELIVERED
+    READ
+    FAILED
+    BOUNCED
+}
+
+// Audit and Activity Logging
+model AuditLog {
+    id        String   @id @default(cuid())
+    tenantId  String
+    userId    String?
+    action    String
+    entity    String
+    entityId  String
+    oldValues Json?
+    newValues Json?
+    ipAddress String?
+    userAgent String?
+    createdAt DateTime @default(now())
+
+    tenant Tenant @relation(fields: [tenantId], references: [id])
+    user   User?  @relation("AuditLogUser", fields: [userId], references: [id])
+
+    @@index([tenantId])
+    @@index([userId])
+    @@index([entity, entityId])
+}
+
+// Fee Management Models
+model FeeStructure {
+    id          String   @id @default(cuid())
+    tenantId    String
+    name        String
+    description String?
+    components  Json // Array of fee components
+    isActive    Boolean  @default(true)
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    tenant Tenant @relation(fields: [tenantId], references: [id])
+}
+
+// Subscription Management
+model Subscription {
+    id            String             @id @default(cuid())
+    tenantId      String
+    tier          SubscriptionTier
+    status        SubscriptionStatus
+    startDate     DateTime
+    endDate       DateTime
+    amount        Int
+    paymentStatus PaymentStatus      @default(PENDING)
+    createdAt     DateTime           @default(now())
+    updatedAt     DateTime           @updatedAt
+
+    tenant Tenant @relation(fields: [tenantId], references: [id])
+}
+
+enum PaymentStatus {
+    PENDING
+    COMPLETED
+    FAILED
+    REFUNDED
+}
+
+// Appointment Scheduling
+model Appointment {
+    id            String            @id @default(cuid())
+    tenantId      String
+    applicationId String?
+    assigneeId    String
+    studentName   String
+    studentEmail  String?
+    studentPhone  String?
+    scheduledAt   DateTime
+    duration      Int               @default(30) // minutes
+    status        AppointmentStatus @default(SCHEDULED)
+    notes         String?
+    createdAt     DateTime          @default(now())
+    updatedAt     DateTime          @updatedAt
+
+    tenant      Tenant       @relation(fields: [tenantId], references: [id])
+    application Application? @relation(fields: [applicationId], references: [id])
+    assignee    User         @relation("AppointmentAssignee", fields: [assigneeId], references: [id])
+}
+
+enum AppointmentStatus {
+    SCHEDULED
+    CONFIRMED
+    COMPLETED
+    CANCELLED
+    NO_SHOW
+}
+
+// Performance Tracking
+model PerformanceLog {
+    id         String   @id @default(cuid())
+    userId     String
+    metric     String
+    value      Float
+    period     String // daily, weekly, monthly
+    periodDate DateTime
+    createdAt  DateTime @default(now())
+
+    user User @relation(fields: [userId], references: [id])
+
+    @@index([userId])
+    @@index([period, periodDate])
+}
