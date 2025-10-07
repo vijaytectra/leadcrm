@@ -110,9 +110,25 @@ router.post("/auth/login", async (req, res) => {
       data: { lastLoginAt: new Date() },
     });
 
+    // Set secure HTTP-only cookies
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict" as const,
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    };
+
+    const refreshCookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict" as const,
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    };
+
+    res.cookie("accessToken", accessToken, cookieOptions);
+    res.cookie("refreshToken", refreshToken, refreshCookieOptions);
+
     res.json({
-      accessToken,
-      refreshToken,
       user: {
         id: user.id,
         email: user.email,
@@ -138,16 +154,15 @@ router.post("/auth/login", async (req, res) => {
  */
 router.post("/auth/refresh", async (req, res) => {
   try {
-    const validation = refreshSchema.safeParse(req.body);
-    if (!validation.success) {
-      return res.status(400).json({
-        error: "Validation failed",
-        details: validation.error.issues,
-        code: "VALIDATION_ERROR",
+    // Get refresh token from cookies
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) {
+      return res.status(401).json({
+        error: "No refresh token provided",
+        code: "NO_REFRESH_TOKEN",
       });
     }
-
-    const { refreshToken } = validation.data;
 
     const payload = verifyRefreshToken(refreshToken);
 
@@ -203,10 +218,25 @@ router.post("/auth/refresh", async (req, res) => {
       },
     });
 
-    res.json({
-      accessToken: newAccessToken,
-      refreshToken: newRefreshToken,
-    });
+    // Set new secure HTTP-only cookies
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict" as const,
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    };
+
+    const refreshCookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict" as const,
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    };
+
+    res.cookie("accessToken", newAccessToken, cookieOptions);
+    res.cookie("refreshToken", newRefreshToken, refreshCookieOptions);
+
+    res.json({ success: true });
   } catch (error) {
     console.error("Refresh error:", error);
     res.status(401).json({
@@ -222,16 +252,15 @@ router.post("/auth/refresh", async (req, res) => {
  */
 router.post("/auth/logout", async (req, res) => {
   try {
-    const validation = logoutSchema.safeParse(req.body);
-    if (!validation.success) {
-      return res.status(400).json({
-        error: "Validation failed",
-        details: validation.error.issues,
-        code: "VALIDATION_ERROR",
-      });
-    }
+    // Get refresh token from cookies
+    const refreshToken = req.cookies.refreshToken;
 
-    const { refreshToken } = validation.data;
+    if (!refreshToken) {
+      // Clear cookies even if no refresh token
+      res.clearCookie("accessToken");
+      res.clearCookie("refreshToken");
+      return res.json({ success: true });
+    }
 
     // Find and revoke refresh token
     const tokens = await prisma.refreshToken.findMany({
@@ -248,6 +277,10 @@ router.post("/auth/logout", async (req, res) => {
         break;
       }
     }
+
+    // Clear cookies
+    res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
 
     res.json({ success: true });
   } catch (error) {

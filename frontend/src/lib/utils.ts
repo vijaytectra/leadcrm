@@ -78,6 +78,7 @@ export async function apiPost<TResponse>(
 ): Promise<TResponse> {
   const res = await fetch(`${API_BASE_URL}/api${path}`, {
     method: "POST",
+    credentials: "include", // Include cookies in requests
     headers: {
       "Content-Type": "application/json",
       ...(opts?.token ? { Authorization: `Bearer ${opts.token}` } : {}),
@@ -103,6 +104,7 @@ export async function apiGet<TResponse>(
   opts?: ApiRequestOptions
 ): Promise<TResponse> {
   const res = await fetch(`${API_BASE_URL}/api${path}`, {
+    credentials: "include", // Include cookies in requests
     headers: {
       ...(opts?.token ? { Authorization: `Bearer ${opts.token}` } : {}),
     },

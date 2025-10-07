@@ -35,6 +35,7 @@ model Tenant {
     feeStructures  FeeStructure[]
     subscriptions  Subscription[]
     appointments   Appointment[]
+    assets         Asset[]
 }
 
 enum SubscriptionTier {
@@ -74,6 +75,7 @@ model User {
     auditLogs       AuditLog[]       @relation("AuditLogUser")
     appointments    Appointment[]    @relation("AppointmentAssignee")
     performanceLogs PerformanceLog[]
+    assets          Asset[]          @relation("AssetUploader")
 }
 
 enum Role {
@@ -406,4 +408,32 @@ model PerformanceLog {
 
     @@index([userId])
     @@index([period, periodDate])
+}
+
+// Asset Management Model
+model Asset {
+    id         String   @id @default(cuid())
+    tenantId   String
+    publicId   String   @unique
+    fileName   String
+    fileType   String
+    fileSize   Int
+    secureUrl  String
+    format     String
+    width      Int?
+    height     Int?
+    bytes      Int
+    folder     String
+    tags       String
+    context    Json
+    uploadedBy String
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+
+    tenant   Tenant @relation(fields: [tenantId], references: [id])
+    uploader User   @relation("AssetUploader", fields: [uploadedBy], references: [id])
+
+    @@index([tenantId])
+    @@index([uploadedBy])
+    @@index([folder])
 }

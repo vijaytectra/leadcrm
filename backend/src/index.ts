@@ -2,17 +2,25 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
+import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth";
 import userRoutes from "./routes/users";
 import institutionRoutes from "./routes/institutions";
 import subscriptionRoutes from "./routes/subscriptions";
 import superAdminRoutes from "./routes/super-admin";
 import financeRoutes from "./routes/finance";
+import assetRoutes from "./routes/assets";
 
 const app = express();
 app.use(helmet());
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+    credentials: true,
+  })
+);
 app.use(express.json());
+app.use(cookieParser());
 app.use(morgan("dev"));
 
 // tenancy-aware middleware: extract tenant slug from path prefix /:tenant/
@@ -34,6 +42,7 @@ app.use("/api/super-admin/institutions", institutionRoutes);
 app.use("/api/super-admin/subscriptions", subscriptionRoutes);
 app.use("/api/super-admin", superAdminRoutes);
 app.use("/api/finance", financeRoutes);
+app.use("/api/assets", assetRoutes);
 
 // Example tenant-aware route
 app.get("/:tenant/health", (req, res) => {

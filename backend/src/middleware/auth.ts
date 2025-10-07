@@ -16,16 +16,22 @@ export function requireAuth(
   res: Response,
   next: NextFunction
 ) {
-  const authHeader = req.headers.authorization;
+  // Try to get token from cookies first, then from Authorization header
+  let token = req.cookies.accessToken;
 
-  if (!authHeader?.startsWith("Bearer ")) {
+  if (!token) {
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith("Bearer ")) {
+      token = authHeader.slice("Bearer ".length);
+    }
+  }
+
+  if (!token) {
     return res.status(401).json({
-      error: "Missing or invalid authorization header",
+      error: "Missing or invalid access token",
       code: "MISSING_TOKEN",
     });
   }
-
-  const token = authHeader.slice("Bearer ".length);
 
   try {
     const payload = verifyAccessToken(token);
