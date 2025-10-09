@@ -8,7 +8,8 @@ import type {
     FormBuilderActions,
     DragDropState,
     DragDropActions,
-    FormBuilderContextType
+    FormBuilderContextType,
+    FieldType
 } from "@/types/form-builder";
 import { formBuilderUtils } from "@/lib/api/forms";
 
@@ -281,7 +282,7 @@ export function FormBuilderProvider({
             const newField: FormField = {
                 id: formBuilderUtils.generateFieldId(),
                 formId: state.currentForm?.id || "",
-                type: type as any,
+                type: type as FieldType,
                 label: formBuilderUtils.getFieldTypeLabel(type),
                 placeholder: "",
                 description: "",

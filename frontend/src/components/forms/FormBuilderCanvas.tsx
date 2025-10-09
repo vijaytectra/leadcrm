@@ -12,6 +12,7 @@ import { DraggableFieldRenderer } from "./DraggableFieldRenderer";
 import { DragDropProvider } from "./DragDropProvider";
 import { toast } from "sonner";
 import { formBuilderUtils } from "@/lib/api/forms";
+import type { FieldType } from "@/types/form-builder";
 
 export function FormBuilderCanvas() {
     const { state, actions, dragDrop, dragDropActions } = useFormBuilder();
@@ -41,7 +42,7 @@ export function FormBuilderCanvas() {
             const newField = {
                 id: formBuilderUtils.generateFieldId(),
                 formId: state.currentForm?.id || '',
-                type: fieldType as any,
+                type: fieldType as FieldType,
                 label: formBuilderUtils.getFieldTypeLabel(fieldType),
                 required: false,
                 order: state.fields.length,
@@ -57,7 +58,11 @@ export function FormBuilderCanvas() {
                     errorMessage: undefined
                 },
                 options: {},
-                conditionalLogic: {},
+                conditionalLogic: {
+                    enabled: false,
+                    conditions: [],
+                    actions: []
+                },
                 styling: {},
                 advanced: {}
             };
@@ -76,7 +81,7 @@ export function FormBuilderCanvas() {
         const newField = {
             id: formBuilderUtils.generateFieldId(),
             formId: state.currentForm?.id || '',
-            type: fieldType as any,
+            type: fieldType as FieldType,
             label: formBuilderUtils.getFieldTypeLabel(fieldType),
             required: false,
             order: state.fields.length,
@@ -92,7 +97,11 @@ export function FormBuilderCanvas() {
                 errorMessage: undefined
             },
             options: {},
-            conditionalLogic: {},
+            conditionalLogic: {
+                enabled: false,
+                conditions: [],
+                actions: []
+            },
             styling: {},
             advanced: {}
         };

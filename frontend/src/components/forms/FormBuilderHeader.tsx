@@ -26,6 +26,13 @@ import {
 import { useFormBuilder } from "./FormBuilderProvider";
 import { toast } from "sonner";
 
+interface EnhancedFormBuilderActions {
+    publishForm: () => void;
+    saveForm: () => void;
+    previewForm: () => void;
+    [key: string]: unknown;
+}
+
 interface FormBuilderHeaderProps {
     mode: "create" | "edit" | "preview";
     onShowTemplates?: () => void;
@@ -45,7 +52,7 @@ export function FormBuilderHeader({
 
         try {
             setIsSaving(true);
-            await actions.saveForm();
+            await (actions as unknown as EnhancedFormBuilderActions).saveForm();
             toast.success("Form saved successfully");
         } catch (error) {
             toast.error("Failed to save form");
@@ -58,7 +65,7 @@ export function FormBuilderHeader({
         if (onPreview) {
             onPreview();
         } else {
-            actions.previewForm();
+            actions.setPreviewMode(true);
         }
     };
 
@@ -66,7 +73,7 @@ export function FormBuilderHeader({
         if (!state.currentForm) return;
 
         try {
-            await actions.publishForm();
+            await (actions as unknown as EnhancedFormBuilderActions).publishForm();
             toast.success("Form published successfully");
         } catch (error) {
             toast.error("Failed to publish form");

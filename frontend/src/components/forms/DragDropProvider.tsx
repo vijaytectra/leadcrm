@@ -2,13 +2,14 @@
 
 import { createContext, useContext, ReactNode } from "react";
 import { useFormBuilder } from "./FormBuilderProvider";
+import type { FormField } from "@/types/form-builder";
 
 interface DragDropContextType {
     isDragging: boolean;
-    draggedField: any;
+    draggedField: FormField | null;
     draggedFieldType: string | null;
     dropTarget: string | null;
-    onDragStart: (field: any, type?: string) => void;
+    onDragStart: (field: FormField, type?: string) => void;
     onDragEnd: () => void;
     onDragOver: (target: string) => void;
     onDragLeave: () => void;
@@ -24,7 +25,7 @@ interface DragDropProviderProps {
 export function DragDropProvider({ children }: DragDropProviderProps) {
     const { dragDrop, dragDropActions } = useFormBuilder();
 
-    const onDragStart = (field: any, type?: string) => {
+    const onDragStart = (field: FormField, type?: string) => {
         dragDropActions.setDraggedField(field);
         if (type) {
             dragDropActions.setDraggedFieldType(type);

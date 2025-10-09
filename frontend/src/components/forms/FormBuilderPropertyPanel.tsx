@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useFormBuilder } from "./FormBuilderProvider";
 import { formBuilderUtils } from "@/lib/api/forms";
+import type { ChoiceOption, FormField } from "@/types/form-builder";
 
 export function FormBuilderPropertyPanel() {
     const { state, actions } = useFormBuilder();
@@ -51,7 +52,7 @@ export function FormBuilderPropertyPanel() {
         );
     }
 
-    const handleFieldUpdate = (updates: any) => {
+    const handleFieldUpdate = (updates: Partial<FormField>) => {
         actions.updateField(selectedField.id, updates);
     };
 
@@ -72,7 +73,7 @@ export function FormBuilderPropertyPanel() {
         });
     };
 
-    const handleUpdateChoice = (choiceId: string, updates: any) => {
+    const handleUpdateChoice = (choiceId: string, updates: Partial<ChoiceOption>) => {
         const updatedChoices = selectedField.options?.choices?.map(choice =>
             choice.id === choiceId ? { ...choice, ...updates } : choice
         ) || [];
@@ -99,7 +100,7 @@ export function FormBuilderPropertyPanel() {
     };
 
     const renderGeneralTab = () => (
-        <div className="space-y-4">
+        <div className="space-y-4 h-screen overflow-auto">
             {/* Basic Properties */}
             <div>
                 <Label htmlFor="field-label" className="text-sm font-medium text-slate-700">
@@ -145,7 +146,7 @@ export function FormBuilderPropertyPanel() {
                 <Label className="text-sm font-medium text-slate-700">Field Width</Label>
                 <Select
                     value={selectedField.width}
-                    onValueChange={(value) => handleFieldUpdate({ width: value })}
+                    onValueChange={(value) => handleFieldUpdate({ width: value as "full" | "half" | "third" | "quarter" })}
 
                 >
                     <SelectTrigger className="mt-1 text-black">
@@ -166,10 +167,10 @@ export function FormBuilderPropertyPanel() {
                     id="required-field"
                     checked={selectedField.required}
                     onCheckedChange={(checked) => handleFieldUpdate({
-                        required: checked,
+                        required: checked === true,
                         validation: {
                             ...selectedField.validation,
-                            required: checked
+                            required: checked === true
                         }
                     })}
                 />
@@ -181,7 +182,7 @@ export function FormBuilderPropertyPanel() {
     );
 
     const renderValidationTab = () => (
-        <div className="space-y-4">
+        <div className="space-y-4  h-screen overflow-auto">
             <div>
                 <Label className="text-sm font-medium text-slate-700">Validation Rules</Label>
                 <div className="mt-2 space-y-3">
@@ -268,7 +269,7 @@ export function FormBuilderPropertyPanel() {
     );
 
     const renderOptionsTab = () => (
-        <div className="space-y-4">
+        <div className="space-y-4  h-screen overflow-auto">
             {/* Choice Fields */}
             {(selectedField.type === "select" || selectedField.type === "radio" || selectedField.type === "checkbox") && (
                 <div>
@@ -312,7 +313,7 @@ export function FormBuilderPropertyPanel() {
                         )) || (
                                 <div className="text-center py-4 text-slate-500">
                                     <p className="text-sm">No options added yet</p>
-                                    <p className="text-xs">Click "Add Option" to get started</p>
+                                    <p className="text-xs">Click &ldquo;Add Option&rdquo; to get started</p>
                                 </div>
                             )}
                     </div>
@@ -504,19 +505,19 @@ export function FormBuilderPropertyPanel() {
                     <div className="flex-shrink-0 p-4 pb-0">
                         <TabsList className="grid w-full grid-cols-4">
                             <TabsTrigger value="general" className="text-xs">
-                                <Type className="h-3 w-3 mr-1" />
+
                                 General
                             </TabsTrigger>
                             <TabsTrigger value="validation" className="text-xs">
-                                <Shield className="h-3 w-3 mr-1" />
+
                                 Rules
                             </TabsTrigger>
                             <TabsTrigger value="options" className="text-xs">
-                                <CheckSquare className="h-3 w-3 mr-1" />
+
                                 Options
                             </TabsTrigger>
                             <TabsTrigger value="styling" className="text-xs">
-                                <Palette className="h-3 w-3 mr-1" />
+
                                 Style
                             </TabsTrigger>
                         </TabsList>

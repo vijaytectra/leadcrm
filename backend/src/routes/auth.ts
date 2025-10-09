@@ -66,6 +66,7 @@ router.post("/auth/login", async (req, res) => {
 
     const { tenant, email, password } = validation.data;
 
+    console.log(tenant, email, password);
 
     // Find user with tenant
     const user = await prisma.user.findFirst({
@@ -76,6 +77,7 @@ router.post("/auth/login", async (req, res) => {
       },
       include: { tenant: true },
     });
+    console.log(user);
 
     if (!user) {
       return res.status(401).json({
@@ -516,7 +518,6 @@ router.post("/auth/request-password-reset", async (req, res) => {
     // Check email service status
     const emailStatus = emailService.getStatus();
 
-
     // Send the email using SendGrid
     const emailSent = await emailService.sendEmail(
       user.email,
@@ -530,7 +531,7 @@ router.post("/auth/request-password-reset", async (req, res) => {
       console.error("Email service configured:", emailStatus.configured);
       console.error("Email service ready:", emailStatus.ready);
       // Don't fail the request, just log the error
-    } 
+    }
 
     res.json({
       success: true,

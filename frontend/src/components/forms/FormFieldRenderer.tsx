@@ -38,19 +38,19 @@ export function FormFieldRenderer({
 }: FieldComponentProps) {
     const handleLabelChange = (value: string) => {
         if (onUpdate) {
-            onUpdate({ label: value });
+            onUpdate(field.id, { label: value });
         }
     };
 
     const handlePlaceholderChange = (value: string) => {
         if (onUpdate) {
-            onUpdate({ placeholder: value });
+            onUpdate(field.id, { placeholder: value });
         }
     };
 
     const handleRequiredChange = (required: boolean) => {
         if (onUpdate) {
-            onUpdate({
+            onUpdate(field.id, {
                 required,
                 validation: {
                     ...field.validation,
@@ -62,7 +62,7 @@ export function FormFieldRenderer({
 
     const handleDescriptionChange = (value: string) => {
         if (onUpdate) {
-            onUpdate({ description: value });
+            onUpdate(field.id, { description: value });
         }
     };
 
@@ -76,10 +76,10 @@ export function FormFieldRenderer({
             date: Calendar,
             time: Clock,
             datetime: Calendar,
-            select: Select,
-            multiselect: Select,
-            radio: RadioGroup,
-            checkbox: Checkbox,
+            select: Sliders,
+            multiselect: Sliders,
+            radio: Sliders,
+            checkbox: Sliders,
             file: Upload,
             signature: PenTool,
             rating: Star,
