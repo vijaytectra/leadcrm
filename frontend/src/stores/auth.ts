@@ -1,17 +1,43 @@
 import { create } from "zustand";
 import {
-  apiGet,
-  apiPost,
+  apiGetClient,
+  apiPostClient,
   type AuthUser,
   type LoginRequest,
   type LoginResponse,
   type MeResponse,
 } from "@/lib/utils";
 
+// Helper function to get token from cookies on client side
+export function getClientToken(): string | null {
+  if (typeof document === "undefined") return null;
+
+  try {
+    const cookies = document.cookie.split(";");
+
+    const tokenCookie = cookies.find((cookie) =>
+      cookie.trim().startsWith("accessToken=")
+    );
+
+    if (tokenCookie) {
+      const token = tokenCookie.split("=")[1];
+      const decodedToken = token ? decodeURIComponent(token) : null;
+      return decodedToken;
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Error getting client token:", error);
+    return null;
+  }
+}
+
 interface AuthState {
   user: AuthUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  currentTenantSlug: string | null;
+  isInitialized: boolean;
 
   // Actions
   login: (credentials: LoginRequest) => Promise<void>;
@@ -21,35 +47,46 @@ interface AuthState {
   setLoading: (loading: boolean) => void;
   clearAuth: () => void;
   checkAuth: () => Promise<void>;
+  setCurrentTenant: (tenantSlug: string | null) => void;
+  getCurrentTenant: () => string | null;
 }
 
 export const useAuthStore = create<AuthState>()((set, get) => ({
   user: null,
-  isLoading: false,
+  isLoading: true, // Start as true to show loading initially
   isAuthenticated: false,
+  currentTenantSlug: null,
+  isInitialized: false,
 
   login: async (credentials: LoginRequest) => {
     set({ isLoading: true });
     try {
-      const response = await apiPost<LoginResponse>("/auth/login", credentials);
+      const response = await apiPostClient<LoginResponse>(
+        "/auth/login",
+        credentials
+      );
+
+      console.log("Login response:", response.user);
 
       set({
         user: response.user,
         isAuthenticated: true,
         isLoading: false,
+        currentTenantSlug: response.user.tenantSlug || null,
+        isInitialized: true,
       });
     } catch (error) {
-      set({ isLoading: false });
+      set({ isLoading: false, isInitialized: true });
       throw error;
     }
   },
 
   logout: async () => {
     try {
-      await apiPost("/auth/logout", {});
+      const token = getClientToken();
+      await apiPostClient("/auth/logout", {}, token || undefined);
     } catch (error) {
       console.error("Logout error:", error);
-      // Continue with logout even if API call fails
     } finally {
       get().clearAuth();
     }
@@ -57,8 +94,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
   refreshAccessToken: async () => {
     try {
-      await apiPost("/auth/refresh", {});
-      // Token refresh is handled by cookies, just check auth status
+      const token = getClientToken();
+      await apiPostClient("/auth/refresh", {}, token || undefined);
       await get().checkAuth();
     } catch (error) {
       console.error("Token refresh failed:", error);
@@ -80,18 +117,72 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       user: null,
       isAuthenticated: false,
       isLoading: false,
+      currentTenantSlug: null,
+      isInitialized: true,
     });
+    // Clear tenant slug from localStorage
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("currentTenantSlug");
+    }
+  },
+
+  setCurrentTenant: (tenantSlug: string | null) => {
+    set({ currentTenantSlug: tenantSlug });
+    // Persist tenant slug to localStorage
+    if (typeof window !== "undefined") {
+      if (tenantSlug) {
+        localStorage.setItem("currentTenantSlug", tenantSlug);
+      } else {
+        localStorage.removeItem("currentTenantSlug");
+      }
+    }
+  },
+
+  getCurrentTenant: () => {
+    return get().currentTenantSlug;
   },
 
   checkAuth: async () => {
+    set({ isLoading: true });
     try {
-      const response = await apiGet<MeResponse>("/auth/me");
-      set({
-        user: response.user,
-        isAuthenticated: true,
-      });
+      const token = getClientToken();
+
+      if (!token) {
+        get().clearAuth();
+        return;
+      }
+
+      const response = await apiGetClient<MeResponse>("/auth/me", token);
+      console.log("Auth check response:", response);
+
+      if (response.user) {
+        // Extract tenant slug from user.tenant.slug or response.tenant.slug
+        const tenantSlug =
+          response.user.tenant?.slug || response.tenant?.slug || null;
+
+        set({
+          user: response.user,
+          isAuthenticated: true,
+          currentTenantSlug: tenantSlug,
+          isLoading: false,
+          isInitialized: true,
+        });
+
+        // Sync with localStorage
+        if (tenantSlug) {
+          localStorage.setItem("currentTenantSlug", tenantSlug);
+        }
+      } else {
+        get().clearAuth();
+      }
     } catch (error) {
       console.error("Auth check failed:", error);
+      if (
+        error instanceof Error &&
+        (error.message.includes("401") || error.message.includes("403"))
+      ) {
+        // Token is invalid
+      }
       get().clearAuth();
     }
   },
@@ -111,6 +202,12 @@ if (typeof window !== "undefined") {
 
 // Initialize auth state on app start
 if (typeof window !== "undefined") {
+  // Restore tenant slug from localStorage
+  const savedTenantSlug = localStorage.getItem("currentTenantSlug");
+  if (savedTenantSlug) {
+    useAuthStore.getState().setCurrentTenant(savedTenantSlug);
+  }
+
   // Check authentication status on app start
   useAuthStore.getState().checkAuth();
 }

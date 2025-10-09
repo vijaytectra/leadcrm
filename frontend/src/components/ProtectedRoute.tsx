@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth";
 import { Loader2 } from "lucide-react";
@@ -8,52 +8,83 @@ import { Loader2 } from "lucide-react";
 interface ProtectedRouteProps {
     children: React.ReactNode;
     allowedRoles?: string[];
-    redirectTo?: string;
+    requireTenant?: boolean;
 }
 
-export default function ProtectedRoute({
+export function ProtectedRoute({
     children,
-    allowedRoles = [],
-    redirectTo = "/login"
+    allowedRoles,
+    requireTenant = false,
 }: ProtectedRouteProps) {
     const router = useRouter();
-    const { user, isAuthenticated, isLoading } = useAuthStore();
+    const { user, isAuthenticated, isLoading, currentTenantSlug } = useAuthStore();
 
-    React.useEffect(() => {
+    useEffect(() => {
+        // Wait for auth check to complete
         if (!isLoading) {
+            // If not authenticated, redirect to login
             if (!isAuthenticated || !user) {
-                router.push(redirectTo);
+                router.push("/login");
                 return;
             }
 
-            if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+            // Check if user has required role
+            if (allowedRoles && !allowedRoles.includes(user.role)) {
                 router.push("/unauthorized");
                 return;
             }
-        }
-    }, [isAuthenticated, user, isLoading, allowedRoles, redirectTo, router]);
 
+            // Check if tenant is required but not present
+            if (requireTenant && !currentTenantSlug) {
+                router.push("/login");
+                return;
+            }
+        }
+    }, [isLoading, isAuthenticated, user, currentTenantSlug, router, allowedRoles, requireTenant]);
+
+    // Show loading state while checking authentication
     if (isLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="flex flex-col items-center space-y-4">
-                    <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                    <p className="text-gray-600">Loading&hellip;</p>
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="text-center">
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+                    <p className="text-muted-foreground">Loading...</p>
                 </div>
             </div>
         );
     }
 
+    // Show loading while redirecting
     if (!isAuthenticated || !user) {
-        return null;
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="text-center">
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+                    <p className="text-muted-foreground">Redirecting to login...</p>
+                </div>
+            </div>
+        );
     }
 
-    if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+    // Check role authorization
+    if (allowedRoles && !allowedRoles.includes(user.role)) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
+            <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
-                    <p className="text-gray-600">You don&apos;t have permission to access this page.</p>
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+                    <p className="text-muted-foreground">Unauthorized access...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Check tenant requirement
+    if (requireTenant && !currentTenantSlug) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="text-center">
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+                    <p className="text-muted-foreground">Loading tenant information...</p>
                 </div>
             </div>
         );

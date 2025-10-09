@@ -6,6 +6,9 @@ import {
   requireRole,
   AuthedRequest,
 } from "../middleware/auth";
+import { emailService } from "../lib/email";
+import { generateInstitutionCredentialsEmail } from "../lib/email-templates";
+import { hashPassword, generateSecurePassword } from "../lib/password";
 import { z } from "zod";
 
 const router = Router();
@@ -45,8 +48,10 @@ const querySchema = z.object({
   page: z.string().optional().default("1"),
   limit: z.string().optional().default("20"),
   search: z.string().optional(),
-  status: z.enum(["ACTIVE", "INACTIVE", "SUSPENDED", "EXPIRED"]).optional(),
-  subscriptionTier: z.enum(["STARTER", "PRO", "MAX"]).optional(),
+  status: z
+    .enum(["ACTIVE", "INACTIVE", "SUSPENDED", "EXPIRED", "all"])
+    .optional(),
+  subscriptionTier: z.enum(["STARTER", "PRO", "MAX", "all"]).optional(),
 });
 
 /**
@@ -60,6 +65,7 @@ router.get(
   requireRole(["SUPER_ADMIN"]),
   async (req: AuthedRequest, res) => {
     try {
+      console.log("req.query", req.query);
       const { page, limit, search, status, subscriptionTier } =
         querySchema.parse(req.query);
 
@@ -72,17 +78,17 @@ router.get(
 
       if (search) {
         whereClause.OR = [
-          { name: { contains: search, mode: "insensitive" } },
-          { email: { contains: search, mode: "insensitive" } },
-          { slug: { contains: search, mode: "insensitive" } },
+          { name: { contains: search } },
+          { email: { contains: search } },
+          { slug: { contains: search } },
         ];
       }
 
-      if (status) {
+      if (status && status !== "all") {
         whereClause.subscriptionStatus = status;
       }
 
-      if (subscriptionTier) {
+      if (subscriptionTier && subscriptionTier !== "all") {
         whereClause.subscriptionTier = subscriptionTier;
       }
 
@@ -149,27 +155,46 @@ router.get(
           return {
             id: institution.id,
             name: institution.name,
-            slug: institution.slug,
-            email: institution.email,
-            phone: institution.phone,
-            address: institution.address,
-            subscriptionTier: institution.subscriptionTier,
-            subscriptionStatus: institution.subscriptionStatus,
-            subscriptionStart: institution.subscriptionStart,
-            subscriptionEnd: institution.subscriptionEnd,
-            maxLeads: institution.maxLeads,
-            maxTeamMembers: institution.maxTeamMembers,
-            createdAt: institution.createdAt,
-            updatedAt: institution.updatedAt,
-            userCount: institution._count.users,
-            leadCount: institution._count.leads,
-            paymentCount: institution._count.payments,
-            totalRevenue: revenueResult._sum.amount || 0,
-            lastActive: lastActiveUser?.lastLoginAt,
-            users: institution.users,
+            email: institution.email || "",
+            phone: institution.phone || "",
+            address: institution.address || "",
+            status:
+              institution.subscriptionStatus === "ACTIVE"
+                ? "active"
+                : institution.subscriptionStatus === "INACTIVE"
+                ? "pending"
+                : institution.subscriptionStatus === "SUSPENDED"
+                ? "suspended"
+                : "active",
+            subscription: institution.subscriptionTier,
+            plan: institution.subscriptionTier,
+            revenue: revenueResult._sum.amount || 0,
+            users: institution._count.users,
+            joinedDate: institution.createdAt.toISOString(),
+            lastActive:
+              lastActiveUser?.lastLoginAt?.toISOString() ||
+              institution.updatedAt.toISOString(),
           };
         })
       );
+
+      // Calculate stats
+      const stats = {
+        total: totalCount,
+        active: await prisma.tenant.count({
+          where: { subscriptionStatus: "ACTIVE" },
+        }),
+        pending: await prisma.tenant.count({
+          where: { subscriptionStatus: "INACTIVE" },
+        }),
+        suspended: await prisma.tenant.count({
+          where: { subscriptionStatus: "SUSPENDED" },
+        }),
+        totalRevenue: institutionsWithMetrics.reduce(
+          (sum, inst) => sum + inst.revenue,
+          0
+        ),
+      };
 
       res.json({
         success: true,
@@ -177,10 +202,11 @@ router.get(
           institutions: institutionsWithMetrics,
           pagination: {
             page: pageNum,
-            limit: limitNum,
+            pageSize: limitNum,
             total: totalCount,
-            pages: Math.ceil(totalCount / limitNum),
+            totalPages: Math.ceil(totalCount / limitNum),
           },
+          stats,
         },
       });
     } catch (error) {
@@ -335,6 +361,67 @@ router.post(
           },
         },
       });
+
+      // Create admin user for the institution
+      const adminPassword = generateSecurePassword();
+      const adminUser = await prisma.user.create({
+        data: {
+          email: institutionData.email || `${institution.slug}@example.com`,
+          passwordHash: await hashPassword(adminPassword),
+          firstName: "Admin",
+          lastName: institution.name,
+          role: "INSTITUTION_ADMIN",
+          tenantId: institution.id,
+          isActive: true,
+        },
+      });
+
+      // Send welcome email to institution admin
+      try {
+        const loginUrl = `${
+          process.env.FRONTEND_URL || "http://localhost:3000"
+        }/login`;
+        const supportEmail =
+          process.env.SENDGRID_FROM_EMAIL || "support@lead101.com";
+        const supportPhone = process.env.SUPPORT_PHONE || "+91-9876543210";
+
+        const emailTemplate = generateInstitutionCredentialsEmail({
+          institutionName: institution.name,
+          adminEmail: adminUser.email,
+          adminPassword: adminPassword,
+          adminFirstName: adminUser.firstName || "Admin",
+          adminLastName: adminUser.lastName || institution.name,
+          loginUrl,
+          features: [
+            "Lead Management System",
+            "Student Application Tracking",
+            "Payment Processing",
+            "Team Member Management",
+            "Analytics Dashboard",
+            "Document Verification",
+            "Communication Tools",
+          ],
+          supportEmail,
+          supportPhone,
+        });
+
+        // Send email using the email service
+        await emailService.sendInstitutionCredentials({
+          institutionName: institution.name,
+          institutionSlug: institution.slug,
+          adminEmail: adminUser.email,
+          adminPassword: adminPassword,
+          loginUrl,
+          supportEmail,
+        });
+
+        console.log(
+          `Welcome email sent to ${adminUser.email} for institution ${institution.name}`
+        );
+      } catch (emailError) {
+        console.error("Failed to send welcome email:", emailError);
+        // Don't fail the institution creation if email fails
+      }
 
       res.status(201).json({
         success: true,
@@ -503,6 +590,219 @@ router.post(
       });
     } catch (error) {
       console.error("Update institution status error:", error);
+      res.status(500).json({
+        error: "Internal server error",
+        code: "INTERNAL_ERROR",
+      });
+    }
+  }
+);
+
+/**
+ * POST /api/institutions/bulk-delete
+ * Delete multiple institutions
+ */
+router.post(
+  "/bulk-delete",
+  requireAuth,
+  requireActiveUser,
+  requireRole(["SUPER_ADMIN"]),
+  async (req: AuthedRequest, res) => {
+    try {
+      const { institutionIds } = req.body;
+
+      if (
+        !institutionIds ||
+        !Array.isArray(institutionIds) ||
+        institutionIds.length === 0
+      ) {
+        return res.status(400).json({
+          error: "Institution IDs are required",
+          code: "MISSING_INSTITUTION_IDS",
+        });
+      }
+
+      // Check if all institutions exist
+      const existingInstitutions = await prisma.tenant.findMany({
+        where: {
+          id: { in: institutionIds },
+        },
+        select: { id: true, name: true },
+      });
+
+      if (existingInstitutions.length !== institutionIds.length) {
+        const foundIds = existingInstitutions.map((inst) => inst.id);
+        const missingIds = institutionIds.filter(
+          (id) => !foundIds.includes(id)
+        );
+        return res.status(404).json({
+          error: "Some institutions not found",
+          code: "INSTITUTIONS_NOT_FOUND",
+          missingIds,
+        });
+      }
+
+      // Delete related records first, then delete institutions
+      for (const institutionId of institutionIds) {
+        // Delete related records in the correct order
+        await prisma.refreshToken.deleteMany({
+          where: {
+            user: {
+              tenantId: institutionId,
+            },
+          },
+        });
+
+        await prisma.auditLog.deleteMany({
+          where: {
+            tenantId: institutionId,
+          },
+        });
+
+        await prisma.payment.deleteMany({
+          where: {
+            tenantId: institutionId,
+          },
+        });
+
+        await prisma.application.deleteMany({
+          where: {
+            tenantId: institutionId,
+          },
+        });
+
+        await prisma.lead.deleteMany({
+          where: {
+            tenantId: institutionId,
+          },
+        });
+
+        await prisma.user.deleteMany({
+          where: {
+            tenantId: institutionId,
+          },
+        });
+      }
+
+      // Now delete the institutions
+      const deleteResult = await prisma.tenant.deleteMany({
+        where: {
+          id: { in: institutionIds },
+        },
+      });
+
+      res.json({
+        success: true,
+        data: {
+          deletedCount: deleteResult.count,
+          deletedInstitutions: existingInstitutions,
+        },
+        message: `Successfully deleted ${deleteResult.count} institution(s)`,
+      });
+    } catch (error) {
+      console.error("Bulk delete institutions error:", error);
+      res.status(500).json({
+        error: "Internal server error",
+        code: "INTERNAL_ERROR",
+      });
+    }
+  }
+);
+
+/**
+ * POST /api/institutions/bulk-activate
+ * Activate multiple institutions
+ */
+router.post(
+  "/bulk-activate",
+  requireAuth,
+  requireActiveUser,
+  requireRole(["SUPER_ADMIN"]),
+  async (req: AuthedRequest, res) => {
+    try {
+      const { institutionIds } = req.body;
+
+      if (
+        !institutionIds ||
+        !Array.isArray(institutionIds) ||
+        institutionIds.length === 0
+      ) {
+        return res.status(400).json({
+          error: "Institution IDs are required",
+          code: "MISSING_INSTITUTION_IDS",
+        });
+      }
+
+      // Update institutions to active status
+      const updateResult = await prisma.tenant.updateMany({
+        where: {
+          id: { in: institutionIds },
+        },
+        data: {
+          subscriptionStatus: "ACTIVE",
+        },
+      });
+
+      res.json({
+        success: true,
+        data: {
+          updatedCount: updateResult.count,
+        },
+        message: `Successfully activated ${updateResult.count} institution(s)`,
+      });
+    } catch (error) {
+      console.error("Bulk activate institutions error:", error);
+      res.status(500).json({
+        error: "Internal server error",
+        code: "INTERNAL_ERROR",
+      });
+    }
+  }
+);
+
+/**
+ * POST /api/institutions/bulk-suspend
+ * Suspend multiple institutions
+ */
+router.post(
+  "/bulk-suspend",
+  requireAuth,
+  requireActiveUser,
+  requireRole(["SUPER_ADMIN"]),
+  async (req: AuthedRequest, res) => {
+    try {
+      const { institutionIds } = req.body;
+
+      if (
+        !institutionIds ||
+        !Array.isArray(institutionIds) ||
+        institutionIds.length === 0
+      ) {
+        return res.status(400).json({
+          error: "Institution IDs are required",
+          code: "MISSING_INSTITUTION_IDS",
+        });
+      }
+
+      // Update institutions to suspended status
+      const updateResult = await prisma.tenant.updateMany({
+        where: {
+          id: { in: institutionIds },
+        },
+        data: {
+          subscriptionStatus: "SUSPENDED",
+        },
+      });
+
+      res.json({
+        success: true,
+        data: {
+          updatedCount: updateResult.count,
+        },
+        message: `Successfully suspended ${updateResult.count} institution(s)`,
+      });
+    } catch (error) {
+      console.error("Bulk suspend institutions error:", error);
       res.status(500).json({
         error: "Internal server error",
         code: "INTERNAL_ERROR",

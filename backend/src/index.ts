@@ -10,6 +10,10 @@ import subscriptionRoutes from "./routes/subscriptions";
 import superAdminRoutes from "./routes/super-admin";
 import financeRoutes from "./routes/finance";
 import assetRoutes from "./routes/assets";
+import roleRoutes from "./routes/roles";
+import analyticsRoutes from "./routes/analytics";
+import leadRoutes from "./routes/leads";
+import settingsRoutes from "./routes/settings";
 
 const app = express();
 app.use(helmet());
@@ -43,6 +47,10 @@ app.use("/api/super-admin/subscriptions", subscriptionRoutes);
 app.use("/api/super-admin", superAdminRoutes);
 app.use("/api/finance", financeRoutes);
 app.use("/api/assets", assetRoutes);
+app.use("/api", roleRoutes);
+app.use("/api", analyticsRoutes);
+app.use("/api", leadRoutes);
+app.use("/api", settingsRoutes);
 
 // Example tenant-aware route
 app.get("/:tenant/health", (req, res) => {

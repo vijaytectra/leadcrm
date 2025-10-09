@@ -4,6 +4,7 @@ import {
   signAccessToken,
   signRefreshToken,
   verifyRefreshToken,
+  verifyAccessToken,
 } from "../lib/jwt";
 import {
   hashPassword,
@@ -12,6 +13,8 @@ import {
   generateSecurePassword,
 } from "../lib/password";
 import { requireAuth, AuthedRequest } from "../middleware/auth";
+import { generatePasswordResetEmail } from "../lib/email-templates";
+import { emailService } from "../lib/email";
 import { z } from "zod";
 
 const router = Router();
@@ -36,6 +39,16 @@ const changePasswordSchema = z.object({
   newPassword: z.string().min(8, "New password must be at least 8 characters"),
 });
 
+const requestPasswordResetSchema = z.object({
+  email: z.string().email("Invalid email format"),
+  tenant: z.string().min(1, "Tenant slug is required"),
+});
+
+const resetPasswordSchema = z.object({
+  token: z.string().min(1, "Reset token is required"),
+  newPassword: z.string().min(8, "New password must be at least 8 characters"),
+});
+
 /**
  * POST /api/auth/login
  * Authenticate user and return access/refresh tokens
@@ -52,6 +65,8 @@ router.post("/auth/login", async (req, res) => {
     }
 
     const { tenant, email, password } = validation.data;
+
+    console.log(tenant, email, password);
 
     // Find user with tenant
     const user = await prisma.user.findFirst({
@@ -110,12 +125,12 @@ router.post("/auth/login", async (req, res) => {
       data: { lastLoginAt: new Date() },
     });
 
-    // Set secure HTTP-only cookies
+    // Set secure cookies
     const cookieOptions = {
-      httpOnly: true,
+      httpOnly: false, // Allow JavaScript access for frontend
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict" as const,
-      maxAge: 15 * 60 * 1000, // 15 minutes
+      sameSite: "lax" as const, // More permissive for cross-origin
+      maxAge: 12 * 60 * 60 * 1000, // 12 hours
     };
 
     const refreshCookieOptions = {
@@ -218,12 +233,12 @@ router.post("/auth/refresh", async (req, res) => {
       },
     });
 
-    // Set new secure HTTP-only cookies
+    // Set new secure cookies
     const cookieOptions = {
-      httpOnly: true,
+      httpOnly: false, // Allow JavaScript access for frontend
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict" as const,
-      maxAge: 15 * 60 * 1000, // 15 minutes
+      sameSite: "lax" as const, // More permissive for cross-origin
+      maxAge: 12 * 60 * 60 * 1000, // 12 hours
     };
 
     const refreshCookieOptions = {
@@ -430,6 +445,229 @@ router.get("/auth/me", requireAuth, async (req: AuthedRequest, res) => {
     res.status(500).json({
       error: "Internal server error",
       code: "INTERNAL_ERROR",
+    });
+  }
+});
+
+/**
+ * POST /api/auth/request-password-reset
+ * Request password reset
+ */
+router.post("/auth/request-password-reset", async (req, res) => {
+  try {
+    const validation = requestPasswordResetSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        error: "Validation failed",
+        details: validation.error.issues,
+        code: "VALIDATION_ERROR",
+      });
+    }
+
+    const { email, tenant } = validation.data;
+
+    // Find user with tenant
+    const user = await prisma.user.findFirst({
+      where: {
+        email,
+        tenant: { slug: tenant },
+        isActive: true,
+      },
+      include: { tenant: true },
+    });
+
+    if (!user) {
+      // Don't reveal if user exists or not for security
+      return res.json({
+        success: true,
+        message: "If the email exists, a password reset link has been sent.",
+      });
+    }
+
+    // Generate reset token
+    const resetToken = signAccessToken({
+      sub: user.id,
+      ten: user.tenantId,
+      rol: user.role,
+      type: "password_reset",
+    });
+
+    // Store reset token with expiration (1 hour)
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    await prisma.refreshToken.create({
+      data: {
+        userId: user.id,
+        tokenHash: await hashPassword(resetToken),
+        expiresAt,
+      },
+    });
+
+    // Generate reset URL
+    const resetUrl = `${
+      process.env.FRONTEND_URL || "http://localhost:3000"
+    }/reset-password?token=${resetToken}`;
+
+    // Send password reset email
+    const emailTemplate = generatePasswordResetEmail(
+      user.email,
+      resetUrl,
+      user.tenant.name
+    );
+
+    // Check email service status
+    const emailStatus = emailService.getStatus();
+    console.log("Email service status:", emailStatus);
+
+    // Send the email using SendGrid
+    const emailSent = await emailService.sendEmail(
+      user.email,
+      emailTemplate.subject,
+      emailTemplate.html,
+      emailTemplate.text
+    );
+
+    if (!emailSent) {
+      console.error("Failed to send password reset email to:", user.email);
+      console.error("Email service configured:", emailStatus.configured);
+      console.error("Email service ready:", emailStatus.ready);
+      // Don't fail the request, just log the error
+    } else {
+      console.log("Password reset email sent successfully to:", user.email);
+    }
+
+    res.json({
+      success: true,
+      message: "If the email exists, a password reset link has been sent.",
+    });
+  } catch (error) {
+    console.error("Error requesting password reset:", error);
+    res.status(500).json({
+      error: "Failed to process password reset request",
+      code: "PASSWORD_RESET_ERROR",
+    });
+  }
+});
+
+/**
+ * POST /api/auth/reset-password
+ * Reset password with token
+ */
+router.post("/auth/reset-password", async (req, res) => {
+  try {
+    const validation = resetPasswordSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        error: "Validation failed",
+        details: validation.error.issues,
+        code: "VALIDATION_ERROR",
+      });
+    }
+
+    const { token, newPassword } = validation.data;
+
+    // Verify reset token
+    let decoded;
+    try {
+      decoded = verifyAccessToken(token);
+      if (decoded.type !== "password_reset") {
+        throw new Error("Invalid token type");
+      }
+    } catch (error) {
+      return res.status(400).json({
+        error: "Invalid or expired reset token",
+        code: "INVALID_RESET_TOKEN",
+      });
+    }
+
+    // Check if reset token exists and is valid
+    const resetTokenRecord = await prisma.refreshToken.findFirst({
+      where: {
+        userId: decoded.sub,
+        revoked: false,
+        expiresAt: { gt: new Date() },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (!resetTokenRecord) {
+      return res.status(400).json({
+        error: "Invalid or expired reset token",
+        code: "INVALID_RESET_TOKEN",
+      });
+    }
+
+    // Verify the token hash
+    const isValidToken = await comparePassword(
+      token,
+      resetTokenRecord.tokenHash
+    );
+    if (!isValidToken) {
+      return res.status(400).json({
+        error: "Invalid or expired reset token",
+        code: "INVALID_RESET_TOKEN",
+      });
+    }
+
+    // Update password
+    const hashedPassword = await hashPassword(newPassword);
+    await prisma.user.update({
+      where: { id: decoded.sub },
+      data: { passwordHash: hashedPassword },
+    });
+
+    // Revoke all refresh tokens for this user
+    await prisma.refreshToken.updateMany({
+      where: { userId: decoded.sub },
+      data: { revoked: true },
+    });
+
+    // Log the password reset
+    await prisma.auditLog.create({
+      data: {
+        tenantId: decoded.ten,
+        userId: decoded.sub,
+        action: "PASSWORD_RESET",
+        entity: "User",
+        entityId: decoded.sub,
+        newValues: { passwordChanged: true },
+      },
+    });
+
+    res.json({
+      success: true,
+      message: "Password has been reset successfully",
+    });
+  } catch (error) {
+    console.error("Error resetting password:", error);
+    res.status(500).json({
+      error: "Failed to reset password",
+      code: "RESET_PASSWORD_ERROR",
+    });
+  }
+});
+
+/**
+ * GET /api/auth/test-email
+ * Test email service configuration
+ */
+router.get("/auth/test-email", async (req, res) => {
+  try {
+    const emailStatus = emailService.getStatus();
+
+    res.json({
+      success: true,
+      emailService: emailStatus,
+      environment: {
+        sendgridApiKey: process.env.SENDGRID_API_KEY ? "Present" : "Missing",
+        sendgridFromEmail: process.env.SENDGRID_FROM_EMAIL || "Missing",
+        sendgridFromName: process.env.SENDGRID_FROM_NAME || "Missing",
+      },
+    });
+  } catch (error) {
+    console.error("Test email error:", error);
+    res.status(500).json({
+      error: "Failed to test email service",
+      code: "EMAIL_TEST_ERROR",
     });
   }
 });

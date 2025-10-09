@@ -6,6 +6,352 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🌱 Starting database seeding...");
 
+  // Create Permissions
+  console.log("🔐 Creating permissions...");
+  const permissions = [
+    // Super Admin permissions
+    {
+      name: "platform:manage",
+      description: "Manage entire platform",
+      resource: "platform",
+      action: "manage",
+    },
+    {
+      name: "institutions:create",
+      description: "Create institutions",
+      resource: "institutions",
+      action: "create",
+    },
+    {
+      name: "institutions:read",
+      description: "View institutions",
+      resource: "institutions",
+      action: "read",
+    },
+    {
+      name: "institutions:update",
+      description: "Update institutions",
+      resource: "institutions",
+      action: "update",
+    },
+    {
+      name: "institutions:delete",
+      description: "Delete institutions",
+      resource: "institutions",
+      action: "delete",
+    },
+    {
+      name: "subscriptions:manage",
+      description: "Manage subscriptions",
+      resource: "subscriptions",
+      action: "manage",
+    },
+    {
+      name: "analytics:view",
+      description: "View platform analytics",
+      resource: "analytics",
+      action: "read",
+    },
+
+    // Institution Admin permissions
+    {
+      name: "users:create",
+      description: "Create users",
+      resource: "users",
+      action: "create",
+    },
+    {
+      name: "users:read",
+      description: "View users",
+      resource: "users",
+      action: "read",
+    },
+    {
+      name: "users:update",
+      description: "Update users",
+      resource: "users",
+      action: "update",
+    },
+    {
+      name: "users:delete",
+      description: "Delete users",
+      resource: "users",
+      action: "delete",
+    },
+    {
+      name: "leads:manage",
+      description: "Manage leads",
+      resource: "leads",
+      action: "manage",
+    },
+    {
+      name: "forms:manage",
+      description: "Manage forms",
+      resource: "forms",
+      action: "manage",
+    },
+    {
+      name: "applications:manage",
+      description: "Manage applications",
+      resource: "applications",
+      action: "manage",
+    },
+    {
+      name: "documents:manage",
+      description: "Manage documents",
+      resource: "documents",
+      action: "manage",
+    },
+    {
+      name: "payments:manage",
+      description: "Manage payments",
+      resource: "payments",
+      action: "manage",
+    },
+    {
+      name: "reports:view",
+      description: "View reports",
+      resource: "reports",
+      action: "read",
+    },
+
+    // Telecaller permissions
+    {
+      name: "leads:read",
+      description: "View leads",
+      resource: "leads",
+      action: "read",
+    },
+    {
+      name: "leads:update",
+      description: "Update leads",
+      resource: "leads",
+      action: "update",
+    },
+    {
+      name: "leads:assign",
+      description: "Assign leads",
+      resource: "leads",
+      action: "assign",
+    },
+    {
+      name: "communications:create",
+      description: "Send communications",
+      resource: "communications",
+      action: "create",
+    },
+    {
+      name: "appointments:manage",
+      description: "Manage appointments",
+      resource: "appointments",
+      action: "manage",
+    },
+
+    // Document Verifier permissions
+    {
+      name: "documents:read",
+      description: "View documents",
+      resource: "documents",
+      action: "read",
+    },
+    {
+      name: "documents:verify",
+      description: "Verify documents",
+      resource: "documents",
+      action: "verify",
+    },
+    {
+      name: "documents:reject",
+      description: "Reject documents",
+      resource: "documents",
+      action: "reject",
+    },
+
+    // Finance Team permissions
+    {
+      name: "payments:read",
+      description: "View payments",
+      resource: "payments",
+      action: "read",
+    },
+    {
+      name: "payments:process",
+      description: "Process payments",
+      resource: "payments",
+      action: "process",
+    },
+    {
+      name: "payments:refund",
+      description: "Process refunds",
+      resource: "payments",
+      action: "refund",
+    },
+    {
+      name: "finance:reports",
+      description: "View finance reports",
+      resource: "finance",
+      action: "read",
+    },
+
+    // Admission Team permissions
+    {
+      name: "applications:read",
+      description: "View applications",
+      resource: "applications",
+      action: "read",
+    },
+    {
+      name: "applications:update",
+      description: "Update applications",
+      resource: "applications",
+      action: "update",
+    },
+    {
+      name: "applications:approve",
+      description: "Approve applications",
+      resource: "applications",
+      action: "approve",
+    },
+    {
+      name: "applications:reject",
+      description: "Reject applications",
+      resource: "applications",
+      action: "reject",
+    },
+
+    // Student/Parent permissions
+    {
+      name: "profile:read",
+      description: "View own profile",
+      resource: "profile",
+      action: "read",
+    },
+    {
+      name: "profile:update",
+      description: "Update own profile",
+      resource: "profile",
+      action: "update",
+    },
+    {
+      name: "applications:create",
+      description: "Create applications",
+      resource: "applications",
+      action: "create",
+    },
+    {
+      name: "documents:upload",
+      description: "Upload documents",
+      resource: "documents",
+      action: "upload",
+    },
+    {
+      name: "payments:create",
+      description: "Make payments",
+      resource: "payments",
+      action: "create",
+    },
+  ];
+
+  const createdPermissions = [];
+  for (const permissionData of permissions) {
+    const permission = await prisma.permission.upsert({
+      where: { name: permissionData.name },
+      update: {},
+      create: permissionData,
+    });
+    createdPermissions.push(permission);
+  }
+
+  // Create Role-Permission mappings
+  console.log("🔗 Creating role-permission mappings...");
+  const rolePermissions = [
+    // Super Admin - All permissions
+    ...createdPermissions.map((p) => ({
+      role: "SUPER_ADMIN",
+      permissionId: p.id,
+    })),
+
+    // Institution Admin - Most permissions except platform management
+    ...createdPermissions
+      .filter((p) => !p.name.startsWith("platform:"))
+      .map((p) => ({ role: "INSTITUTION_ADMIN", permissionId: p.id })),
+
+    // Telecaller - Lead and communication permissions
+    ...createdPermissions
+      .filter(
+        (p) =>
+          p.name.startsWith("leads:") ||
+          p.name.startsWith("communications:") ||
+          p.name.startsWith("appointments:")
+      )
+      .map((p) => ({ role: "TELECALLER", permissionId: p.id })),
+
+    // Document Verifier - Document permissions
+    ...createdPermissions
+      .filter((p) => p.name.startsWith("documents:"))
+      .map((p) => ({ role: "DOCUMENT_VERIFIER", permissionId: p.id })),
+
+    // Finance Team - Payment and finance permissions
+    ...createdPermissions
+      .filter(
+        (p) => p.name.startsWith("payments:") || p.name.startsWith("finance:")
+      )
+      .map((p) => ({ role: "FINANCE_TEAM", permissionId: p.id })),
+
+    // Admission Team - Application permissions
+    ...createdPermissions
+      .filter((p) => p.name.startsWith("applications:"))
+      .map((p) => ({ role: "ADMISSION_TEAM", permissionId: p.id })),
+
+    // Admission Head - All application and some management permissions
+    ...createdPermissions
+      .filter(
+        (p) =>
+          p.name.startsWith("applications:") ||
+          p.name.startsWith("users:") ||
+          p.name.startsWith("reports:")
+      )
+      .map((p) => ({ role: "ADMISSION_HEAD", permissionId: p.id })),
+
+    // Student - Basic permissions
+    ...createdPermissions
+      .filter(
+        (p) =>
+          p.name.startsWith("profile:") ||
+          p.name.startsWith("applications:create") ||
+          p.name.startsWith("documents:upload") ||
+          p.name.startsWith("payments:create")
+      )
+      .map((p) => ({ role: "STUDENT", permissionId: p.id })),
+
+    // Parent - Similar to student
+    ...createdPermissions
+      .filter(
+        (p) =>
+          p.name.startsWith("profile:") ||
+          p.name.startsWith("applications:create") ||
+          p.name.startsWith("documents:upload") ||
+          p.name.startsWith("payments:create")
+      )
+      .map((p) => ({ role: "PARENT", permissionId: p.id })),
+  ];
+
+  for (const rolePermission of rolePermissions) {
+    await prisma.rolePermission.upsert({
+      where: {
+        role_permissionId: {
+          role: rolePermission.role as any,
+          permissionId: rolePermission.permissionId,
+        },
+      },
+      update: {},
+      create: {
+        role: rolePermission.role as any,
+        permissionId: rolePermission.permissionId,
+      },
+    });
+  }
+
   // Create Super Admin tenant
   const superAdminTenant = await prisma.tenant.upsert({
     where: { slug: "lead101" },

@@ -92,7 +92,7 @@ const roleCredentials = [
 
 export default function LoginPage() {
     const router = useRouter();
-    const { login, isLoading, user } = useAuthStore();
+    const { login, isLoading } = useAuthStore();
     const [showPassword, setShowPassword] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
     const [selectedRole, setSelectedRole] = React.useState<string | null>(null);
@@ -105,21 +105,52 @@ export default function LoginPage() {
         watch,
     } = useForm<LoginFormData>({
         resolver: zodResolver(loginSchema),
-        mode: "onChange", // Real-time validation
+        mode: "onChange",
     });
-
-    // Redirect if already authenticated
-    React.useEffect(() => {
-        if (user) {
-            router.push("/");
-        }
-    }, [user, router]);
 
     const onSubmit = async (data: LoginFormData) => {
         setError(null);
         try {
+            // Call login and wait for it to complete
             await login(data);
-            router.push("/");
+
+            // Get the UPDATED user and tenant slug from the store AFTER login
+            const { user, currentTenantSlug } = useAuthStore.getState();
+
+            console.log("After login - user:", user);
+            console.log("After login - currentTenantSlug:", currentTenantSlug);
+
+            // Now route based on the updated user role
+            if (user?.role === "INSTITUTION_ADMIN") {
+                router.push(`/institution-admin/dashboard?tenant=${currentTenantSlug}`);
+            }
+            else if (user?.role === "SUPER_ADMIN") {
+                router.push("/super-admin/dashboard");
+            }
+            else if (user?.role === "TELECALLER") {
+                router.push(`/telecaller/dashboard?tenant=${currentTenantSlug}`);
+            }
+            else if (user?.role === "DOCUMENT_VERIFIER") {
+                router.push(`/document-verifier/dashboard?tenant=${currentTenantSlug}`);
+            }
+            else if (user?.role === "FINANCE_TEAM") {
+                router.push(`/finance-team/dashboard?tenant=${currentTenantSlug}`);
+            }
+            else if (user?.role === "ADMISSION_TEAM") {
+                router.push(`/admission-team/dashboard?tenant=${currentTenantSlug}`);
+            }
+            else if (user?.role === "ADMISSION_HEAD") {
+                router.push(`/admission-head/dashboard?tenant=${currentTenantSlug}`);
+            }
+            else if (user?.role === "STUDENT") {
+                router.push(`/student/dashboard?tenant=${currentTenantSlug}`);
+            }
+            else if (user?.role === "PARENT") {
+                router.push(`/parent/dashboard?tenant=${currentTenantSlug}`);
+            }
+            else {
+                router.push("/");
+            }
         } catch (err: unknown) {
             if (err instanceof ApiException) {
                 setError(err.error.error || "Login failed");
@@ -239,7 +270,12 @@ export default function LoginPage() {
                                 </Button>
                             </form>
 
-                            <div className="text-center">
+                            <div className="text-center space-y-2">
+                                <p className="text-sm text-gray-600">
+                                    <a href="/forgot-password" className="text-blue-600 hover:underline">
+                                        Forgot your password?
+                                    </a>
+                                </p>
                                 <p className="text-sm text-gray-600">
                                     Need help?{" "}
                                     <a href="#" className="text-blue-600 hover:underline">
@@ -269,8 +305,8 @@ export default function LoginPage() {
                                     key={index}
                                     onClick={() => handleRoleSelect(role)}
                                     className={`p-4 rounded-lg border-2 transition-all duration-200 text-left ${selectedRole === role.role
-                                            ? "border-blue-500 bg-blue-50 shadow-md"
-                                            : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
+                                        ? "border-blue-500 bg-blue-50 shadow-md"
+                                        : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
                                         }`}
                                 >
                                     <div className="flex items-center justify-between">

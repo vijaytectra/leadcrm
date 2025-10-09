@@ -1,15 +1,11 @@
-import nodemailer from "nodemailer";
+import sgMail from "@sendgrid/mail";
 import { z } from "zod";
 
 // Email configuration validation
 const emailConfigSchema = z.object({
-  host: z.string(),
-  port: z.number(),
-  secure: z.boolean(),
-  auth: z.object({
-    user: z.string(),
-    pass: z.string(),
-  }),
+  apiKey: z.string(),
+  fromEmail: z.string().email(),
+  fromName: z.string(),
 });
 
 // Email template types
@@ -46,64 +42,78 @@ export interface PaymentNotification {
 }
 
 class EmailService {
-  private transporter: nodemailer.Transporter | null = null;
   private isConfigured = false;
+  private fromEmail: string = "";
+  private fromName: string = "";
 
   constructor() {
-    this.initializeTransporter();
+    this.initializeSendGrid();
   }
 
-  private initializeTransporter() {
+  private initializeSendGrid() {
     try {
-      const emailConfig = {
-        host: process.env.SMTP_HOST || "smtp.gmail.com",
-        port: parseInt(process.env.SMTP_PORT || "587"),
-        secure: process.env.SMTP_SECURE === "true",
-        auth: {
-          user: process.env.SMTP_USER || "",
-          pass: process.env.SMTP_PASS || "",
-        },
-      };
+      const apiKey = process.env.SENDGRID_API_KEY;
+      this.fromEmail =
+        process.env.SENDGRID_FROM_EMAIL || process.env.SMTP_USER || "";
+      this.fromName = process.env.SENDGRID_FROM_NAME || "LEAD101 Platform";
 
-      const validatedConfig = emailConfigSchema.parse(emailConfig);
+      console.log("SendGrid configuration check:");
+      console.log("API Key present:", !!apiKey);
+      console.log("From Email:", this.fromEmail);
+      console.log("From Name:", this.fromName);
 
-      if (validatedConfig.auth.user && validatedConfig.auth.pass) {
-        this.transporter = nodemailer.createTransport(validatedConfig);
+      if (apiKey && this.fromEmail) {
+        sgMail.setApiKey(apiKey);
         this.isConfigured = true;
-        console.log("Email service configured successfully");
+        console.log("SendGrid email service configured successfully");
       } else {
-        console.warn("Email service not configured - SMTP credentials missing");
+        console.warn(
+          "Email service not configured - SendGrid API key or from email missing"
+        );
+        console.warn("API Key:", apiKey ? "Present" : "Missing");
+        console.warn("From Email:", this.fromEmail || "Missing");
       }
     } catch (error) {
-      console.error("Failed to configure email service:", error);
+      console.error("Failed to configure SendGrid email service:", error);
       this.isConfigured = false;
     }
   }
 
-  private async sendEmail(
+  private async sendEmailInternal(
     to: string,
     subject: string,
     html: string,
     text?: string
   ): Promise<boolean> {
-    if (!this.isConfigured || !this.transporter) {
+    if (!this.isConfigured) {
       console.warn("Email service not configured, skipping email send");
       return false;
     }
 
     try {
-      const info = await this.transporter.sendMail({
-        from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      const msg = {
         to,
+        from: {
+          email: this.fromEmail,
+          name: this.fromName,
+        },
         subject,
         html,
-        text,
-      });
+        text: text || html.replace(/<[^>]*>/g, ""), // Strip HTML tags for text version
+      };
 
-      console.log("Email sent successfully:", info.messageId);
+      console.log("Attempting to send email:");
+      console.log("To:", to);
+      console.log("From:", this.fromEmail);
+      console.log("Subject:", subject);
+
+      const response = await sgMail.send(msg);
+      console.log("Email sent successfully:", response[0].statusCode);
+      console.log("Response:", response[0]);
       return true;
     } catch (error) {
       console.error("Failed to send email:", error);
+      console.error("Error details:", error);
       return false;
     }
   }
@@ -210,7 +220,7 @@ class EmailService {
       © 2025 LEAD101. All rights reserved.
     `;
 
-    return await this.sendEmail(data.adminEmail, subject, html, text);
+    return await this.sendEmailInternal(data.adminEmail, subject, html, text);
   }
 
   /**
@@ -293,7 +303,7 @@ class EmailService {
       </html>
     `;
 
-    return await this.sendEmail(
+    return await this.sendEmailInternal(
       data.adminEmail || "admin@example.com",
       subject,
       html
@@ -362,7 +372,7 @@ class EmailService {
       </html>
     `;
 
-    return await this.sendEmail(
+    return await this.sendEmailInternal(
       data.adminEmail || "admin@example.com",
       subject,
       html
@@ -373,25 +383,29 @@ class EmailService {
    * Test email configuration
    */
   async testEmailConfiguration(): Promise<boolean> {
-    if (!this.isConfigured || !this.transporter) {
+    if (!this.isConfigured) {
       return false;
     }
 
     try {
-      const testEmail = process.env.SMTP_USER;
+      const testEmail = this.fromEmail;
       if (!testEmail) {
         return false;
       }
 
-      const info = await this.transporter.sendMail({
-        from: testEmail,
+      const msg = {
         to: testEmail,
+        from: {
+          email: this.fromEmail,
+          name: this.fromName,
+        },
         subject: "LEAD101 Email Service Test",
         html: "<p>This is a test email from LEAD101 email service.</p>",
         text: "This is a test email from LEAD101 email service.",
-      });
+      };
 
-      console.log("Test email sent successfully:", info.messageId);
+      const response = await sgMail.send(msg);
+      console.log("Test email sent successfully:", response[0].statusCode);
       return true;
     } catch (error) {
       console.error("Failed to send test email:", error);
@@ -400,12 +414,24 @@ class EmailService {
   }
 
   /**
+   * Send generic email (public method)
+   */
+  async sendEmail(
+    to: string,
+    subject: string,
+    html: string,
+    text?: string
+  ): Promise<boolean> {
+    return await this.sendEmailInternal(to, subject, html, text);
+  }
+
+  /**
    * Get email service status
    */
   getStatus(): { configured: boolean; ready: boolean } {
     return {
       configured: this.isConfigured,
-      ready: this.isConfigured && this.transporter !== null,
+      ready: this.isConfigured,
     };
   }
 }

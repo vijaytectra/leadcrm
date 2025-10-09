@@ -90,6 +90,33 @@ enum Role {
     PARENT
 }
 
+// RBAC Models
+model Permission {
+    id          String   @id @default(cuid())
+    name        String   @unique
+    description String?
+    resource    String // e.g., "users", "leads", "institutions"
+    action      String // e.g., "create", "read", "update", "delete"
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    rolePermissions RolePermission[]
+
+    @@index([resource, action])
+}
+
+model RolePermission {
+    id           String   @id @default(cuid())
+    role         Role
+    permissionId String
+    createdAt    DateTime @default(now())
+
+    permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+    @@unique([role, permissionId])
+    @@index([role])
+}
+
 model Lead {
     id         String     @id @default(cuid())
     tenantId   String

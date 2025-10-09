@@ -9,6 +9,8 @@ import {
   AuthedRequest,
 } from "../middleware/auth";
 import { hashPassword, generateSecurePassword } from "../lib/password";
+import { emailService } from "../lib/email";
+import { generateUserCredentialsEmail } from "../lib/email-templates";
 import { z } from "zod";
 
 const router = Router();
@@ -59,10 +61,14 @@ router.get(
   requireAuth,
   requireActiveUser,
   requireInstitutionAdmin,
-  requireTenantAccess,
+  // requireTenantAccess,
   async (req: AuthedRequest, res) => {
     try {
       const tenantSlug = req.params.tenant;
+      console.log("Tenant slug:", tenantSlug);
+      console.log(req.auth);
+      console.log(req.auth?.rol);
+      console.log(req.auth?.ten);
 
       if (!tenantSlug) {
         return res.status(400).json({
@@ -72,15 +78,20 @@ router.get(
       }
 
       // For super admin, allow access to any tenant
-      // For institution admin, validate tenant access
-      if (
-        req.auth?.rol === "INSTITUTION_ADMIN" &&
-        req.auth.ten !== tenantSlug
-      ) {
-        return res.status(403).json({
-          error: "Access denied to this tenant",
-          code: "TENANT_ACCESS_DENIED",
+      // For institution admin, validate tenant access by checking if user belongs to the tenant
+      if (req.auth?.rol === "INSTITUTION_ADMIN") {
+        // Get user's tenant to validate access
+        const user = await prisma.user.findUnique({
+          where: { id: req.auth.sub },
+          select: { tenant: { select: { slug: true } } },
         });
+
+        if (!user || user.tenant.slug !== tenantSlug) {
+          return res.status(403).json({
+            error: "Access denied to this tenant",
+            code: "TENANT_ACCESS_DENIED",
+          });
+        }
       }
 
       const users = await prisma.user.findMany({
@@ -105,7 +116,7 @@ router.get(
         },
         orderBy: { createdAt: "desc" },
       });
-
+      console.log("Users:", users);
       res.json({ users });
     } catch (error) {
       console.error("Get users error:", error);
@@ -194,6 +205,33 @@ router.post(
           createdAt: true,
         },
       });
+
+      // Send email with credentials if password was generated
+      if (!password) {
+        try {
+          const emailTemplate = generateUserCredentialsEmail({
+            email: user.email,
+            password: userPassword,
+            firstName: user.firstName || "",
+            lastName: user.lastName || "",
+            role: user.role,
+            institutionName: tenant.name,
+            loginUrl: `${
+              process.env.FRONTEND_URL || "http://localhost:3000"
+            }/login?tenant=${tenantSlug}`,
+          });
+
+          await emailService.sendEmail(
+            user.email,
+            emailTemplate.subject,
+            emailTemplate.html,
+            emailTemplate.text
+          );
+        } catch (emailError) {
+          console.error("Failed to send user credentials email:", emailError);
+          // Don't fail the user creation if email fails
+        }
+      }
 
       res.status(201).json({
         user,

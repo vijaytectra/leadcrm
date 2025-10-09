@@ -67,19 +67,24 @@ npm run dev
 
 ### Backend Environment Variables (.env)
 
-| Variable                 | Description                | Required | Default       | Example                         |
-| ------------------------ | -------------------------- | -------- | ------------- | ------------------------------- |
-| `NODE_ENV`               | Environment mode           | Yes      | `development` | `development`                   |
-| `PORT`                   | Server port                | Yes      | `4000`        | `4000`                          |
-| `DATABASE_URL`           | Database connection string | Yes      | -             | `file:./dev.db`                 |
-| `JWT_SECRET`             | JWT signing secret         | Yes      | -             | `your_super_secret_jwt_key`     |
-| `JWT_REFRESH_SECRET`     | JWT refresh secret         | Yes      | -             | `your_super_secret_refresh_key` |
-| `SENDGRID_API_KEY`       | SendGrid API key           | Yes      | -             | `SG.xxx`                        |
-| `CASHFREE_CLIENT_ID`     | Cashfree client ID         | Yes      | -             | `your_client_id`                |
-| `CASHFREE_CLIENT_SECRET` | Cashfree client secret     | Yes      | -             | `your_client_secret`            |
-| `CLOUDINARY_CLOUD_NAME`  | Cloudinary cloud name      | Yes      | -             | `your_cloud_name`               |
-| `CLOUDINARY_API_KEY`     | Cloudinary API key         | Yes      | -             | `your_api_key`                  |
-| `CLOUDINARY_API_SECRET`  | Cloudinary API secret      | Yes      | -             | `your_api_secret`               |
+| Variable                 | Description                | Required | Default                 | Example                         |
+| ------------------------ | -------------------------- | -------- | ----------------------- | ------------------------------- |
+| `NODE_ENV`               | Environment mode           | Yes      | `development`           | `development`                   |
+| `PORT`                   | Server port                | Yes      | `4000`                  | `4000`                          |
+| `DATABASE_URL`           | Database connection string | Yes      | -                       | `file:./dev.db`                 |
+| `JWT_SECRET`             | JWT signing secret         | Yes      | -                       | `your_super_secret_jwt_key`     |
+| `JWT_REFRESH_SECRET`     | JWT refresh secret         | Yes      | -                       | `your_super_secret_refresh_key` |
+| `SENDGRID_API_KEY`       | SendGrid API key           | Yes      | -                       | `SG.xxx`                        |
+| `SENDGRID_FROM_EMAIL`    | From email address         | Yes      | -                       | `noreply@yourdomain.com`        |
+| `SENDGRID_FROM_NAME`     | From name for emails       | No       | `LEAD101 Platform`      | `LEAD101 Platform`              |
+| `SUPPORT_EMAIL`          | Support email address      | No       | `support@lead101.com`   | `support@yourdomain.com`        |
+| `SUPPORT_PHONE`          | Support phone number       | No       | `+91-9876543210`        | `+91-9876543210`                |
+| `FRONTEND_URL`           | Frontend URL for links     | No       | `http://localhost:3000` | `http://localhost:3000`         |
+| `CASHFREE_CLIENT_ID`     | Cashfree client ID         | Yes      | -                       | `your_client_id`                |
+| `CASHFREE_CLIENT_SECRET` | Cashfree client secret     | Yes      | -                       | `your_client_secret`            |
+| `CLOUDINARY_CLOUD_NAME`  | Cloudinary cloud name      | Yes      | -                       | `your_cloud_name`               |
+| `CLOUDINARY_API_KEY`     | Cloudinary API key         | Yes      | -                       | `your_api_key`                  |
+| `CLOUDINARY_API_SECRET`  | Cloudinary API secret      | Yes      | -                       | `your_api_secret`               |
 
 ### Frontend Environment Variables (.env.local)
 
@@ -112,16 +117,30 @@ createdb lead101
 DATABASE_URL="postgresql://username:password@localhost:5432/lead101"
 ```
 
-### 2. Email Service (SendGrid)
+### 2. Email Service Configuration (SendGrid)
 
 1. Sign up at [SendGrid](https://sendgrid.com/)
-2. Create an API key
-3. Add to `.env`:
+2. Create an API key in the SendGrid dashboard
+3. Verify your sender email address in SendGrid
+4. Add to `.env`:
    ```
    SENDGRID_API_KEY=SG.your_api_key_here
    SENDGRID_FROM_EMAIL=noreply@yourdomain.com
    SENDGRID_FROM_NAME=LEAD101 Platform
+   SUPPORT_EMAIL=support@yourdomain.com
+   SUPPORT_PHONE=+91-9876543210
+   FRONTEND_URL=http://localhost:3000
    ```
+
+#### Email Features
+
+The system automatically sends emails for:
+
+- **Institution Creation**: Welcome email with admin credentials
+- **Password Reset**: Password reset links
+- **User Invitations**: Account creation notifications
+- **Payment Notifications**: Transaction confirmations
+- **Subscription Updates**: Plan changes and renewals
 
 ### 3. Payment Gateway (Cashfree)
 

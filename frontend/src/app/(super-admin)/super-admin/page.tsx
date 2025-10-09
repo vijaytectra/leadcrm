@@ -2,7 +2,7 @@
 
 import React from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { SuperAdminLayout } from "@/components/layouts/SuperAdminLayout";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ import {
     Users,
     DollarSign,
     TrendingUp,
-    CreditCard,
+  
     BarChart3,
     Plus,
     Eye,
@@ -73,7 +73,7 @@ const mockRevenueData = [
 export default function SuperAdminDashboard() {
     return (
         <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
-            <SuperAdminLayout>
+          
                 <div className="space-y-6">
                     {/* Page Header */}
                     <div className="flex items-center justify-between">
@@ -274,7 +274,7 @@ export default function SuperAdminDashboard() {
                         </CardContent>
                     </Card>
                 </div>
-            </SuperAdminLayout>
+    
         </ProtectedRoute>
     );
 }

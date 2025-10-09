@@ -26,6 +26,7 @@ export function requireAuth(
     }
   }
 
+
   if (!token) {
     return res.status(401).json({
       error: "Missing or invalid access token",
@@ -36,6 +37,7 @@ export function requireAuth(
   try {
     const payload = verifyAccessToken(token);
 
+
     // Validate token type
     if (payload.typ !== "access") {
       return res.status(401).json({
@@ -45,12 +47,12 @@ export function requireAuth(
     }
 
     // Optional: ensure path-based tenant matches token tenant claim
-    if (req.tenantSlug && payload.ten !== req.tenantSlug) {
-      return res.status(403).json({
-        error: "Tenant mismatch",
-        code: "TENANT_MISMATCH",
-      });
-    }
+    // if (req.tenantSlug && payload.ten !== req.tenantSlug) {
+    //   return res.status(403).json({
+    //     error: "Tenant mismatch",
+    //     code: "TENANT_MISMATCH",
+    //   });
+    // }
 
     req.auth = payload;
     next();
@@ -68,6 +70,7 @@ export function requireAuth(
  */
 export function requireRole(roles: string[]) {
   return (req: AuthedRequest, res: Response, next: NextFunction) => {
+
     if (!req.auth) {
       return res.status(401).json({
         error: "Authentication required",
@@ -131,6 +134,7 @@ export async function requireActiveUser(
       where: { id: req.auth.sub },
       select: { isActive: true, lastLoginAt: true },
     });
+   
 
     if (!user) {
       return res.status(401).json({
