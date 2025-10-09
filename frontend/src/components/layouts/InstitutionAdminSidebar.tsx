@@ -14,6 +14,7 @@ import {
   HelpCircle,
   ChevronLeft,
   ChevronRight,
+  UserPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,12 @@ const navigation = [
     href: "/institution-admin/dashboard",
     icon: LayoutDashboard,
     description: "Overview and analytics",
+  },
+  {
+    name: "Leads",
+    href: "/institution-admin/leads",
+    icon: UserPlus,
+    description: "Lead management",
   },
   {
     name: "User Management",
@@ -82,11 +89,11 @@ export function InstitutionAdminSidebar({ className }: InstitutionAdminSidebarPr
     return `${basePath}?tenant=${currentTenantSlug}`;
   };
 
-  console.log("Tenant slug:", currentTenantSlug);
+
   return (
     <div
       className={cn(
-        "flex flex-col bg-sidebar border-r border-sidebar-border transition-all duration-300",
+        "flex flex-col bg-sidebar border-r border-sidebar-border transition-all duration-300 overflow-auto",
         collapsed ? "w-16" : "w-64",
         className
       )}

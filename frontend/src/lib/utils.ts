@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { getToken } from "./getToken";
+import { getClientToken } from "../stores/auth";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -217,7 +218,7 @@ export async function apiGetClient<TResponse>(
     headers,
     cache: "no-store",
   });
-  console.log("res", res);
+ 
   if (!res.ok) {
     const errorData = await res.json().catch(
       (): ApiError => ({
@@ -242,6 +243,126 @@ export async function apiPostClient<TResponse>(
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(
+      (): ApiError => ({
+        error: "Unknown error",
+        code: "UNKNOWN_ERROR",
+      })
+    );
+    throw new ApiException("API Error", res.status, errorData);
+  }
+
+  return res.json();
+}
+
+// Client-side API functions for browser usage
+export async function apiGetClientNew<TResponse>(
+  path: string,
+  opts?: ApiRequestOptions
+): Promise<TResponse> {
+  let token: string | undefined = undefined;
+  if (opts?.token) {
+    const clientToken = getClientToken();
+    token = clientToken || undefined;
+
+    if (!token || token === "") {
+      throw new ApiException("Unauthorized", 401, {
+        error: "Unauthorized",
+        code: "UNAUTHORIZED",
+      });
+    }
+  }
+  const res = await fetch(`${API_BASE_URL}/api${path}`, {
+    credentials: "include", // Include cookies in requests
+    headers: {
+      ...(opts?.token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(
+      (): ApiError => ({
+        error: "Unknown error",
+        code: "UNKNOWN_ERROR",
+      })
+    );
+    throw new ApiException("API Error", res.status, errorData);
+  }
+
+  return res.json();
+}
+
+export async function apiPostClientNew<TResponse>(
+  path: string,
+  body: unknown,
+  opts?: ApiRequestOptions
+): Promise<TResponse> {
+  let token: string | undefined = undefined;
+  if (opts?.token) {
+    const clientToken = getClientToken();
+    token = clientToken || undefined;
+
+    if (!token || token === "") {
+      throw new ApiException("Unauthorized", 401, {
+        error: "Unauthorized",
+        code: "UNAUTHORIZED",
+      });
+    }
+  }
+
+  const res = await fetch(`${API_BASE_URL}/api${path}`, {
+    method: "POST",
+    credentials: "include", // Include cookies in requests
+    headers: {
+      "Content-Type": "application/json",
+      ...(opts?.token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(
+      (): ApiError => ({
+        error: "Unknown error",
+        code: "UNKNOWN_ERROR",
+      })
+    );
+    throw new ApiException("API Error", res.status, errorData);
+  }
+
+  return res.json();
+}
+
+export async function apiPutClient<TResponse>(
+  path: string,
+  body: unknown,
+  opts?: ApiRequestOptions
+): Promise<TResponse> {
+  let token: string | undefined = undefined;
+  if (opts?.token) {
+    const clientToken = getClientToken();
+    token = clientToken || undefined;
+
+    if (!token || token === "") {
+      throw new ApiException("Unauthorized", 401, {
+        error: "Unauthorized",
+        code: "UNAUTHORIZED",
+      });
+    }
+  }
+
+  const res = await fetch(`${API_BASE_URL}/api${path}`, {
+    method: "PUT",
+    credentials: "include", // Include cookies in requests
+    headers: {
+      "Content-Type": "application/json",
+      ...(opts?.token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: JSON.stringify(body),
   });

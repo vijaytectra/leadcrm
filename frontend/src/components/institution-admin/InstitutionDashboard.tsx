@@ -9,7 +9,12 @@ import {
   Calendar,
   DollarSign,
   Target,
-  CheckCircle
+  CheckCircle,
+  ArrowUp,
+  ArrowDown,
+  MoreHorizontal,
+  Bell,
+  Settings
 } from "lucide-react";
 
 interface InstitutionStats {
@@ -35,34 +40,50 @@ export function InstitutionDashboard({ stats, tenantSlug }: InstitutionDashboard
     {
       title: "Total Users",
       value: stats.totalUsers,
-      description: `${stats.activeUsers} active`,
+      description: `${stats.activeUsers} active users`,
       icon: Users,
-      trend: stats.newUsersThisMonth > 0 ? `+${stats.newUsersThisMonth} this month` : "No new users",
+      trend: stats.newUsersThisMonth,
+      trendLabel: "this month",
       trendType: "positive" as const,
+      color: "bg-blue-500",
+      lightColor: "bg-blue-50",
+      textColor: "text-blue-600",
     },
     {
       title: "Total Leads",
       value: stats.totalLeads,
       description: `${stats.convertedLeads} converted`,
       icon: Target,
-      trend: `${stats.conversionRate}% conversion rate`,
+      trend: stats.conversionRate,
+      trendLabel: "conversion rate",
       trendType: stats.conversionRate > 20 ? "positive" : "neutral" as const,
+      color: "bg-green-500",
+      lightColor: "bg-green-50",
+      textColor: "text-green-600",
     },
     {
       title: "Monthly Revenue",
       value: `₹${stats.monthlyRevenue.toLocaleString()}`,
-      description: "This month",
+      description: "Current month",
       icon: DollarSign,
-      trend: stats.revenueGrowth > 0 ? `+${stats.revenueGrowth}% growth` : "No growth",
+      trend: stats.revenueGrowth,
+      trendLabel: "vs last month",
       trendType: stats.revenueGrowth > 0 ? "positive" : "neutral" as const,
+      color: "bg-purple-500",
+      lightColor: "bg-purple-50",
+      textColor: "text-purple-600",
     },
     {
-      title: "Upcoming Appointments",
+      title: "Appointments",
       value: stats.upcomingAppointments,
       description: "Next 7 days",
       icon: Calendar,
-      trend: stats.pendingTasks > 0 ? `${stats.pendingTasks} pending tasks` : "All caught up",
+      trend: stats.pendingTasks,
+      trendLabel: "pending tasks",
       trendType: stats.pendingTasks > 0 ? "warning" : "positive" as const,
+      color: "bg-orange-500",
+      lightColor: "bg-orange-50",
+      textColor: "text-orange-600",
     },
   ];
 
@@ -73,6 +94,7 @@ export function InstitutionDashboard({ stats, tenantSlug }: InstitutionDashboard
       message: "Sarah Johnson joined as Telecaller",
       time: "2 hours ago",
       icon: UserPlus,
+      color: "bg-blue-100 text-blue-600",
     },
     {
       id: "2",
@@ -80,6 +102,7 @@ export function InstitutionDashboard({ stats, tenantSlug }: InstitutionDashboard
       message: "Lead #1234 converted to application",
       time: "4 hours ago",
       icon: CheckCircle,
+      color: "bg-green-100 text-green-600",
     },
     {
       id: "3",
@@ -87,6 +110,7 @@ export function InstitutionDashboard({ stats, tenantSlug }: InstitutionDashboard
       message: "Monthly revenue target achieved",
       time: "1 day ago",
       icon: TrendingUp,
+      color: "bg-purple-100 text-purple-600",
     },
     {
       id: "4",
@@ -94,179 +118,243 @@ export function InstitutionDashboard({ stats, tenantSlug }: InstitutionDashboard
       message: "New features available in dashboard",
       time: "2 days ago",
       icon: Activity,
+      color: "bg-gray-100 text-gray-600",
     },
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-heading-text">
-            Institution Dashboard
-          </h1>
-          <p className="text-subtext mt-1">
-            Welcome back! Here&apos;s what&apos;s happening with your institution.
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 p-6">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Enhanced Header */}
+        <div className="flex items-center justify-between bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+          <div>
+            <div className="flex items-center space-x-3 mb-2">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                Institution Dashboard
+              </h1>
+              <Badge variant="secondary" className="text-xs px-3 py-1 bg-blue-100 text-blue-700 border-blue-200">
+                {tenantSlug}
+              </Badge>
+            </div>
+            <p className="text-gray-600">
+              Welcome back! Here&apos;s what&apos;s happening with your institution today.
+            </p>
+          </div>
+          <div className="flex items-center space-x-3">
+            <Button variant="outline" size="sm" className="hover:bg-gray-50">
+              <Bell className="h-4 w-4 mr-2" />
+              Notifications
+            </Button>
+            <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
+              <UserPlus className="h-4 w-4 mr-2" />
+              Add User
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center space-x-3">
-          <Badge variant="secondary" className="text-sm">
-            {tenantSlug}
-          </Badge>
-          <Button>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Add User
-          </Button>
-        </div>
-      </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statCards.map((stat, index) => (
-          <Card key={index} className="hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-subtext">
-                {stat.title}
-              </CardTitle>
-              <stat.icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-heading-text">
-                {stat.value}
+        {/* Enhanced Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {statCards.map((stat, index) => (
+            <Card key={index} className="group hover:shadow-lg transition-all duration-300 border-0 shadow-sm bg-white overflow-hidden">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className={`p-3 rounded-xl ${stat.lightColor}`}>
+                    <stat.icon className={`h-6 w-6 ${stat.textColor}`} />
+                  </div>
+                  <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 mb-1">
+                      {stat.title}
+                    </p>
+                    <p className="text-3xl font-bold text-gray-900">
+                      {stat.value}
+                    </p>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-500">
+                      {stat.description}
+                    </span>
+                    <div className={`flex items-center space-x-1 text-xs px-2 py-1 rounded-full ${
+                      stat.trendType === "positive" 
+                        ? "bg-green-100 text-green-700" 
+                        : stat.trendType === "warning"
+                        ? "bg-yellow-100 text-yellow-700"
+                        : "bg-gray-100 text-gray-600"
+                    }`}>
+                      {stat.trendType === "positive" && <ArrowUp className="h-3 w-3" />}
+                      {stat.trendType === "warning" && <ArrowDown className="h-3 w-3" />}
+                      <span>
+                        {typeof stat.trend === 'number' && stat.trend > 0 ? '+' : ''}
+                        {stat.trend}
+                        {stat.trendType === "positive" && typeof stat.trend === 'number' ? '%' : ''}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Enhanced Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Enhanced Recent Activity */}
+          <Card className="lg:col-span-2 border-0 shadow-sm bg-white">
+            <CardHeader className="border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <Activity className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
+                    <CardDescription className="text-sm">Latest updates from your institution</CardDescription>
+                  </div>
+                </div>
+                <Button variant="ghost" size="sm">
+                  View All
+                </Button>
               </div>
-              <p className="text-xs text-subtext mt-1">
-                {stat.description}
-              </p>
-              <div className="flex items-center mt-2">
-                <span
-                  className={`text-xs ${stat.trendType === "positive"
-                    ? "text-green-600"
-                    : stat.trendType === "warning"
-                      ? "text-yellow-600"
-                      : "text-muted-foreground"
-                    }`}
-                >
-                  {stat.trend}
-                </span>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="divide-y divide-gray-100">
+                {recentActivities.map((activity, index) => (
+                  <div
+                    key={activity.id}
+                    className="flex items-center space-x-4 p-6 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className={`flex-shrink-0 p-2 rounded-lg ${activity.color}`}>
+                      <activity.icon className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 mb-1">
+                        {activity.message}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {activity.time}
+                      </p>
+                    </div>
+                    <div className="flex-shrink-0">
+                      <div className="h-2 w-2 bg-blue-400 rounded-full"></div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Activity */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Activity className="h-5 w-5 mr-2" />
-              Recent Activity
-            </CardTitle>
-            <CardDescription>
-              Latest updates from your institution
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentActivities.map((activity) => (
-                <div
-                  key={activity.id}
-                  className="flex items-start space-x-3 p-3 rounded-lg hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                      <activity.icon className="h-4 w-4 text-primary" />
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-heading-text">
-                      {activity.message}
-                    </p>
-                    <p className="text-xs text-subtext mt-1">
-                      {activity.time}
-                    </p>
-                  </div>
+          {/* Enhanced Quick Actions */}
+          <Card className="border-0 shadow-sm bg-white">
+            <CardHeader className="border-b border-gray-100">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <Settings className="h-5 w-5 text-green-600" />
                 </div>
-              ))}
-            </div>
-            <div className="mt-4 pt-4 border-t border-border">
-              <Button variant="outline" className="w-full">
-                View All Activity
+                <div>
+                  <CardTitle className="text-lg font-semibold">Quick Actions</CardTitle>
+                  <CardDescription className="text-sm">Common tasks and shortcuts</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6 space-y-3">
+              <Button className="w-full justify-start bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
+                <UserPlus className="h-4 w-4 mr-3" />
+                Add New User
+              </Button>
+              <Button className="w-full justify-start" variant="outline">
+                <Target className="h-4 w-4 mr-3" />
+                View Leads
+              </Button>
+              <Button className="w-full justify-start" variant="outline">
+                <Calendar className="h-4 w-4 mr-3" />
+                Schedule Meeting
+              </Button>
+              <Button className="w-full justify-start" variant="outline">
+                <DollarSign className="h-4 w-4 mr-3" />
+                View Revenue Reports
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Enhanced Performance Overview */}
+        <Card className="border-0 shadow-sm bg-white">
+          <CardHeader className="border-b border-gray-100">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <TrendingUp className="h-5 w-5 text-purple-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg font-semibold">Performance Overview</CardTitle>
+                  <CardDescription className="text-sm">Key metrics and insights for your institution</CardDescription>
+                </div>
+              </div>
+              <Button variant="outline" size="sm">
+                Export Report
               </Button>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>
-              Common tasks and shortcuts
-            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <Button className="w-full justify-start" variant="outline">
-              <UserPlus className="h-4 w-4 mr-2" />
-              Add New User
-            </Button>
-            <Button className="w-full justify-start" variant="outline">
-              <Target className="h-4 w-4 mr-2" />
-              View Leads
-            </Button>
-            <Button className="w-full justify-start" variant="outline">
-              <Calendar className="h-4 w-4 mr-2" />
-              Schedule Meeting
-            </Button>
-            <Button className="w-full justify-start" variant="outline">
-              <DollarSign className="h-4 w-4 mr-2" />
-              View Revenue
-            </Button>
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="text-center space-y-2">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-3">
+                  <Target className="h-8 w-8 text-green-600" />
+                </div>
+                <div className="text-3xl font-bold text-gray-900">
+                  {stats.conversionRate}%
+                </div>
+                <div className="text-sm font-medium text-gray-600">Conversion Rate</div>
+                <div className="flex items-center justify-center space-x-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                  <ArrowUp className="h-3 w-3" />
+                  <span>Above industry average</span>
+                </div>
+              </div>
+              
+              <div className="text-center space-y-2">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-3">
+                  <Users className="h-8 w-8 text-blue-600" />
+                </div>
+                <div className="text-3xl font-bold text-gray-900">
+                  {stats.activeUsers}
+                </div>
+                <div className="text-sm font-medium text-gray-600">Active Team Members</div>
+                <div className="flex items-center justify-center space-x-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                  <Activity className="h-3 w-3" />
+                  <span>{Math.round((stats.activeUsers / stats.totalUsers) * 100)}% engagement</span>
+                </div>
+              </div>
+              
+              <div className="text-center space-y-2">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-3">
+                  <DollarSign className="h-8 w-8 text-purple-600" />
+                </div>
+                <div className="text-3xl font-bold text-gray-900">
+                  ₹{stats.monthlyRevenue.toLocaleString()}
+                </div>
+                <div className="text-sm font-medium text-gray-600">Monthly Revenue</div>
+                <div className={`flex items-center justify-center space-x-1 text-xs px-2 py-1 rounded-full ${
+                  stats.revenueGrowth > 0 
+                    ? "text-green-600 bg-green-50" 
+                    : "text-gray-600 bg-gray-50"
+                }`}>
+                  {stats.revenueGrowth > 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+                  <span>
+                    {stats.revenueGrowth > 0 ? `+${stats.revenueGrowth}% growth` : "No growth"}
+                  </span>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Performance Overview */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Performance Overview</CardTitle>
-          <CardDescription>
-            Key metrics and insights for your institution
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-heading-text mb-2">
-                {stats.conversionRate}%
-              </div>
-              <div className="text-sm text-subtext">Conversion Rate</div>
-              <div className="text-xs text-green-600 mt-1">
-                Above industry average
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-heading-text mb-2">
-                {stats.activeUsers}
-              </div>
-              <div className="text-sm text-subtext">Active Team Members</div>
-              <div className="text-xs text-blue-600 mt-1">
-                {Math.round((stats.activeUsers / stats.totalUsers) * 100)}% engagement
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-heading-text mb-2">
-                ₹{stats.monthlyRevenue.toLocaleString()}
-              </div>
-              <div className="text-sm text-subtext">Monthly Revenue</div>
-              <div className="text-xs text-green-600 mt-1">
-                {stats.revenueGrowth > 0 ? `+${stats.revenueGrowth}% growth` : "No growth"}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

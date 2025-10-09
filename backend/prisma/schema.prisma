@@ -162,40 +162,125 @@ model LeadNote {
 }
 
 model Form {
-    id              String   @id @default(cuid())
-    tenantId        String
-    title           String
-    requiresPayment Boolean  @default(false)
-    createdAt       DateTime @default(now())
-    updatedAt       DateTime @updatedAt
+    id                       String    @id @default(cuid())
+    tenantId                 String
+    title                    String
+    description              String?
+    isActive                 Boolean   @default(true)
+    requiresPayment          Boolean   @default(false)
+    paymentAmount            Int?
+    allowMultipleSubmissions Boolean   @default(false)
+    maxSubmissions           Int?
+    submissionDeadline       DateTime?
+    settings                 Json // FormSettings
+    createdAt                DateTime  @default(now())
+    updatedAt                DateTime  @updatedAt
 
     tenant      Tenant           @relation(fields: [tenantId], references: [id])
     fields      FormField[]
+    steps       FormStep[]
     submissions FormSubmission[]
+    widgets     FormWidget[]
+    analytics   FormAnalytics[]
 }
 
 model FormField {
-    id       String  @id @default(cuid())
-    formId   String
-    type     String // e.g., text, number, email, select
-    label    String
-    options  Json?
-    required Boolean @default(false)
-    order    Int
+    id               String  @id @default(cuid())
+    formId           String
+    type             String // FieldType enum
+    label            String
+    placeholder      String?
+    description      String?
+    required         Boolean @default(false)
+    order            Int
+    width            String  @default("full") // full, half, third, quarter
+    validation       Json? // FieldValidation
+    conditionalLogic Json? // ConditionalLogic
+    options          Json? // FieldOptions
+    styling          Json? // FieldStyling
+    advanced         Json? // FieldAdvanced
 
-    form Form @relation(fields: [formId], references: [id])
+    form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+}
+
+model FormStep {
+    id          String   @id @default(cuid())
+    formId      String
+    title       String
+    description String?
+    order       Int
+    isActive    Boolean  @default(true)
+    fields      Json // Array of field IDs
+    conditions  Json? // ConditionalLogic
+    settings    Json // StepSettings
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
 }
 
 model FormSubmission {
-    id          String   @id @default(cuid())
-    formId      String
-    data        Json
-    userContact String?
-    status      String   @default("SUBMITTED")
-    createdAt   DateTime @default(now())
+    id        String   @id @default(cuid())
+    formId    String
+    data      Json // Record<string, FormSubmissionValue>
+    metadata  Json // SubmissionMetadata
+    status    String   @default("submitted") // SubmissionStatus
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
     form    Form     @relation(fields: [formId], references: [id])
     payment Payment? @relation("SubmissionPayment")
+}
+
+model FormWidget {
+    id        String   @id @default(cuid())
+    formId    String
+    name      String
+    type      String // WidgetType enum
+    settings  Json // WidgetSettings
+    embedCode String
+    isActive  Boolean  @default(true)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+}
+
+model FormTemplate {
+    id           String   @id @default(cuid())
+    name         String
+    description  String
+    category     String // FormCategory enum
+    isPublic     Boolean  @default(false)
+    isPremium    Boolean  @default(false)
+    formConfig   Json // FormBuilderConfig
+    fields       Json // FormField[]
+    steps        Json // FormStep[]
+    previewImage String?
+    tags         Json // string[]
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
+}
+
+model FormAnalytics {
+    id                String   @id @default(cuid())
+    formId            String
+    date              DateTime
+    views             Int      @default(0)
+    submissions       Int      @default(0)
+    conversions       Int      @default(0)
+    bounceRate        Float    @default(0)
+    avgCompletionTime Float    @default(0)
+    deviceBreakdown   Json // DeviceMetric[]
+    sourceBreakdown   Json // SourceMetric[]
+    fieldAnalytics    Json // FieldAnalytic[]
+    createdAt         DateTime @default(now())
+
+    form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+    @@unique([formId, date])
+    @@index([formId])
+    @@index([date])
 }
 
 model Payment {

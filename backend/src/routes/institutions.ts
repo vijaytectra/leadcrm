@@ -65,7 +65,7 @@ router.get(
   requireRole(["SUPER_ADMIN"]),
   async (req: AuthedRequest, res) => {
     try {
-      console.log("req.query", req.query);
+
       const { page, limit, search, status, subscriptionTier } =
         querySchema.parse(req.query);
 
@@ -415,9 +415,7 @@ router.post(
           supportEmail,
         });
 
-        console.log(
-          `Welcome email sent to ${adminUser.email} for institution ${institution.name}`
-        );
+      
       } catch (emailError) {
         console.error("Failed to send welcome email:", emailError);
         // Don't fail the institution creation if email fails

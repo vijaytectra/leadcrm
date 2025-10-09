@@ -1,5 +1,5 @@
-import { getToken } from "../getToken";
-import { apiGet, apiPost, apiPut } from "../utils";
+import { getClientToken } from "../../stores/auth";
+import { apiGetClientNew, apiPostClientNew, apiPutClient } from "../utils";
 
 export interface User {
   id: string;
@@ -49,16 +49,19 @@ export interface CreateUserResponse {
  */
 export async function getUsers(tenantSlug: string): Promise<User[]> {
   try {
-    console.log("Getting users for tenant:", tenantSlug);
-    const token = await getToken();
+
+    const token = getClientToken();
     if (!token) {
       throw new Error("No token found");
     }
 
-    const response = await apiGet<UsersResponse>(`/${tenantSlug}/users`, {
-      token: token,
-    });
-    console.log("Users response:", response);
+    const response = await apiGetClientNew<UsersResponse>(
+      `/${tenantSlug}/users`,
+      {
+        token: token,
+      }
+    );
+    
     return response.users;
   } catch (error) {
     console.error("Error fetching users:", error);
@@ -73,12 +76,12 @@ export async function getUser(
   tenantSlug: string,
   userId: string
 ): Promise<User> {
-  const token = await getToken();
+  const token = getClientToken();
   if (!token) {
     throw new Error("No token found");
   }
   try {
-    const response = await apiGet<UserResponse>(
+    const response = await apiGetClientNew<UserResponse>(
       `/${tenantSlug}/users/${userId}`,
       {
         token: token,
@@ -98,12 +101,12 @@ export async function createUser(
   tenantSlug: string,
   userData: CreateUserRequest
 ): Promise<CreateUserResponse> {
-  const token = await getToken();
+  const token = getClientToken();
   if (!token) {
     throw new Error("No token found");
   }
   try {
-    const response = await apiPost<CreateUserResponse>(
+    const response = await apiPostClientNew<CreateUserResponse>(
       `/${tenantSlug}/users`,
       userData,
       { token: token }
@@ -123,12 +126,12 @@ export async function updateUser(
   userId: string,
   userData: UpdateUserRequest
 ): Promise<User> {
-  const token = await getToken();
+  const token = getClientToken();
   if (!token) {
     throw new Error("No token found");
   }
   try {
-    const response = await apiPut<UserResponse>(
+    const response = await apiPutClient<UserResponse>(
       `/${tenantSlug}/users/${userId}`,
       userData,
       { token: token }
@@ -147,12 +150,16 @@ export async function deleteUser(
   tenantSlug: string,
   userId: string
 ): Promise<void> {
-  const token = await getToken();
+  const token = getClientToken();
   if (!token) {
     throw new Error("No token found");
   }
   try {
-    await apiPost(`/${tenantSlug}/users/${userId}`, {}, { token: token });
+    await apiPostClientNew(
+      `/${tenantSlug}/users/${userId}`,
+      {},
+      { token: token }
+    );
   } catch (error) {
     console.error("Error deleting user:", error);
     throw error;

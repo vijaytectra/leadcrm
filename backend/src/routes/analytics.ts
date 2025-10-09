@@ -19,11 +19,11 @@ router.get(
   "/:tenant/analytics/stats",
   requireAuth,
   requireActiveUser,
-  requireInstitutionAdmin,
-  requireTenantAccess,
+  requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res) => {
     try {
       const tenantSlug = req.params.tenant;
+
 
       if (!tenantSlug) {
         return res.status(400).json({
@@ -83,7 +83,8 @@ router.get(
         },
       });
 
-      const conversionRate = totalLeads > 0 ? (convertedLeads / totalLeads) * 100 : 0;
+      const conversionRate =
+        totalLeads > 0 ? (convertedLeads / totalLeads) * 100 : 0;
 
       // Get revenue statistics (mock data for now)
       const monthlyRevenue = 45000; // This would come from payment records
@@ -221,12 +222,12 @@ router.get(
       });
 
       const performance = {
-        leadsByDay: leadsByDay.map(item => ({
-          date: item.createdAt.toISOString().split('T')[0],
+        leadsByDay: leadsByDay.map((item) => ({
+          date: item.createdAt.toISOString().split("T")[0],
           count: item._count.id,
         })),
-        conversionsByDay: conversionsByDay.map(item => ({
-          date: item.createdAt.toISOString().split('T')[0],
+        conversionsByDay: conversionsByDay.map((item) => ({
+          date: item.createdAt.toISOString().split("T")[0],
           count: item._count.id,
         })),
         userActivity,

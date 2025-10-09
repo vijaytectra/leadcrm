@@ -36,6 +36,7 @@ import {
     TrendingUp
 } from "lucide-react";
 import { getClientToken } from "@/stores/auth";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 interface Institution {
     id: string;
@@ -258,7 +259,7 @@ export default function InstitutionsPage() {
                 subscriptionTier: filters.subscription,
             });
 
-            console.log("queryParams", queryParams);
+   
             const response = await apiGetClient<{
                 success: boolean;
                 data: {
@@ -432,7 +433,7 @@ export default function InstitutionsPage() {
     }
 
     return (
-
+        <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
         <div className="relative space-y-8 bg-gradient-to-br from-slate-50 via-white to-slate-100 p-6">
             {/* Page Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-4 sm:space-y-0">
@@ -829,6 +830,9 @@ export default function InstitutionsPage() {
                 onSubmit={handleAddInstitution}
             />
         </div>
+        </ProtectedRoute>
+
+
 
     );
 }

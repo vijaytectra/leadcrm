@@ -117,8 +117,7 @@ export default function LoginPage() {
             // Get the UPDATED user and tenant slug from the store AFTER login
             const { user, currentTenantSlug } = useAuthStore.getState();
 
-            console.log("After login - user:", user);
-            console.log("After login - currentTenantSlug:", currentTenantSlug);
+          
 
             // Now route based on the updated user role
             if (user?.role === "INSTITUTION_ADMIN") {

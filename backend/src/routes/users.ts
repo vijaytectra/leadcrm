@@ -65,10 +65,7 @@ router.get(
   async (req: AuthedRequest, res) => {
     try {
       const tenantSlug = req.params.tenant;
-      console.log("Tenant slug:", tenantSlug);
-      console.log(req.auth);
-      console.log(req.auth?.rol);
-      console.log(req.auth?.ten);
+     
 
       if (!tenantSlug) {
         return res.status(400).json({
@@ -116,7 +113,7 @@ router.get(
         },
         orderBy: { createdAt: "desc" },
       });
-      console.log("Users:", users);
+    
       res.json({ users });
     } catch (error) {
       console.error("Get users error:", error);

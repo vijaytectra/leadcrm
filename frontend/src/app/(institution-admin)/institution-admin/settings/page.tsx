@@ -8,16 +8,17 @@ export const metadata: Metadata = {
 };
 
 interface InstitutionSettingsPageProps {
-  searchParams: {
+  searchParams: Promise<{
     tenant?: string;
-  };
+  }>;
 }
 
 export default async function InstitutionSettingsPage({
   searchParams,
 }: InstitutionSettingsPageProps) {
-  const tenantSlug = searchParams.tenant;
-  
+  const resolvedSearchParams = await searchParams;
+  const tenantSlug = resolvedSearchParams.tenant;
+
   if (!tenantSlug) {
     return (
       <div className="flex items-center justify-center h-64">

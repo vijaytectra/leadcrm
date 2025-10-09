@@ -20,7 +20,7 @@ export default function Navbar() {
     const { user, logout, isLoading } = useAuthStore();
 
     const handleLogout = async () => {
-        console.log("handleLogout triggered");
+        
         try {
             await logout();
             router.push("/login");
@@ -31,12 +31,12 @@ export default function Navbar() {
     };
 
     const handleProfileClick = () => {
-        console.log("Profile clicked");
+       
         router.push("/profile");
     };
 
     const handleSettingsClick = () => {
-        console.log("Settings clicked");
+      
         router.push("/settings");
     };
 

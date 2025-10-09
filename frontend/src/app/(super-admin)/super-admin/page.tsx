@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import ProtectedRoute from "@/components/ProtectedRoute";
+
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import {
     Eye,
     MoreHorizontal
 } from "lucide-react";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 // Mock data
 const mockStats = {

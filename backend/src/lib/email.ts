@@ -57,24 +57,20 @@ class EmailService {
         process.env.SENDGRID_FROM_EMAIL || process.env.SMTP_USER || "";
       this.fromName = process.env.SENDGRID_FROM_NAME || "LEAD101 Platform";
 
-      console.log("SendGrid configuration check:");
-      console.log("API Key present:", !!apiKey);
-      console.log("From Email:", this.fromEmail);
-      console.log("From Name:", this.fromName);
+    
 
       if (apiKey && this.fromEmail) {
         sgMail.setApiKey(apiKey);
         this.isConfigured = true;
-        console.log("SendGrid email service configured successfully");
+        
       } else {
         console.warn(
           "Email service not configured - SendGrid API key or from email missing"
         );
-        console.warn("API Key:", apiKey ? "Present" : "Missing");
-        console.warn("From Email:", this.fromEmail || "Missing");
+        
       }
     } catch (error) {
-      console.error("Failed to configure SendGrid email service:", error);
+     
       this.isConfigured = false;
     }
   }
@@ -102,18 +98,13 @@ class EmailService {
         text: text || html.replace(/<[^>]*>/g, ""), // Strip HTML tags for text version
       };
 
-      console.log("Attempting to send email:");
-      console.log("To:", to);
-      console.log("From:", this.fromEmail);
-      console.log("Subject:", subject);
+      
 
       const response = await sgMail.send(msg);
-      console.log("Email sent successfully:", response[0].statusCode);
-      console.log("Response:", response[0]);
+
       return true;
     } catch (error) {
-      console.error("Failed to send email:", error);
-      console.error("Error details:", error);
+     
       return false;
     }
   }
@@ -405,7 +396,7 @@ class EmailService {
       };
 
       const response = await sgMail.send(msg);
-      console.log("Test email sent successfully:", response[0].statusCode);
+      
       return true;
     } catch (error) {
       console.error("Failed to send test email:", error);

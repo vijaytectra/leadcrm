@@ -21,7 +21,8 @@ import {
     AlertCircle,
     CheckCircle
 } from "lucide-react";
-import ProtectedRoute from "@/components/ProtectedRoute";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+
 
 // Mock data
 const mockSubscriptions = [

@@ -14,6 +14,7 @@ import roleRoutes from "./routes/roles";
 import analyticsRoutes from "./routes/analytics";
 import leadRoutes from "./routes/leads";
 import settingsRoutes from "./routes/settings";
+import formRoutes from "./routes/forms";
 
 const app = express();
 app.use(helmet());
@@ -31,7 +32,7 @@ app.use(morgan("dev"));
 app.use((req, _res, next) => {
   const parts = req.path.split("/").filter(Boolean);
   if (parts.length > 0) {
-    (req as any).tenantSlug = parts[0];
+    (req as { tenantSlug?: string }).tenantSlug = parts[0];
   }
   next();
 });
@@ -50,11 +51,21 @@ app.use("/api/assets", assetRoutes);
 app.use("/api", roleRoutes);
 app.use("/api", analyticsRoutes);
 app.use("/api", leadRoutes);
+app.use("/api", formRoutes);
+
+// Debug middleware to log all requests
+app.use((req, res, next) => {
+  console.log(`Incoming request: ${req.method} ${req.path}`);
+  next();
+});
 app.use("/api", settingsRoutes);
 
 // Example tenant-aware route
 app.get("/:tenant/health", (req, res) => {
-  res.json({ status: "ok", tenant: (req as any).tenantSlug });
+  res.json({
+    status: "ok",
+    tenant: (req as { tenantSlug?: string }).tenantSlug,
+  });
 });
 
 const port = process.env.PORT ? Number(process.env.PORT) : 4000;

@@ -20,7 +20,8 @@ import {
     Eye,
     MoreHorizontal
 } from "lucide-react";
-import ProtectedRoute from "@/components/ProtectedRoute";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+
 
 // Mock data
 const mockFinancialStats = {

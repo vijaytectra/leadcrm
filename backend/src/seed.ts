@@ -555,6 +555,107 @@ async function main() {
     });
   }
 
+  // Create additional dummy leads (10 more)
+  console.log("👥 Creating additional dummy leads...");
+  const additionalLeads = [
+    {
+      name: "Arjun Mehta",
+      email: "arjun.mehta@email.com",
+      phone: "+91-9876543306",
+      source: "Instagram Ads",
+      status: "NEW" as const,
+      score: 65,
+      tenantId: "cmgi1wh590002vz0cfwo2edb4",
+    },
+    {
+      name: "Kavya Reddy",
+      email: "kavya.reddy@email.com",
+      phone: "+91-9876543307",
+      source: "YouTube Ads",
+      status: "CONTACTED" as const,
+      score: 88,
+      tenantId: "cmgi1wh590002vz0cfwo2edb4",
+    },
+    {
+      name: "Rajesh Verma",
+      email: "rajesh.verma@email.com",
+      phone: "+91-9876543308",
+      source: "Google Search",
+      status: "QUALIFIED" as const,
+      score: 92,
+      tenantId: "cmgi1wh590002vz0cfwo2edb4",
+    },
+    {
+      name: "Anita Joshi",
+      email: "anita.joshi@email.com",
+      phone: "+91-9876543309",
+      source: "Facebook Organic",
+      status: "INTERESTED" as const,
+      score: 76,
+      tenantId: "cmgi1wh590002vz0cfwo2edb4",
+    },
+    {
+      name: "Suresh Kumar",
+      email: "suresh.kumar@email.com",
+      phone: "+91-9876543310",
+      source: "WhatsApp Business",
+      status: "APPLICATION_STARTED" as const,
+      score: 83,
+      tenantId: "cmgi1wh590002vz0cfwo2edb4",
+    },
+    {
+      name: "Meera Desai",
+      email: "meera.desai@email.com",
+      phone: "+91-9876543311",
+      source: "Email Campaign",
+      status: "DOCUMENTS_SUBMITTED" as const,
+      score: 89,
+      tenantId: "cmgi1wh590002vz0cfwo2edb4",
+    },
+    {
+      name: "Vikash Singh",
+      email: "vikash.singh@email.com",
+      phone: "+91-9876543312",
+      source: "LinkedIn Organic",
+      status: "UNDER_REVIEW" as const,
+      score: 94,
+      tenantId: "cmgi1wh590002vz0cfwo2edb4",
+    },
+    {
+      name: "Pooja Agarwal",
+      email: "pooja.agarwal@email.com",
+      phone: "+91-9876543313",
+      source: "Twitter Ads",
+      status: "ADMITTED" as const,
+      score: 97,
+      tenantId: "cmgi1wh590002vz0cfwo2edb4",
+    },
+    {
+      name: "Rohit Sharma",
+      email: "rohit.sharma@email.com",
+      phone: "+91-9876543314",
+      source: "TikTok Ads",
+      status: "ENROLLED" as const,
+      score: 91,
+      tenantId: "cmgi1wh590002vz0cfwo2edb4",
+    },
+    {
+      name: "Deepika Nair",
+      email: "deepika.nair@email.com",
+      phone: "+91-9876543315",
+      source: "Snapchat Ads",
+      status: "REJECTED" as const,
+      score: 45,
+      tenantId: "cmgi1wh590002vz0cfwo2edb4",
+    },
+  ];
+
+  for (const leadData of additionalLeads) {
+    await prisma.lead.create({
+      data: leadData,
+    });
+  }
+
   // Create sample fee structure
   await prisma.feeStructure.create({
     data: {

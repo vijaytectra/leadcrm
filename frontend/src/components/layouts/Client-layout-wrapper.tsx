@@ -39,14 +39,14 @@ export default function InstitutionAdminLayout({
 
   return (
     <ProtectedRoute 
-      allowedRoles={["INSTITUTION_ADMIN"]} 
+      allowedRoles={["INSTITUTION_ADMIN","SUPER_ADMIN"]} 
       requireTenant={true}
     >
       <div className="flex h-screen overflow-hidden">
         <InstitutionAdminSidebar />
         <div className="flex-1 flex flex-col overflow-hidden">
           <InstitutionAdminHeader />
-          <main className="flex-1 overflow-y-auto bg-background p-6">
+          <main className="flex-1 overflow-y-auto bg-white  p-6">
             {children}
           </main>
         </div>

@@ -29,7 +29,7 @@ export default function ForgotPasswordPage() {
         try {
 
             const res = await apiPost<{ success: boolean, message: string, error: string }>("/auth/request-password-reset", { email, tenant });
-            console.log(res);
+    
 
 
             if (res.success) {

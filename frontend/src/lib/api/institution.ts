@@ -79,6 +79,7 @@ export async function getInstitutionStats(
         token: token,
       }
     );
+  
     return data.stats;
   } catch (error) {
     console.error("Error fetching institution stats:", error);

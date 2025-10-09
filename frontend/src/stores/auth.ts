@@ -66,7 +66,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         credentials
       );
 
-      console.log("Login response:", response.user);
+     
 
       set({
         user: response.user,
@@ -153,7 +153,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       }
 
       const response = await apiGetClient<MeResponse>("/auth/me", token);
-      console.log("Auth check response:", response);
+      
 
       if (response.user) {
         // Extract tenant slug from user.tenant.slug or response.tenant.slug
