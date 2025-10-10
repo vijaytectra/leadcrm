@@ -24,18 +24,21 @@ model Tenant {
     createdAt          DateTime           @default(now())
     updatedAt          DateTime           @updatedAt
 
-    users          User[]
-    leads          Lead[]
-    forms          Form[]
-    payments       Payment[]
-    applications   Application[]
-    documents      Document[]
-    communications Communication[]
-    auditLogs      AuditLog[]
-    feeStructures  FeeStructure[]
-    subscriptions  Subscription[]
-    appointments   Appointment[]
-    assets         Asset[]
+    users                 User[]
+    leads                 Lead[]
+    forms                 Form[]
+    payments              Payment[]
+    applications          Application[]
+    documents             Document[]
+    communications        Communication[]
+    auditLogs             AuditLog[]
+    feeStructures         FeeStructure[]
+    subscriptions         Subscription[]
+    appointments          Appointment[]
+    assets                Asset[]
+    callLogs              CallLog[]
+    telecallerPerformance TelecallerPerformance[]
+    followUpReminders     FollowUpReminder[]
 }
 
 enum SubscriptionTier {
@@ -65,17 +68,20 @@ model User {
     createdAt    DateTime  @default(now())
     updatedAt    DateTime  @updatedAt
 
-    tenant          Tenant           @relation(fields: [tenantId], references: [id])
-    leadNotes       LeadNote[]
-    assignedLeads   Lead[]           @relation("LeadAssignee")
-    refreshTokens   RefreshToken[]
-    applications    Application[]    @relation("ApplicationAssignee")
-    documents       Document[]       @relation("DocumentVerifier")
-    communications  Communication[]  @relation("CommunicationSender")
-    auditLogs       AuditLog[]       @relation("AuditLogUser")
-    appointments    Appointment[]    @relation("AppointmentAssignee")
-    performanceLogs PerformanceLog[]
-    assets          Asset[]          @relation("AssetUploader")
+    tenant                Tenant                  @relation(fields: [tenantId], references: [id])
+    leadNotes             LeadNote[]
+    assignedLeads         Lead[]                  @relation("LeadAssignee")
+    refreshTokens         RefreshToken[]
+    applications          Application[]           @relation("ApplicationAssignee")
+    documents             Document[]              @relation("DocumentVerifier")
+    communications        Communication[]         @relation("CommunicationSender")
+    auditLogs             AuditLog[]              @relation("AuditLogUser")
+    appointments          Appointment[]           @relation("AppointmentAssignee")
+    performanceLogs       PerformanceLog[]
+    assets                Asset[]                 @relation("AssetUploader")
+    callLogs              CallLog[]               @relation("CallLogTelecaller")
+    telecallerPerformance TelecallerPerformance[] @relation("TelecallerPerformance")
+    followUpReminders     FollowUpReminder[]      @relation("FollowUpReminderTelecaller")
 }
 
 enum Role {
@@ -130,10 +136,12 @@ model Lead {
     createdAt  DateTime   @default(now())
     updatedAt  DateTime   @updatedAt
 
-    tenant      Tenant       @relation(fields: [tenantId], references: [id])
-    assignee    User?        @relation("LeadAssignee", fields: [assigneeId], references: [id])
-    notes       LeadNote[]
-    application Application?
+    tenant            Tenant             @relation(fields: [tenantId], references: [id])
+    assignee          User?              @relation("LeadAssignee", fields: [assigneeId], references: [id])
+    notes             LeadNote[]
+    application       Application?
+    callLogs          CallLog[]
+    followUpReminders FollowUpReminder[]
 }
 
 enum LeadStatus {
@@ -551,4 +559,138 @@ model Asset {
     @@index([tenantId])
     @@index([uploadedBy])
     @@index([folder])
+}
+
+// Call Logging Models
+model CallLog {
+    id           String       @id @default(cuid())
+    tenantId     String
+    leadId       String
+    telecallerId String
+    callType     CallType     @default(OUTBOUND)
+    status       CallStatus   @default(INITIATED)
+    duration     Int? // in seconds
+    outcome      CallOutcome?
+    notes        String?
+    recordingUrl String?
+    recordingId  String?
+    scheduledAt  DateTime?
+    startedAt    DateTime?
+    endedAt      DateTime?
+    createdAt    DateTime     @default(now())
+    updatedAt    DateTime     @updatedAt
+
+    tenant     Tenant @relation(fields: [tenantId], references: [id])
+    lead       Lead   @relation(fields: [leadId], references: [id])
+    telecaller User   @relation("CallLogTelecaller", fields: [telecallerId], references: [id])
+
+    @@index([tenantId])
+    @@index([leadId])
+    @@index([telecallerId])
+    @@index([status])
+    @@index([createdAt])
+}
+
+enum CallType {
+    INBOUND
+    OUTBOUND
+    FOLLOW_UP
+    SCHEDULED
+}
+
+enum CallStatus {
+    INITIATED
+    RINGING
+    ANSWERED
+    BUSY
+    NO_ANSWER
+    FAILED
+    COMPLETED
+    CANCELLED
+}
+
+enum CallOutcome {
+    SUCCESSFUL
+    NO_ANSWER
+    BUSY
+    WRONG_NUMBER
+    NOT_INTERESTED
+    CALLBACK_REQUESTED
+    INTERESTED
+    QUALIFIED
+    NOT_QUALIFIED
+    FOLLOW_UP_SCHEDULED
+}
+
+// Telecaller Performance Models
+model TelecallerPerformance {
+    id              String   @id @default(cuid())
+    tenantId        String
+    telecallerId    String
+    date            DateTime
+    callsMade       Int      @default(0)
+    callsAnswered   Int      @default(0)
+    callsConverted  Int      @default(0)
+    totalDuration   Int      @default(0) // in seconds
+    avgCallDuration Float    @default(0)
+    conversionRate  Float    @default(0)
+    responseRate    Float    @default(0)
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    tenant     Tenant @relation(fields: [tenantId], references: [id])
+    telecaller User   @relation("TelecallerPerformance", fields: [telecallerId], references: [id])
+
+    @@unique([tenantId, telecallerId, date])
+    @@index([tenantId])
+    @@index([telecallerId])
+    @@index([date])
+}
+
+// Follow-up Reminder Models
+model FollowUpReminder {
+    id           String           @id @default(cuid())
+    tenantId     String
+    leadId       String
+    telecallerId String
+    type         FollowUpType
+    priority     FollowUpPriority @default(MEDIUM)
+    scheduledAt  DateTime
+    status       FollowUpStatus   @default(PENDING)
+    notes        String?
+    completedAt  DateTime?
+    createdAt    DateTime         @default(now())
+    updatedAt    DateTime         @updatedAt
+
+    tenant     Tenant @relation(fields: [tenantId], references: [id])
+    lead       Lead   @relation(fields: [leadId], references: [id])
+    telecaller User   @relation("FollowUpReminderTelecaller", fields: [telecallerId], references: [id])
+
+    @@index([tenantId])
+    @@index([leadId])
+    @@index([telecallerId])
+    @@index([scheduledAt])
+    @@index([status])
+}
+
+enum FollowUpType {
+    CALL
+    EMAIL
+    SMS
+    WHATSAPP
+    MEETING
+}
+
+enum FollowUpPriority {
+    LOW
+    MEDIUM
+    HIGH
+    URGENT
+}
+
+enum FollowUpStatus {
+    PENDING
+    COMPLETED
+    CANCELLED
+    OVERDUE
 }
