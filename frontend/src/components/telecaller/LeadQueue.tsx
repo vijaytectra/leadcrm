@@ -17,7 +17,7 @@ import {
     Mail,
     PhoneCall
 } from "lucide-react";
-import { getLeads } from "@/lib/api/leads";
+import { getTelecallerLeads } from "@/lib/api/telecaller";
 
 interface Lead {
     id: string;
@@ -56,10 +56,10 @@ interface Lead {
 
 interface LeadQueueProps {
     tenantSlug: string;
-    onLeadSelect: (leadId: string) => void;
-    onCallLog: (leadId: string) => void;
-    onFollowUp: (leadId: string) => void;
-    onStatusUpdate: (leadId: string) => void;
+    onLeadSelect?: (leadId: string) => void;
+    onCallLog?: (leadId: string) => void;
+    onFollowUp?: (leadId: string) => void;
+    onStatusUpdate?: (leadId: string) => void;
 }
 
 export const LeadQueue = memo(function LeadQueue({
@@ -81,17 +81,32 @@ export const LeadQueue = memo(function LeadQueue({
     const fetchLeads = useCallback(async () => {
         try {
             setLoading(true);
-            const response = await getLeads(tenantSlug, {
-                page,
-                limit: 20,
-                status: statusFilter === "all" ? undefined : statusFilter,
-                search: searchTerm || undefined,
-                sortBy,
-                sortOrder,
-            });
+            console.log("Tenant Slug", tenantSlug);
+            const response = await getTelecallerLeads(tenantSlug);
 
             if (response.success) {
-                setLeads(response.data.leads);
+                setLeads(response.data.leads.map(lead => ({
+                    id: lead.id,
+                    name: lead.name,
+                    email: lead.email,
+                    phone: lead.phone,
+                    source: lead.source,
+                    status: lead.status,
+                    score: lead.score,
+                    createdAt: lead.createdAt,
+                    updatedAt: lead.updatedAt,
+                    notes: (lead.notes || []).map(note => ({
+                        id: note.id,
+                        note: note.note,
+                        createdAt: note.createdAt,
+                        user: {
+                            firstName: note.user.firstName,
+                            lastName: note.user.lastName
+                        }
+                    })),
+                    callLogs: lead.callLogs || [],
+                    followUpReminders: lead.followUpReminders || []
+                })));
                 setTotalPages(response.data.pagination.pages);
             }
         } catch (error) {
@@ -256,7 +271,7 @@ export const LeadQueue = memo(function LeadQueue({
                                             <div className="flex items-center gap-2 text-sm mb-2">
                                                 <PhoneCall className="h-4 w-4 text-blue-500" />
                                                 <span>Last call: {formatDate(lastCall.date)}</span>
-                                                <Badge variant="outline" size="sm">
+                                                <Badge variant="outline" >
                                                     {lastCall.outcome || lastCall.status}
                                                 </Badge>
                                             </div>
@@ -283,7 +298,7 @@ export const LeadQueue = memo(function LeadQueue({
                                     <div className="flex flex-col gap-2 ml-4">
                                         <Button
                                             size="sm"
-                                            onClick={() => onCallLog(lead.id)}
+                                            onClick={() => onCallLog?.(lead.id)}
                                             className="flex items-center gap-2"
                                         >
                                             <Phone className="h-4 w-4" />
@@ -292,7 +307,7 @@ export const LeadQueue = memo(function LeadQueue({
                                         <Button
                                             size="sm"
                                             variant="outline"
-                                            onClick={() => onFollowUp(lead.id)}
+                                            onClick={() => onFollowUp?.(lead.id)}
                                             className="flex items-center gap-2"
                                         >
                                             <Calendar className="h-4 w-4" />
@@ -301,7 +316,7 @@ export const LeadQueue = memo(function LeadQueue({
                                         <Button
                                             size="sm"
                                             variant="outline"
-                                            onClick={() => onStatusUpdate(lead.id)}
+                                            onClick={() => onStatusUpdate?.(lead.id)}
                                             className="flex items-center gap-2"
                                         >
                                             <Edit className="h-4 w-4" />

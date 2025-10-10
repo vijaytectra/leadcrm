@@ -1,250 +1,155 @@
 "use client";
 
-import { memo, useCallback, useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-    Phone,
-    Clock,
-    Upload,
-    Save,
-    X,
-    Play,
-    Pause,
-    Square
-} from "lucide-react";
+import { Phone, Clock, FileText, Upload } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface CallLogFormProps {
     tenantSlug: string;
-    leadId?: string | null;
-    onClose: () => void;
+    leadId?: string;
+    leadName?: string;
+    leadPhone?: string;
+    onSave?: (callLog: CallLog) => void;
+    onCancel?: () => void;
+    initialData?: Partial<CallLog>;
+    isEditing?: boolean;
 }
 
-interface Lead {
+interface CallLog {
     id: string;
-    name: string;
-    phone?: string;
-    email?: string;
+    leadId: string;
+    callType: string;
     status: string;
+    outcome?: string;
+    duration?: number;
+    notes?: string;
+    recordingUrl?: string;
+    recordingId?: string;
+    scheduledAt?: string;
+    startedAt?: string;
+    endedAt?: string;
+    createdAt: string;
 }
 
-export const CallLogForm = memo(function CallLogForm({
+export function CallLogForm({
     tenantSlug,
     leadId,
-    onClose
+    leadName,
+    leadPhone,
+    onSave,
+    onCancel,
+    initialData,
+    isEditing = false
 }: CallLogFormProps) {
-    const [loading, setLoading] = useState(false);
-    const [recording, setRecording] = useState(false);
-    const [callDuration, setCallDuration] = useState(0);
-    const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-    const [leads, setLeads] = useState<Lead[]>([]);
-
     const [formData, setFormData] = useState({
-        leadId: leadId || "",
-        callType: "OUTBOUND",
-        status: "INITIATED",
-        duration: 0,
-        outcome: "",
-        notes: "",
-        recordingUrl: "",
-        recordingId: "",
+        callType: initialData?.callType || "OUTBOUND",
+        status: initialData?.status || "INITIATED",
+        outcome: initialData?.outcome || "",
+        duration: initialData?.duration || 0,
+        notes: initialData?.notes || "",
+        recordingUrl: initialData?.recordingUrl || "",
+        scheduledAt: initialData?.scheduledAt || "",
+        startedAt: initialData?.startedAt || "",
+        endedAt: initialData?.endedAt || ""
     });
 
-    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const fetchLeads = useCallback(async () => {
-        try {
-            // This would be replaced with actual API call
-            // const response = await getLeads(tenantSlug);
-            // setLeads(response.data.leads);
-            setLeads([]);
-        } catch (error) {
-            console.error("Failed to fetch leads:", error);
-        }
-    }, [tenantSlug]);
-
-    useEffect(() => {
-        fetchLeads();
-    }, [fetchLeads]);
-
-    useEffect(() => {
-        if (leadId && leads.length > 0) {
-            const lead = leads.find(l => l.id === leadId);
-            if (lead) {
-                setSelectedLead(lead);
-                setFormData(prev => ({ ...prev, leadId }));
-            }
-        }
-    }, [leadId, leads]);
-
-    const handleInputChange = useCallback((field: string, value: string | number) => {
-        setFormData(prev => ({
-            ...prev,
-            [field]: value
-        }));
-
-        // Clear error when user starts typing
-        if (errors[field]) {
-            setErrors(prev => ({
-                ...prev,
-                [field]: ""
-            }));
-        }
-    }, [errors]);
-
-    const handleLeadSelect = useCallback((leadId: string) => {
-        const lead = leads.find(l => l.id === leadId);
-        if (lead) {
-            setSelectedLead(lead);
-            setFormData(prev => ({ ...prev, leadId }));
-        }
-    }, [leads]);
-
-    const startRecording = useCallback(() => {
-        setRecording(true);
-        setCallDuration(0);
-        // Start timer
-        const interval = setInterval(() => {
-            setCallDuration(prev => prev + 1);
-        }, 1000);
-
-        // Store interval ID for cleanup
-        (window as any).callTimer = interval;
-    }, []);
-
-    const stopRecording = useCallback(() => {
-        setRecording(false);
-        if ((window as any).callTimer) {
-            clearInterval((window as any).callTimer);
-        }
-        setFormData(prev => ({ ...prev, duration: callDuration }));
-    }, [callDuration]);
-
-    const validateForm = useCallback(() => {
-        const newErrors: Record<string, string> = {};
-
-        if (!formData.leadId) {
-            newErrors.leadId = "Please select a lead";
-        }
-        if (!formData.status) {
-            newErrors.status = "Please select call status";
-        }
-        if (formData.status === "COMPLETED" && !formData.outcome) {
-            newErrors.outcome = "Please select call outcome";
-        }
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    }, [formData]);
-
-    const handleSubmit = useCallback(async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
-        if (!validateForm()) {
-            return;
-        }
-
-        setLoading(true);
+        setIsSubmitting(true);
 
         try {
             // This would be replaced with actual API call
-            // await createCallLog(tenantSlug, formData);
-            console.log("Creating call log:", formData);
+            // const response = await createCallLog(tenantSlug, {
+            //   leadId: leadId || initialData?.leadId,
+            //   ...formData
+            // });
 
-            // Close modal on success
-            onClose();
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            const callLog: CallLog = {
+                id: Date.now().toString(),
+                leadId: leadId || initialData?.leadId || "",
+                ...formData,
+                createdAt: new Date().toISOString()
+            };
+
+            onSave?.(callLog);
         } catch (error) {
-            console.error("Failed to create call log:", error);
+            console.error("Failed to save call log:", error);
         } finally {
-            setLoading(false);
+            setIsSubmitting(false);
         }
-    }, [formData, validateForm, tenantSlug, onClose]);
+    };
 
-    const formatDuration = (seconds: number) => {
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = seconds % 60;
-        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    const handleInputChange = (field: string, value: string | number) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+    };
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case "COMPLETED": return "bg-green-100 text-green-800 border-green-200";
+            case "NO_ANSWER": return "bg-red-100 text-red-800 border-red-200";
+            case "BUSY": return "bg-yellow-100 text-yellow-800 border-yellow-200";
+            case "CANCELLED": return "bg-gray-100 text-gray-800 border-gray-200";
+            default: return "bg-blue-100 text-blue-800 border-blue-200";
+        }
+    };
+
+    const getOutcomeColor = (outcome: string) => {
+        switch (outcome) {
+            case "INTERESTED":
+            case "QUALIFIED":
+                return "bg-green-100 text-green-800 border-green-200";
+            case "NOT_INTERESTED":
+            case "WRONG_NUMBER":
+                return "bg-red-100 text-red-800 border-red-200";
+            case "CALLBACK_REQUESTED":
+                return "bg-yellow-100 text-yellow-800 border-yellow-200";
+            default: return "bg-gray-100 text-gray-800 border-gray-200";
+        }
     };
 
     return (
-        <Dialog open={true} onOpenChange={onClose}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle>Log Call</DialogTitle>
-                    <DialogDescription>
-                        Record call details and outcomes for lead follow-up
-                    </DialogDescription>
-                </DialogHeader>
-
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                    <Phone className="h-5 w-5" />
+                    <span>{isEditing ? "Edit Call Log" : "Log New Call"}</span>
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Lead Selection */}
-                    <div className="space-y-2">
-                        <Label htmlFor="leadId">Select Lead *</Label>
-                        <Select
-                            value={formData.leadId}
-                            onValueChange={handleLeadSelect}
-                            disabled={!!leadId}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Choose a lead" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {leads.map((lead) => (
-                                    <SelectItem key={lead.id} value={lead.id}>
-                                        <div className="flex items-center gap-2">
-                                            <span>{lead.name}</span>
-                                            <Badge variant="outline" className="text-xs">
-                                                {lead.status}
-                                            </Badge>
-                                        </div>
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        {errors.leadId && (
-                            <p className="text-sm text-red-600">{errors.leadId}</p>
-                        )}
-                    </div>
-
-                    {/* Selected Lead Info */}
-                    {selectedLead && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-lg">Lead Information</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <Label className="text-sm font-medium">Name</Label>
-                                        <p className="text-sm">{selectedLead.name}</p>
-                                    </div>
-                                    <div>
-                                        <Label className="text-sm font-medium">Phone</Label>
-                                        <p className="text-sm">{selectedLead.phone || "No phone"}</p>
-                                    </div>
-                                    <div>
-                                        <Label className="text-sm font-medium">Email</Label>
-                                        <p className="text-sm">{selectedLead.email || "No email"}</p>
-                                    </div>
-                                    <div>
-                                        <Label className="text-sm font-medium">Status</Label>
-                                        <Badge variant="outline">{selectedLead.status}</Badge>
-                                    </div>
+                    {/* Lead Information */}
+                    {leadName && (
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                            <h4 className="font-medium text-gray-900 mb-2">Lead Information</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <Label className="text-sm text-gray-600">Name</Label>
+                                    <div className="text-sm font-medium text-gray-900">{leadName}</div>
                                 </div>
-                            </CardContent>
-                        </Card>
+                                <div>
+                                    <Label className="text-sm text-gray-600">Phone</Label>
+                                    <div className="text-sm font-medium text-gray-900">{leadPhone}</div>
+                                </div>
+                            </div>
+                        </div>
                     )}
 
                     {/* Call Details */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="callType">Call Type *</Label>
+                        <div>
+                            <Label htmlFor="callType">Call Type</Label>
                             <Select
                                 value={formData.callType}
                                 onValueChange={(value) => handleInputChange("callType", value)}
@@ -253,16 +158,16 @@ export const CallLogForm = memo(function CallLogForm({
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="OUTBOUND">Outbound</SelectItem>
                                     <SelectItem value="INBOUND">Inbound</SelectItem>
+                                    <SelectItem value="OUTBOUND">Outbound</SelectItem>
                                     <SelectItem value="FOLLOW_UP">Follow-up</SelectItem>
                                     <SelectItem value="SCHEDULED">Scheduled</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="status">Call Status *</Label>
+                        <div>
+                            <Label htmlFor="status">Status</Label>
                             <Select
                                 value={formData.status}
                                 onValueChange={(value) => handleInputChange("status", value)}
@@ -281,16 +186,13 @@ export const CallLogForm = memo(function CallLogForm({
                                     <SelectItem value="CANCELLED">Cancelled</SelectItem>
                                 </SelectContent>
                             </Select>
-                            {errors.status && (
-                                <p className="text-sm text-red-600">{errors.status}</p>
-                            )}
                         </div>
                     </div>
 
-                    {/* Call Outcome */}
-                    {formData.status === "COMPLETED" && (
-                        <div className="space-y-2">
-                            <Label htmlFor="outcome">Call Outcome *</Label>
+                    {/* Outcome and Duration */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <Label htmlFor="outcome">Outcome</Label>
                             <Select
                                 value={formData.outcome}
                                 onValueChange={(value) => handleInputChange("outcome", value)}
@@ -300,120 +202,132 @@ export const CallLogForm = memo(function CallLogForm({
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="SUCCESSFUL">Successful</SelectItem>
+                                    <SelectItem value="NO_ANSWER">No Answer</SelectItem>
+                                    <SelectItem value="BUSY">Busy</SelectItem>
+                                    <SelectItem value="WRONG_NUMBER">Wrong Number</SelectItem>
+                                    <SelectItem value="NOT_INTERESTED">Not Interested</SelectItem>
+                                    <SelectItem value="CALLBACK_REQUESTED">Callback Requested</SelectItem>
                                     <SelectItem value="INTERESTED">Interested</SelectItem>
                                     <SelectItem value="QUALIFIED">Qualified</SelectItem>
-                                    <SelectItem value="NOT_INTERESTED">Not Interested</SelectItem>
                                     <SelectItem value="NOT_QUALIFIED">Not Qualified</SelectItem>
-                                    <SelectItem value="CALLBACK_REQUESTED">Callback Requested</SelectItem>
-                                    <SelectItem value="WRONG_NUMBER">Wrong Number</SelectItem>
+                                    <SelectItem value="FOLLOW_UP_SCHEDULED">Follow-up Scheduled</SelectItem>
                                 </SelectContent>
                             </Select>
-                            {errors.outcome && (
-                                <p className="text-sm text-red-600">{errors.outcome}</p>
-                            )}
                         </div>
-                    )}
 
-                    {/* Call Duration */}
-                    <div className="space-y-2">
-                        <Label>Call Duration</Label>
-                        <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2">
-                                <Clock className="h-4 w-4" />
-                                <span className="font-mono text-lg">
-                                    {formatDuration(callDuration)}
-                                </span>
-                            </div>
-                            <div className="flex gap-2">
-                                {!recording ? (
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        onClick={startRecording}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <Play className="h-4 w-4" />
-                                        Start Timer
-                                    </Button>
-                                ) : (
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="destructive"
-                                        onClick={stopRecording}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <Square className="h-4 w-4" />
-                                        Stop Timer
-                                    </Button>
-                                )}
-                            </div>
+                        <div>
+                            <Label htmlFor="duration">Duration (seconds)</Label>
+                            <Input
+                                id="duration"
+                                type="number"
+                                value={formData.duration}
+                                onChange={(e) => handleInputChange("duration", parseInt(e.target.value) || 0)}
+                                placeholder="0"
+                            />
                         </div>
                     </div>
 
-                    {/* Call Notes */}
-                    <div className="space-y-2">
-                        <Label htmlFor="notes">Call Notes</Label>
+                    {/* Timing */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <Label htmlFor="scheduledAt">Scheduled At</Label>
+                            <Input
+                                id="scheduledAt"
+                                type="datetime-local"
+                                value={formData.scheduledAt}
+                                onChange={(e) => handleInputChange("scheduledAt", e.target.value)}
+                            />
+                        </div>
+
+                        <div>
+                            <Label htmlFor="startedAt">Started At</Label>
+                            <Input
+                                id="startedAt"
+                                type="datetime-local"
+                                value={formData.startedAt}
+                                onChange={(e) => handleInputChange("startedAt", e.target.value)}
+                            />
+                        </div>
+
+                        <div>
+                            <Label htmlFor="endedAt">Ended At</Label>
+                            <Input
+                                id="endedAt"
+                                type="datetime-local"
+                                value={formData.endedAt}
+                                onChange={(e) => handleInputChange("endedAt", e.target.value)}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Notes */}
+                    <div>
+                        <Label htmlFor="notes">Notes</Label>
                         <Textarea
                             id="notes"
-                            placeholder="Enter call details, conversation summary, next steps..."
                             value={formData.notes}
                             onChange={(e) => handleInputChange("notes", e.target.value)}
+                            placeholder="Add call notes..."
                             rows={4}
                         />
                     </div>
 
-                    {/* Recording Upload */}
-                    <div className="space-y-2">
-                        <Label htmlFor="recording">Call Recording (Optional)</Label>
-                        <div className="flex items-center gap-4">
+                    {/* Recording */}
+                    <div>
+                        <Label htmlFor="recordingUrl">Recording URL</Label>
+                        <div className="flex space-x-2">
                             <Input
-                                id="recording"
-                                type="file"
-                                accept="audio/*"
-                                onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) {
-                                        // Handle file upload
-                                        console.log("Recording file:", file);
-                                    }
-                                }}
-                                className="flex-1"
+                                id="recordingUrl"
+                                value={formData.recordingUrl}
+                                onChange={(e) => handleInputChange("recordingUrl", e.target.value)}
+                                placeholder="https://example.com/recording.mp3"
                             />
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="flex items-center gap-2"
-                            >
-                                <Upload className="h-4 w-4" />
+                            <Button type="button" variant="outline" size="sm">
+                                <Upload className="h-4 w-4 mr-2" />
                                 Upload
                             </Button>
                         </div>
                     </div>
 
-                    {/* Form Actions */}
-                    <div className="flex justify-end gap-3 pt-4 border-t">
+                    {/* Status Preview */}
+                    {(formData.status || formData.outcome) && (
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                            <h4 className="font-medium text-gray-900 mb-2">Preview</h4>
+                            <div className="flex flex-wrap gap-2">
+                                {formData.status && (
+                                    <Badge className={getStatusColor(formData.status)}>
+                                        {formData.status.replace("_", " ")}
+                                    </Badge>
+                                )}
+                                {formData.outcome && (
+                                    <Badge className={getOutcomeColor(formData.outcome)}>
+                                        {formData.outcome.replace("_", " ")}
+                                    </Badge>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex justify-end space-x-3">
                         <Button
                             type="button"
                             variant="outline"
-                            onClick={onClose}
-                            disabled={loading}
+                            onClick={onCancel}
+                            disabled={isSubmitting}
                         >
-                            <X className="h-4 w-4 mr-2" />
                             Cancel
                         </Button>
                         <Button
                             type="submit"
-                            disabled={loading}
-                            className="flex items-center gap-2"
+                            disabled={isSubmitting}
+                            className="bg-blue-600 hover:bg-blue-700"
                         >
-                            <Save className="h-4 w-4" />
-                            {loading ? "Saving..." : "Save Call Log"}
+                            {isSubmitting ? "Saving..." : isEditing ? "Update Call Log" : "Save Call Log"}
                         </Button>
                     </div>
                 </form>
-            </DialogContent>
-        </Dialog>
+            </CardContent>
+        </Card>
     );
-});
+}

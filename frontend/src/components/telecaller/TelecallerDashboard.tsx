@@ -189,7 +189,7 @@ export const TelecallerDashboard = memo(function TelecallerDashboard({
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Today's Calls</CardTitle>
+                        <CardTitle className="text-sm font-medium">Today&apos;s Calls</CardTitle>
                         <PhoneCall className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -333,8 +333,12 @@ export const TelecallerDashboard = memo(function TelecallerDashboard({
             {showCallLogForm && (
                 <CallLogForm
                     tenantSlug={tenantSlug}
-                    leadId={selectedLead}
-                    onClose={() => {
+                    leadId={selectedLead || undefined}
+                    onSave={() => {
+                        setShowCallLogForm(false);
+                        setSelectedLead(null);
+                    }}
+                    onCancel={() => {
                         setShowCallLogForm(false);
                         setSelectedLead(null);
                     }}
@@ -344,8 +348,12 @@ export const TelecallerDashboard = memo(function TelecallerDashboard({
             {showFollowUpForm && (
                 <FollowUpForm
                     tenantSlug={tenantSlug}
-                    leadId={selectedLead}
-                    onClose={() => {
+                    leadId={selectedLead || undefined}
+                    onSave={() => {
+                        setShowFollowUpForm(false);
+                        setSelectedLead(null);
+                    }}
+                    onCancel={() => {
                         setShowFollowUpForm(false);
                         setSelectedLead(null);
                     }}
@@ -356,7 +364,9 @@ export const TelecallerDashboard = memo(function TelecallerDashboard({
                 <LeadStatusUpdate
                     tenantSlug={tenantSlug}
                     leadId={selectedLead}
-                    onClose={() => {
+                    leadName=""
+                    currentStatus="NEW"
+                    onCancel={() => {
                         setShowStatusUpdate(false);
                         setSelectedLead(null);
                     }}

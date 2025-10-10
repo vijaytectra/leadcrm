@@ -126,6 +126,8 @@ router.get(
     try {
       const tenantSlug = req.params.tenant;
       const userId = req.auth!.sub;
+      console.log("Tenant Slug", tenantSlug);
+      console.log("User ID", userId);
 
       if (!tenantSlug) {
         return res.status(400).json({
@@ -139,6 +141,7 @@ router.get(
         where: { slug: tenantSlug },
         select: { id: true },
       });
+      console.log("Tenant", tenant);
 
       if (!tenant) {
         return res.status(404).json({

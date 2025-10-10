@@ -1,15 +1,15 @@
 import { Suspense } from "react";
 import { TelecallerDashboard } from "@/components/telecaller/TelecallerDashboard";
 import { Card, CardContent } from "@/components/ui/card";
-import { Activity } from "lucide-react";
 
-interface TelecallerPageProps {
-    params: {
-        tenant: string;
-    };
+
+interface TelecallerDashboardPageProps {
+    searchParams: Promise<{
+        tenant?: string;
+    }>;
 }
 
-async function getTelecallerDashboardData(tenantSlug: string) {
+async function getTelecallerDashboardData() {
     try {
         // This would be replaced with actual API call
         // const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/${tenantSlug}/telecaller/dashboard`, {
@@ -144,10 +144,21 @@ function TelecallerDashboardSkeleton() {
     );
 }
 
-export default async function TelecallerPage({ params }: TelecallerPageProps) {
-    const { tenant } = params;
+export default async function TelecallerDashboardPage({ searchParams }: TelecallerDashboardPageProps) {
+    const resolvedSearchParams = await searchParams;
+    const tenant = resolvedSearchParams.tenant || "demo-tenant";
 
-    const dashboardData = await getTelecallerDashboardData(tenant);
+    const dashboardData = await getTelecallerDashboardData();
+
+    if (!dashboardData) {
+        return (
+            <div className="container mx-auto py-6">
+                <div className="text-center text-gray-500">
+                    Failed to load dashboard data
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="container mx-auto py-6 space-y-6">

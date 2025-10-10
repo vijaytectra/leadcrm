@@ -202,7 +202,7 @@ async function makeRequest<T>(
 ): Promise<{ success: boolean; data: T; error?: string }> {
   try {
     const token = await getToken();
-
+    console.log("API_BASE_URL", API_BASE_URL);
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       headers: {
@@ -211,6 +211,7 @@ async function makeRequest<T>(
         ...options.headers,
       },
     });
+    console.log("Response", response);
 
     const data = await response.json();
 

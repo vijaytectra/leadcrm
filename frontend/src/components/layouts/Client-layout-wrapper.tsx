@@ -38,8 +38,8 @@ export default function InstitutionAdminLayout({
   }, [searchParams, currentTenantSlug, router, setCurrentTenant]);
 
   return (
-    <ProtectedRoute 
-      allowedRoles={["INSTITUTION_ADMIN","SUPER_ADMIN"]} 
+    <ProtectedRoute
+      allowedRoles={["INSTITUTION_ADMIN"]}
       requireTenant={true}
     >
       <div className="flex h-screen overflow-hidden">

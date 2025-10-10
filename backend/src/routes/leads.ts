@@ -392,7 +392,7 @@ router.get(
     try {
       console.log("📊 GET LEADS - Route handler executed");
       const tenantSlug = req.params.tenant;
-
+      console.log("Tenant Slug", tenantSlug);
       if (!tenantSlug) {
         return res.status(400).json({
           error: "Tenant slug is required",
@@ -405,6 +405,8 @@ router.get(
         where: { slug: tenantSlug },
         select: { id: true },
       });
+
+      console.log("Tenant", tenant);
 
       if (!tenant) {
         return res.status(404).json({
