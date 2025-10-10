@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -17,6 +17,13 @@ import type { FieldType } from "@/types/form-builder";
 export function FormBuilderCanvas() {
     const { state, actions, dragDrop, dragDropActions } = useFormBuilder();
     const canvasRef = useRef<HTMLDivElement>(null);
+
+    // Debug logging
+    console.log("FormBuilderCanvas render:", {
+        fields: state.fields,
+        fieldsLength: state.fields.length,
+        currentForm: state.currentForm
+    });
 
 
     const handleFieldMove = useCallback((dragIndex: number, hoverIndex: number) => {
@@ -64,7 +71,9 @@ export function FormBuilderCanvas() {
                     actions: []
                 },
                 styling: {},
-                advanced: {}
+                advanced: {},
+                createdAt: new Date(),
+                updatedAt: new Date()
             };
             actions.addField(newField);
             toast.success(`${formBuilderUtils.getFieldTypeLabel(fieldType)} added`);
@@ -103,9 +112,13 @@ export function FormBuilderCanvas() {
                 actions: []
             },
             styling: {},
-            advanced: {}
+            advanced: {},
+            createdAt: new Date(),
+            updatedAt: new Date()
         };
+        console.log("Adding field:", newField);
         actions.addField(newField);
+        console.log("Field added, current fields count:", state.fields.length + 1);
         toast.success(`${formBuilderUtils.getFieldTypeLabel(fieldType)} added`);
     }, [actions, state.fields.length, state.currentForm?.id]);
 

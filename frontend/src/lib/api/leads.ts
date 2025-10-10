@@ -1,5 +1,10 @@
-import { getClientToken } from "../../stores/auth";
-import { apiGetClientNew, apiPostClientNew, apiPutClient } from "../utils";
+import { getClientToken } from "../client-token";
+import {
+  apiGetClientNew,
+  apiPostClientNew,
+  apiPutClient,
+  apiDeleteClient,
+} from "../utils";
 
 export interface Lead {
   id: string;
@@ -119,23 +124,23 @@ const MOCK_ASSIGNMENT_STATS: AssignmentStats = {
       id: "user1",
       name: "Jane Smith",
       email: "jane@company.com",
-      currentLoad: 15
+      currentLoad: 15,
     },
     {
-      id: "user2", 
+      id: "user2",
       name: "Bob Wilson",
       email: "bob@company.com",
-      currentLoad: 12
-    }
+      currentLoad: 12,
+    },
   ],
   unassignedLeads: 8,
   assignmentHistory: [
     {
       date: new Date().toISOString(),
       algorithm: "ROUND_ROBIN",
-      assigned: 5
-    }
-  ]
+      assigned: 5,
+    },
+  ],
 };
 
 /**
@@ -281,12 +286,8 @@ export async function deleteLead(
       throw new Error("No token found");
     }
 
-    // Fixed: Removed /api prefix and use proper delete endpoint
-    await apiPostClientNew(
-      `/${tenantSlug}/leads/${leadId}`,
-      {},
-      { token: token }
-    );
+    // Fixed: Use proper DELETE method
+    await apiDeleteClient(`/${tenantSlug}/leads/${leadId}`, { token: token });
   } catch (error) {
     console.error("Error deleting lead:", error);
     throw error;
@@ -466,7 +467,7 @@ export async function getAssignmentStats(
     return response.data;
   } catch (error) {
     console.error("Error fetching assignment stats:", error);
-    
+
     // Return mock data as fallback during development
     console.warn("Using mock assignment stats due to API error");
     return MOCK_ASSIGNMENT_STATS;

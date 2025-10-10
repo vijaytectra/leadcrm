@@ -36,7 +36,9 @@ export class FormBuilderService {
           allowMultipleSubmissions: data.allowMultipleSubmissions || false,
           maxSubmissions: data.maxSubmissions,
           submissionDeadline: data.submissionDeadline,
-          settings: data.settings || this.getDefaultFormSettings(),
+          settings: data.settings
+            ? JSON.parse(JSON.stringify(data.settings))
+            : this.getDefaultFormSettings(),
         },
       });
 
@@ -84,7 +86,9 @@ export class FormBuilderService {
           allowMultipleSubmissions: data.allowMultipleSubmissions,
           maxSubmissions: data.maxSubmissions,
           submissionDeadline: data.submissionDeadline,
-          settings: data.settings,
+          settings: data.settings
+            ? JSON.parse(JSON.stringify(data.settings))
+            : undefined,
         },
         include: {
           fields: { orderBy: { order: "asc" } },
@@ -174,11 +178,21 @@ export class FormBuilderService {
           required: data.required || false,
           order: data.order,
           width: data.width || "full",
-          validation: data.validation,
-          conditionalLogic: data.conditionalLogic,
-          options: data.options,
-          styling: data.styling,
-          advanced: data.advanced,
+          validation: data.validation
+            ? JSON.parse(JSON.stringify(data.validation))
+            : null,
+          conditionalLogic: data.conditionalLogic
+            ? JSON.parse(JSON.stringify(data.conditionalLogic))
+            : null,
+          options: data.options
+            ? JSON.parse(JSON.stringify(data.options))
+            : null,
+          styling: data.styling
+            ? JSON.parse(JSON.stringify(data.styling))
+            : null,
+          advanced: data.advanced
+            ? JSON.parse(JSON.stringify(data.advanced))
+            : null,
         },
       });
 
@@ -212,11 +226,21 @@ export class FormBuilderService {
           required: data.required,
           order: data.order,
           width: data.width,
-          validation: data.validation,
-          conditionalLogic: data.conditionalLogic,
-          options: data.options,
-          styling: data.styling,
-          advanced: data.advanced,
+          validation: data.validation
+            ? JSON.parse(JSON.stringify(data.validation))
+            : undefined,
+          conditionalLogic: data.conditionalLogic
+            ? JSON.parse(JSON.stringify(data.conditionalLogic))
+            : undefined,
+          options: data.options
+            ? JSON.parse(JSON.stringify(data.options))
+            : undefined,
+          styling: data.styling
+            ? JSON.parse(JSON.stringify(data.styling))
+            : undefined,
+          advanced: data.advanced
+            ? JSON.parse(JSON.stringify(data.advanced))
+            : undefined,
         },
       });
 
@@ -280,7 +304,7 @@ export class FormBuilderService {
       }
 
       if (!form.isActive) {
-        throw this.createError("FORM_INACTIVE", "Form is not active");
+        throw this.createError("FORM_NOT_ACTIVE", "Form is not active");
       }
 
       // Check submission limits
@@ -311,11 +335,13 @@ export class FormBuilderService {
       const submission = await prisma.formSubmission.create({
         data: {
           formId,
-          data: data.data,
-          metadata: {
-            ...metadata,
-            ...data.metadata,
-          },
+          data: JSON.parse(JSON.stringify(data.data)),
+          metadata: JSON.parse(
+            JSON.stringify({
+              ...metadata,
+              ...data.metadata,
+            })
+          ),
           status: "submitted" as SubmissionStatus,
         },
       });
@@ -396,7 +422,7 @@ export class FormBuilderService {
           formId,
           name: data.name,
           type: data.type,
-          settings: data.settings,
+          settings: JSON.parse(JSON.stringify(data.settings)),
           embedCode,
         },
       });
@@ -408,6 +434,216 @@ export class FormBuilderService {
         "Failed to create widget",
         error
       );
+    }
+  }
+
+  // Step Management
+  async createStep(
+    formId: string,
+    tenantId: string,
+    data: {
+      title: string;
+      description?: string;
+      order: number;
+      isActive?: boolean;
+      isPayment?: boolean;
+      paymentAmount?: number;
+      fields?: string[];
+      conditions?: any;
+      settings?: any;
+    }
+  ): Promise<any> {
+    try {
+      // Get existing steps to determine proper order
+      const existingSteps = await prisma.formStep.findMany({
+        where: { formId },
+        orderBy: { order: "asc" },
+      });
+
+      let finalOrder = data.order;
+
+      // If this is a payment step, ensure it's always last
+      if (data.isPayment) {
+        finalOrder = existingSteps.length;
+      } else {
+        // If this is not a payment step, ensure it doesn't go after any payment steps
+        const paymentSteps = existingSteps.filter((step) => step.isPayment);
+        if (paymentSteps.length > 0 && data.order >= paymentSteps[0].order) {
+          finalOrder = paymentSteps[0].order;
+        }
+      }
+
+      const step = await prisma.formStep.create({
+        data: {
+          formId,
+          title: data.title,
+          description: data.description,
+          order: finalOrder,
+          isActive: data.isActive ?? true,
+          isPayment: data.isPayment ?? false,
+          paymentAmount: data.paymentAmount,
+          fields: data.fields || [],
+          conditions: data.conditions
+            ? JSON.parse(JSON.stringify(data.conditions))
+            : null,
+          settings: JSON.parse(
+            JSON.stringify(data.settings || this.getDefaultStepSettings())
+          ),
+        },
+      });
+
+      // Reorder steps if necessary to maintain payment steps at the end
+      await this.reorderStepsToKeepPaymentLast(formId);
+
+      return step;
+    } catch (error) {
+      throw this.handleError(
+        "STEP_CREATION_FAILED",
+        "Failed to create step",
+        error
+      );
+    }
+  }
+
+  async updateStep(
+    stepId: string,
+    formId: string,
+    tenantId: string,
+    data: {
+      title?: string;
+      description?: string;
+      order?: number;
+      isActive?: boolean;
+      isPayment?: boolean;
+      paymentAmount?: number;
+      fields?: string[];
+      conditions?: any;
+      settings?: any;
+    }
+  ): Promise<any> {
+    try {
+      // Get existing steps to determine proper order
+      const existingSteps = await prisma.formStep.findMany({
+        where: { formId },
+        orderBy: { order: "asc" },
+      });
+
+      let finalOrder = data.order;
+
+      // If this is a payment step, ensure it's always last
+      if (data.isPayment) {
+        finalOrder = existingSteps.length - 1; // Last position
+      } else if (data.order !== undefined) {
+        // If this is not a payment step, ensure it doesn't go after any payment steps
+        const paymentSteps = existingSteps.filter(
+          (step) => step.isPayment && step.id !== stepId
+        );
+        if (paymentSteps.length > 0 && data.order >= paymentSteps[0].order) {
+          finalOrder = paymentSteps[0].order - 1;
+        }
+      }
+
+      const step = await prisma.formStep.update({
+        where: { id: stepId },
+        data: {
+          title: data.title,
+          description: data.description,
+          order: finalOrder,
+          isActive: data.isActive,
+          isPayment: data.isPayment,
+          paymentAmount: data.paymentAmount,
+          fields: data.fields,
+          conditions: data.conditions
+            ? JSON.parse(JSON.stringify(data.conditions))
+            : undefined,
+          settings: data.settings
+            ? JSON.parse(JSON.stringify(data.settings))
+            : undefined,
+        },
+      });
+
+      // Reorder steps if necessary to maintain payment steps at the end
+      await this.reorderStepsToKeepPaymentLast(formId);
+
+      return step;
+    } catch (error) {
+      throw this.handleError(
+        "STEP_UPDATE_FAILED",
+        "Failed to update step",
+        error
+      );
+    }
+  }
+
+  async deleteStep(
+    stepId: string,
+    formId: string,
+    tenantId: string
+  ): Promise<void> {
+    try {
+      await prisma.formStep.delete({
+        where: { id: stepId },
+      });
+    } catch (error) {
+      throw this.handleError(
+        "STEP_DELETION_FAILED",
+        "Failed to delete step",
+        error
+      );
+    }
+  }
+
+  async getFormSteps(formId: string, tenantId: string): Promise<any[]> {
+    try {
+      const steps = await prisma.formStep.findMany({
+        where: { formId, form: { tenantId } },
+        orderBy: { order: "asc" },
+      });
+
+      return steps;
+    } catch (error) {
+      throw this.handleError(
+        "STEPS_FETCH_FAILED",
+        "Failed to fetch steps",
+        error
+      );
+    }
+  }
+
+  private getDefaultStepSettings() {
+    return {
+      showProgress: true,
+      allowBack: true,
+      allowSkip: false,
+      autoSave: false,
+      validationMode: "onSubmit",
+    };
+  }
+
+  private async reorderStepsToKeepPaymentLast(formId: string): Promise<void> {
+    try {
+      const steps = await prisma.formStep.findMany({
+        where: { formId },
+        orderBy: { order: "asc" },
+      });
+
+      // Separate payment and non-payment steps
+      const nonPaymentSteps = steps.filter((step) => !step.isPayment);
+      const paymentSteps = steps.filter((step) => step.isPayment);
+
+      // Reorder: non-payment steps first, then payment steps
+      const reorderedSteps = [...nonPaymentSteps, ...paymentSteps];
+
+      // Update order for all steps
+      for (let i = 0; i < reorderedSteps.length; i++) {
+        await prisma.formStep.update({
+          where: { id: reorderedSteps[i].id },
+          data: { order: i },
+        });
+      }
+    } catch (error) {
+      console.error("Error reordering steps:", error);
+      // Don't throw error here as it's a helper function
     }
   }
 
@@ -432,9 +668,9 @@ export class FormBuilderService {
           category: data.category,
           isPublic: data.isPublic,
           isPremium: data.isPremium,
-          formConfig: data.formConfig,
-          fields: data.fields,
-          steps: data.steps,
+          formConfig: JSON.parse(JSON.stringify(data.formConfig)),
+          fields: JSON.parse(JSON.stringify(data.fields)),
+          steps: JSON.parse(JSON.stringify(data.steps)),
           previewImage: data.previewImage,
           tags: data.tags,
         },
@@ -583,6 +819,25 @@ export class FormBuilderService {
           throw this.createError("VALIDATION_ERROR", "Invalid number format");
         }
         break;
+      case "payment":
+        // Validate payment field data
+        if (value && typeof value === "object") {
+          const paymentData = value as any;
+          if (
+            paymentData.paymentItems &&
+            Array.isArray(paymentData.paymentItems)
+          ) {
+            for (const item of paymentData.paymentItems) {
+              if (!item.id || !item.name || typeof item.amount !== "number") {
+                throw this.createError(
+                  "VALIDATION_ERROR",
+                  "Invalid payment item structure"
+                );
+              }
+            }
+          }
+        }
+        break;
       // Add more field type validations
     }
   }
@@ -595,6 +850,38 @@ export class FormBuilderService {
   private isValidPhone(phone: string): boolean {
     const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
     return phoneRegex.test(phone.replace(/\s/g, ""));
+  }
+
+  // Helper method to calculate total payment amount
+  private calculatePaymentTotal(paymentItems: any[]): number {
+    return paymentItems.reduce((total, item) => total + (item.amount || 0), 0);
+  }
+
+  // Helper method to validate payment field structure
+  private validatePaymentField(field: any): boolean {
+    if (field.type !== "payment") return true;
+
+    const options = field.options as any;
+    if (
+      !options ||
+      !options.paymentItems ||
+      !Array.isArray(options.paymentItems)
+    ) {
+      return false;
+    }
+
+    for (const item of options.paymentItems) {
+      if (
+        !item.id ||
+        !item.name ||
+        typeof item.amount !== "number" ||
+        item.amount < 0
+      ) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   private generateEmbedCode(
@@ -671,12 +958,16 @@ export class FormBuilderService {
       title: form.title,
       description: form.description,
       isActive: form.isActive,
+      isPublished: form.isPublished || false,
       requiresPayment: form.requiresPayment,
       paymentAmount: form.paymentAmount,
       allowMultipleSubmissions: form.allowMultipleSubmissions,
       maxSubmissions: form.maxSubmissions,
       submissionDeadline: form.submissionDeadline,
-      settings: form.settings,
+      settings: {
+        ...form.settings,
+        steps: form.steps || [],
+      },
       createdAt: form.createdAt,
       updatedAt: form.updatedAt,
     };

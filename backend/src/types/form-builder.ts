@@ -6,6 +6,7 @@ export interface FormBuilderConfig {
   title: string;
   description?: string;
   isActive: boolean;
+  isPublished: boolean;
   requiresPayment: boolean;
   paymentAmount?: number;
   allowMultipleSubmissions: boolean;
@@ -342,6 +343,8 @@ export interface FormStep {
   description?: string;
   order: number;
   isActive: boolean;
+  isPayment: boolean;
+  paymentAmount?: number;
   fields: string[]; // Field IDs
   conditions?: ConditionalLogic;
   settings: StepSettings;
@@ -611,6 +614,7 @@ export interface FormBuilderError {
 
 export type FormBuilderErrorCode =
   | "FORM_NOT_FOUND"
+  | "FORM_NOT_ACTIVE"
   | "FIELD_NOT_FOUND"
   | "INVALID_FIELD_TYPE"
   | "VALIDATION_ERROR"

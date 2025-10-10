@@ -166,7 +166,8 @@ model Form {
     tenantId                 String
     title                    String
     description              String?
-    isActive                 Boolean   @default(true)
+    isActive                 Boolean   @default(false)
+    isPublished              Boolean   @default(false)
     requiresPayment          Boolean   @default(false)
     paymentAmount            Int?
     allowMultipleSubmissions Boolean   @default(false)
@@ -204,17 +205,19 @@ model FormField {
 }
 
 model FormStep {
-    id          String   @id @default(cuid())
-    formId      String
-    title       String
-    description String?
-    order       Int
-    isActive    Boolean  @default(true)
-    fields      Json // Array of field IDs
-    conditions  Json? // ConditionalLogic
-    settings    Json // StepSettings
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
+    id            String   @id @default(cuid())
+    formId        String
+    title         String
+    description   String?
+    order         Int
+    isActive      Boolean  @default(true)
+    isPayment     Boolean  @default(false)
+    paymentAmount Int?
+    fields        Json // Array of field IDs
+    conditions    Json? // ConditionalLogic
+    settings      Json // StepSettings
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
 
     form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
 }

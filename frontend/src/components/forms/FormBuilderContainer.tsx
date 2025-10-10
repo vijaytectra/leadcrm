@@ -11,6 +11,7 @@ import { FormBuilderPropertyPanel } from "./FormBuilderPropertyPanel";
 import { FormPreviewModal } from "./FormPreviewModal";
 import { FormTemplatesModal } from "./FormTemplatesModal";
 import { formsApi } from "@/lib/api/forms";
+import { useAuthStore } from "@/stores/auth";
 import type { FormBuilderConfig, FormField, FormTemplate } from "@/types/form-builder";
 
 interface FormBuilderContainerProps {
@@ -25,23 +26,26 @@ export function FormBuilderContainer({
     mode
 }: FormBuilderContainerProps) {
     const router = useRouter();
+    const { currentTenantSlug } = useAuthStore();
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showTemplates, setShowTemplates] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
     const [selectedTemplate, setSelectedTemplate] = useState<FormTemplate | null>(null);
+    const [loadedForm, setLoadedForm] = useState<FormBuilderConfig | null>(null);
+    const [loadedFields, setLoadedFields] = useState<FormField[]>([]);
 
     // Load form data
     const loadForm = useCallback(async () => {
-        if (!formId) return;
+        if (!formId || !currentTenantSlug) return;
 
         try {
             setIsLoading(true);
             setError(null);
 
             const [formResponse, fieldsResponse] = await Promise.all([
-                formsApi.getForm(formId),
-                formsApi.getFormFields(formId)
+                formsApi.getForm(currentTenantSlug, formId),
+                formsApi.getFormFields(currentTenantSlug, formId)
             ]);
 
             if (!formResponse.success || !fieldsResponse.success) {
@@ -53,8 +57,44 @@ export function FormBuilderContainer({
                 throw new Error("Invalid form data received");
             }
 
-            // Initialize form builder with loaded data
-            // This will be handled by the FormBuilderProvider
+            // Store loaded data for FormBuilderProvider
+            console.log("Loaded form data:", formResponse.data);
+            console.log("Loaded fields:", fieldsResponse.data.fields);
+            console.log("Loaded steps:", formResponse.data.settings?.steps);
+
+            // Ensure steps are properly loaded from the form settings
+            const formData = formResponse.data as FormBuilderConfig;
+            if (formData.settings && formData.settings.steps) {
+                console.log("Steps found in form settings:", formData.settings.steps);
+            } else {
+                console.log("No steps found in form settings, creating default step");
+                // Create a default step if none exist
+                formData.settings = {
+                    ...formData.settings,
+                    steps: [{
+                        id: `step_${Date.now()}`,
+                        formId: formData.id,
+                        title: "Step 1",
+                        description: "Basic information",
+                        order: 0,
+                        isActive: true,
+                        isPayment: false,
+                        fields: fieldsResponse.data.fields.map(f => f.id),
+                        settings: {
+                            showProgress: true,
+                            allowBack: true,
+                            allowSkip: false,
+                            autoSave: false,
+                            validationMode: "onSubmit"
+                        },
+                        createdAt: new Date(),
+                        updatedAt: new Date()
+                    }]
+                };
+            }
+
+            setLoadedForm(formData);
+            setLoadedFields(fieldsResponse.data.fields);
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : "Failed to load form";
             setError(errorMessage);
@@ -62,11 +102,11 @@ export function FormBuilderContainer({
         } finally {
             setIsLoading(false);
         }
-    }, [formId]);
+    }, [formId, currentTenantSlug]);
 
     // Load template data
     const loadTemplate = useCallback(async () => {
-        if (!templateId) return;
+        if (!templateId || !currentTenantSlug) return;
 
         try {
             setIsLoading(true);
@@ -91,7 +131,7 @@ export function FormBuilderContainer({
         } finally {
             setIsLoading(false);
         }
-    }, [templateId]);
+    }, [templateId, currentTenantSlug]);
 
     // Initialize form builder
     useEffect(() => {
@@ -104,6 +144,13 @@ export function FormBuilderContainer({
         }
     }, [mode, formId, templateId, loadForm, loadTemplate]);
 
+    // Handle preview mode specifically
+    useEffect(() => {
+        if (mode === "preview" && formId) {
+            loadForm();
+        }
+    }, [mode, formId, loadForm]);
+
     // Handle template selection
     const handleTemplateSelect = useCallback((template: FormTemplate) => {
         setSelectedTemplate(template);
@@ -111,93 +158,37 @@ export function FormBuilderContainer({
         toast.success(`Template "${template.name}" selected`);
     }, []);
 
-    // Handle form save
-    const handleSave = useCallback(async (formData: FormBuilderConfig, fields: FormField[]) => {
-        try {
-            setIsLoading(true);
-            setError(null);
-
-            if (mode === "create") {
-                const response = await formsApi.createForm({
-                    title: formData.title,
-                    description: formData.description,
-                    requiresPayment: formData.requiresPayment,
-                    paymentAmount: formData.paymentAmount,
-                    allowMultipleSubmissions: formData.allowMultipleSubmissions,
-                    maxSubmissions: formData.maxSubmissions,
-                    submissionDeadline: formData.submissionDeadline,
-                    settings: formData.settings
-                });
-
-                if (!response.success || !response.data) {
-                    throw new Error("Failed to create form");
-                }
-
-                // Create fields
-                for (const field of fields) {
-                    await formsApi.createField(response.data.id, {
-                        type: field.type,
-                        label: field.label,
-                        placeholder: field.placeholder,
-                        description: field.description,
-                        required: field.required,
-                        order: field.order,
-                        width: field.width,
-                        validation: field.validation,
-                        conditionalLogic: field.conditionalLogic,
-                        options: field.options,
-                        styling: field.styling,
-                        advanced: field.advanced
-                    });
-                }
-
-                toast.success("Form created successfully");
-                router.push(`/institution-admin/forms?formId=${response.data.id}&mode=edit`);
-            } else if (mode === "edit" && formId) {
-                const response = await formsApi.updateForm(formId, {
-                    title: formData.title,
-                    description: formData.description,
-                    isActive: formData.isActive,
-                    requiresPayment: formData.requiresPayment,
-                    paymentAmount: formData.paymentAmount,
-                    allowMultipleSubmissions: formData.allowMultipleSubmissions,
-                    maxSubmissions: formData.maxSubmissions,
-                    submissionDeadline: formData.submissionDeadline,
-                    settings: formData.settings
-                });
-
-                if (!response.success) {
-                    throw new Error("Failed to update form");
-                }
-
-                toast.success("Form updated successfully");
-            }
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : "Failed to save form";
-            setError(errorMessage);
-            toast.error(errorMessage);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [mode, formId, router]);
 
     // Handle form preview
     const handlePreview = useCallback(() => {
+        console.log("Preview triggered:", { mode, formId, showPreview });
         setShowPreview(true);
-    }, []);
+        console.log("showPreview set to true");
+    }, [mode, formId, showPreview]);
 
     // Handle form publish
     const handlePublish = useCallback(async () => {
+        if (!currentTenantSlug) {
+            toast.error("Missing tenant information");
+            return;
+        }
+
         try {
             setIsLoading(true);
             setError(null);
 
-            if (!formId) {
-                throw new Error("Form ID is required for publishing");
+            const currentFormId = formId;
+
+            // If form doesn't exist yet, we can't publish
+            if (!currentFormId) {
+                toast.error("Please save the form first, then publish it");
+                return;
             }
 
-            const response = await formsApi.updateForm(formId, {
-                isActive: true
+            // Now publish the form
+            const response = await formsApi.updateForm(currentTenantSlug, currentFormId, {
+                isActive: true,
+                isPublished: true
             });
 
             if (!response.success) {
@@ -205,6 +196,11 @@ export function FormBuilderContainer({
             }
 
             toast.success("Form published successfully");
+
+            // Navigate to forms list after successful publish
+            setTimeout(() => {
+                router.push("/institution-admin/forms");
+            }, 1000);
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : "Failed to publish form";
             setError(errorMessage);
@@ -212,7 +208,7 @@ export function FormBuilderContainer({
         } finally {
             setIsLoading(false);
         }
-    }, [formId]);
+    }, [formId, currentTenantSlug, router]);
 
     if (isLoading) {
         return (
@@ -243,19 +239,88 @@ export function FormBuilderContainer({
         );
     }
 
+    // Don't render FormBuilderProvider until we have the data for edit and preview modes
+    if ((mode === "edit" || mode === "preview") && !loadedForm) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <div className="text-slate-600">Loading form data...</div>
+                </div>
+            </div>
+        );
+    }
+
+    // Create default form for create mode
+    const defaultForm: FormBuilderConfig = {
+        id: "",
+        title: "Untitled Form",
+        description: "",
+        isActive: false,
+        isPublished: false,
+        requiresPayment: false,
+        paymentAmount: 0,
+        allowMultipleSubmissions: true,
+        settings: {
+            theme: {
+                primaryColor: "#3b82f6",
+                secondaryColor: "#1e40af",
+                backgroundColor: "#ffffff",
+                textColor: "#1f2937",
+                borderColor: "#e5e7eb",
+                borderRadius: 8,
+                fontFamily: "Inter, sans-serif",
+                fontSize: 14
+            },
+            layout: {
+                width: "narrow" as const,
+                alignment: "left" as const,
+                spacing: "normal" as const,
+                showProgress: true,
+                showStepNumbers: false
+            },
+            validation: {
+                validateOnSubmit: true,
+                showInlineErrors: true,
+                customValidationRules: []
+            },
+            notifications: {
+                emailOnSubmission: false,
+                emailRecipients: [],
+                smsOnSubmission: false,
+                smsRecipients: [],
+                autoResponse: false
+            },
+            integrations: {
+                customScripts: []
+            },
+            security: {
+                requireCaptcha: false,
+                captchaType: "recaptcha" as const,
+                allowAnonymous: true,
+                rateLimit: {
+                    enabled: false,
+                    maxSubmissions: 10,
+                    timeWindow: 60
+                }
+            }
+        },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        tenantId: ""
+    };
+
     return (
         <FormBuilderProvider
-            initialForm={selectedTemplate?.formConfig}
-            initialFields={selectedTemplate?.fields || []}
-            onSave={handleSave}
-            onPreview={handlePreview}
-            onPublish={handlePublish}
+            initialForm={mode === "create" ? defaultForm : (loadedForm || selectedTemplate?.formConfig)}
+            initialFields={mode === "create" ? (selectedTemplate?.fields || []) : loadedFields}
+            initialSteps={mode === "create" ? [] : (loadedForm?.settings?.steps || [])}
         >
             <div className="h-screen flex flex-col bg-slate-50">
                 <FormBuilderHeader
-                    mode={mode}
-                    onShowTemplates={() => setShowTemplates(true)}
                     onPreview={handlePreview}
+                    onPublish={handlePublish}
+                    hasFormId={!!formId}
                 />
                 <div className="flex-1 flex overflow-hidden">
                     {/* Sidebar - Hidden on mobile, visible on desktop */}
@@ -277,6 +342,8 @@ export function FormBuilderContainer({
                 </div>
             </div>
 
+
+
             {/* Modals */}
             {showTemplates && (
                 <FormTemplatesModal
@@ -286,10 +353,24 @@ export function FormBuilderContainer({
             )}
 
             {showPreview && (
+                <>
+                    {console.log("Rendering FormPreviewModal")}
+                    <FormPreviewModal
+                        onClose={() => {
+                            console.log("Closing preview modal");
+                            setShowPreview(false);
+                        }}
+                    />
+                </>
+            )}
+
+            {/* Show preview modal when in preview mode */}
+            {mode === "preview" && loadedForm && (
                 <FormPreviewModal
-                    onClose={() => setShowPreview(false)}
+                    onClose={() => router.push("/institution-admin/forms")}
                 />
             )}
         </FormBuilderProvider>
     );
 }
+

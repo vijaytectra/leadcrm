@@ -3,6 +3,8 @@ import { formBuilderService } from "../lib/form-builder";
 import {
   requireAuth,
   requireInstitutionAdmin,
+  requireActiveUser,
+  requireRole,
   AuthedRequest,
 } from "../middleware/auth";
 import {
@@ -17,20 +19,190 @@ import {
   SubmissionListResponse,
   FormBuilderError,
 } from "../types/form-builder";
+import { prisma } from "../lib/prisma";
+import { z } from "zod";
 
 const router = Router();
 
+// Validation schemas
+const createFormSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: z.string().optional(),
+  isActive: z.boolean().optional().default(false),
+  isPublished: z.boolean().optional().default(false),
+  requiresPayment: z.boolean().optional().default(false),
+  paymentAmount: z.number().optional(),
+  allowMultipleSubmissions: z.boolean().optional().default(false),
+  maxSubmissions: z.number().optional(),
+  submissionDeadline: z
+    .string()
+    .datetime()
+    .transform((val) => new Date(val))
+    .optional(),
+  settings: z.object({}).passthrough().optional(),
+});
+
+const updateFormSchema = z.object({
+  title: z.string().min(1, "Title is required").optional(),
+  description: z.string().optional(),
+  isActive: z.boolean().optional(),
+  isPublished: z.boolean().optional(),
+  requiresPayment: z.boolean().optional(),
+  paymentAmount: z.number().optional(),
+  allowMultipleSubmissions: z.boolean().optional(),
+  maxSubmissions: z.number().optional(),
+  submissionDeadline: z
+    .string()
+    .datetime()
+    .transform((val) => new Date(val))
+    .optional(),
+  settings: z.object({}).passthrough().optional(),
+});
+
+const createFieldSchema = z
+  .object({
+    type: z.string().min(1, "Field type is required"),
+    label: z.string().min(1, "Label is required"),
+    placeholder: z.string().optional(),
+    description: z.string().optional(),
+    required: z.boolean().optional().default(false),
+    order: z.number().optional().default(0),
+    width: z
+      .enum(["full", "half", "third", "quarter"])
+      .optional()
+      .default("full"),
+    validation: z.object({}).passthrough().optional(),
+    conditionalLogic: z.object({}).passthrough().optional(),
+    options: z.object({}).passthrough().optional(),
+    styling: z.object({}).passthrough().optional(),
+    advanced: z.object({}).passthrough().optional(),
+  })
+  .refine(
+    (data) => {
+      // Additional validation for payment fields
+      if (data.type === "payment" && data.options) {
+        const options = data.options as any;
+        if (options.paymentItems && Array.isArray(options.paymentItems)) {
+          // Validate payment items structure
+          for (const item of options.paymentItems) {
+            if (!item.id || !item.name || typeof item.amount !== "number") {
+              return false;
+            }
+          }
+        }
+      }
+      return true;
+    },
+    {
+      message: "Payment field options must include valid paymentItems array",
+      path: ["options"],
+    }
+  );
+
+const updateFieldSchema = z
+  .object({
+    type: z.string().min(1, "Field type is required").optional(),
+    label: z.string().min(1, "Label is required").optional(),
+    placeholder: z.string().optional(),
+    description: z.string().optional(),
+    required: z.boolean().optional(),
+    order: z.number().optional(),
+    width: z.enum(["full", "half", "third", "quarter"]).optional(),
+    validation: z.object({}).passthrough().optional(),
+    conditionalLogic: z.object({}).passthrough().optional(),
+    options: z.object({}).passthrough().optional(),
+    styling: z.object({}).passthrough().optional(),
+    advanced: z.object({}).passthrough().optional(),
+  })
+  .refine(
+    (data) => {
+      // Additional validation for payment fields
+      if (data.type === "payment" && data.options) {
+        const options = data.options as any;
+        if (options.paymentItems && Array.isArray(options.paymentItems)) {
+          // Validate payment items structure
+          for (const item of options.paymentItems) {
+            if (!item.id || !item.name || typeof item.amount !== "number") {
+              return false;
+            }
+          }
+        }
+      }
+      return true;
+    },
+    {
+      message: "Payment field options must include valid paymentItems array",
+      path: ["options"],
+    }
+  );
+
+const formQuerySchema = z.object({
+  page: z.string().transform(Number).optional().default(1),
+  limit: z.string().transform(Number).optional().default(10),
+  status: z.enum(["draft", "published", "archived"]).optional(),
+  search: z.string().optional(),
+  sortBy: z
+    .enum(["createdAt", "updatedAt", "title"])
+    .optional()
+    .default("createdAt"),
+  sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
+});
+
 // Form Management Routes
 router.post(
-  "/",
+  "/:tenant/forms",
   requireAuth,
-  requireInstitutionAdmin,
+  requireActiveUser,
+  requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-      const tenantId = req.auth?.ten || "";
-      const formData: CreateFormRequest = req.body;
+      console.log("📝 CREATE FORM - Route handler executed");
+      const tenantSlug = req.params.tenant;
 
-      const form = await formBuilderService.createForm(tenantId, formData);
+      if (!tenantSlug) {
+        return res.status(400).json({
+          error: "Tenant slug is required",
+          code: "TENANT_REQUIRED",
+        });
+      }
+
+      // Get tenant
+      const tenant = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true },
+      });
+
+      if (!tenant) {
+        return res.status(404).json({
+          error: "Tenant not found",
+          code: "TENANT_NOT_FOUND",
+        });
+      }
+
+      const validation = createFormSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Validation failed",
+          details: validation.error.issues,
+          code: "VALIDATION_ERROR",
+        });
+      }
+
+      const formData = validation.data;
+
+      const form = await formBuilderService.createForm(tenant.id, formData);
+
+      // Log form creation
+      await prisma.auditLog.create({
+        data: {
+          tenantId: tenant.id,
+          userId: req.auth!.sub,
+          action: "FORM_CREATED",
+          entity: "Form",
+          entityId: form.id,
+          newValues: JSON.parse(JSON.stringify(formData)),
+        },
+      });
 
       const response: FormResponse = {
         success: true,
@@ -40,6 +212,7 @@ router.post(
 
       res.status(201).json(response);
     } catch (error) {
+      console.error("Error creating form:", error);
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
@@ -51,24 +224,72 @@ router.post(
 );
 
 router.get(
-  "/",
+  "/:tenant/forms",
   requireAuth,
-  requireInstitutionAdmin,
+  requireActiveUser,
+  requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-      const tenantId = req.auth?.ten || "";
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
+      console.log("📋 GET FORMS - Route handler executed");
+      const tenantSlug = req.params.tenant;
 
-      const result = await formBuilderService.listForms(tenantId, page, limit);
+      if (!tenantSlug) {
+        return res.status(400).json({
+          error: "Tenant slug is required",
+          code: "TENANT_REQUIRED",
+        });
+      }
+
+      // Get tenant
+      const tenant = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true },
+      });
+
+      if (!tenant) {
+        return res.status(404).json({
+          error: "Tenant not found",
+          code: "TENANT_NOT_FOUND",
+        });
+      }
+
+      const query = formQuerySchema.parse(req.query);
+      const { page, limit, status, search, sortBy, sortOrder } = query;
+
+      const result = await formBuilderService.listForms(tenant.id, page, limit);
+
+      // Filter by status if provided
+      let filteredForms = result.forms;
+      if (status) {
+        filteredForms = result.forms.filter((form) => {
+          if (status === "draft") return !form.isActive;
+          if (status === "published") return form.isActive;
+          if (status === "archived") return false; // Add archived logic if needed
+          return true;
+        });
+      }
+
+      // Filter by search if provided
+      if (search) {
+        filteredForms = filteredForms.filter(
+          (form) =>
+            form.title.toLowerCase().includes(search.toLowerCase()) ||
+            (form.description &&
+              form.description.toLowerCase().includes(search.toLowerCase()))
+        );
+      }
 
       const response: FormListResponse = {
         success: true,
-        data: result,
+        data: {
+          ...result,
+          forms: filteredForms,
+        },
       };
 
       res.json(response);
     } catch (error) {
+      console.error("Error fetching forms:", error);
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
@@ -80,15 +301,37 @@ router.get(
 );
 
 router.get(
-  "/:formId",
+  "/:tenant/forms/:formId",
   requireAuth,
-  requireInstitutionAdmin,
+  requireActiveUser,
+  requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-      const tenantId = req.auth?.ten || "";
-      const { formId } = req.params;
+      console.log("🔍 GET FORM - Route handler executed");
+      const { formId, tenant } = req.params;
+      const tenantSlug = tenant;
 
-      const form = await formBuilderService.getForm(formId, tenantId);
+      if (!tenantSlug) {
+        return res.status(400).json({
+          error: "Tenant slug is required",
+          code: "TENANT_REQUIRED",
+        });
+      }
+
+      // Get tenant
+      const tenantRecord = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true },
+      });
+
+      if (!tenantRecord) {
+        return res.status(404).json({
+          error: "Tenant not found",
+          code: "TENANT_NOT_FOUND",
+        });
+      }
+
+      const form = await formBuilderService.getForm(formId, tenantRecord.id);
 
       const response: FormResponse = {
         success: true,
@@ -97,6 +340,7 @@ router.get(
 
       res.json(response);
     } catch (error) {
+      console.error("Error fetching form:", error);
       const formError = error as FormBuilderError;
       res.status(404).json({
         success: false,
@@ -108,20 +352,64 @@ router.get(
 );
 
 router.put(
-  "/:formId",
+  "/:tenant/forms/:formId",
   requireAuth,
-  requireInstitutionAdmin,
+  requireActiveUser,
+  requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-      const tenantId = req.auth?.ten || "";
-      const { formId } = req.params;
-      const formData: UpdateFormRequest = req.body;
+      console.log("✏️ UPDATE FORM - Route handler executed");
+      const { formId, tenant } = req.params;
+      const tenantSlug = tenant;
+
+      if (!tenantSlug) {
+        return res.status(400).json({
+          error: "Tenant slug is required",
+          code: "TENANT_REQUIRED",
+        });
+      }
+
+      // Get tenant
+      const tenantRecord = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true },
+      });
+
+      if (!tenantRecord) {
+        return res.status(404).json({
+          error: "Tenant not found",
+          code: "TENANT_NOT_FOUND",
+        });
+      }
+
+      const validation = updateFormSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Validation failed",
+          details: validation.error.issues,
+          code: "VALIDATION_ERROR",
+        });
+      }
+
+      const formData = validation.data;
 
       const form = await formBuilderService.updateForm(
         formId,
-        tenantId,
+        tenantRecord.id,
         formData
       );
+
+      // Log form update
+      await prisma.auditLog.create({
+        data: {
+          tenantId: tenantRecord.id,
+          userId: req.auth!.sub,
+          action: "FORM_UPDATED",
+          entity: "Form",
+          entityId: formId,
+          newValues: JSON.parse(JSON.stringify(formData)),
+        },
+      });
 
       const response: FormResponse = {
         success: true,
@@ -131,6 +419,7 @@ router.put(
 
       res.json(response);
     } catch (error) {
+      console.error("Error updating form:", error);
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
@@ -142,21 +431,55 @@ router.put(
 );
 
 router.delete(
-  "/:formId",
+  "/:tenant/forms/:formId",
   requireAuth,
-  requireInstitutionAdmin,
+  requireActiveUser,
+  requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-      const tenantId = req.auth?.ten || "";
-      const { formId } = req.params;
+      console.log("🗑️ DELETE FORM - Route handler executed");
+      const { formId, tenant } = req.params;
+      const tenantSlug = tenant;
 
-      await formBuilderService.deleteForm(formId, tenantId);
+      if (!tenantSlug) {
+        return res.status(400).json({
+          error: "Tenant slug is required",
+          code: "TENANT_REQUIRED",
+        });
+      }
+
+      // Get tenant
+      const tenantRecord = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true },
+      });
+
+      if (!tenantRecord) {
+        return res.status(404).json({
+          error: "Tenant not found",
+          code: "TENANT_NOT_FOUND",
+        });
+      }
+
+      await formBuilderService.deleteForm(formId, tenantRecord.id);
+
+      // Log form deletion
+      await prisma.auditLog.create({
+        data: {
+          tenantId: tenantRecord.id,
+          userId: req.auth!.sub,
+          action: "FORM_DELETED",
+          entity: "Form",
+          entityId: formId,
+        },
+      });
 
       res.json({
         success: true,
         message: "Form deleted successfully",
       });
     } catch (error) {
+      console.error("Error deleting form:", error);
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
@@ -169,20 +492,67 @@ router.delete(
 
 // Field Management Routes
 router.post(
-  "/:formId/fields",
+  "/:tenant/forms/:formId/fields",
   requireAuth,
-  requireInstitutionAdmin,
+  requireActiveUser,
+  requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-      const tenantId = req.auth?.ten || "";
-      const { formId } = req.params;
-      const fieldData: CreateFieldRequest = req.body;
+      console.log("➕ CREATE FIELD - Route handler executed");
+      const { formId, tenant } = req.params;
+      const tenantSlug = tenant;
+
+      if (!tenantSlug) {
+        return res.status(400).json({
+          error: "Tenant slug is required",
+          code: "TENANT_REQUIRED",
+        });
+      }
+
+      // Get tenant
+      const tenantRecord = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true },
+      });
+
+      if (!tenantRecord) {
+        return res.status(404).json({
+          error: "Tenant not found",
+          code: "TENANT_NOT_FOUND",
+        });
+      }
+
+      const validation = createFieldSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Validation failed",
+          details: validation.error.issues,
+          code: "VALIDATION_ERROR",
+        });
+      }
+
+      const fieldData = validation.data;
 
       const field = await formBuilderService.createField(
         formId,
-        tenantId,
-        fieldData
+        tenantRecord.id,
+        {
+          ...fieldData,
+          type: fieldData.type as any,
+        }
       );
+
+      // Log field creation
+      await prisma.auditLog.create({
+        data: {
+          tenantId: tenantRecord.id,
+          userId: req.auth!.sub,
+          action: "FIELD_CREATED",
+          entity: "FormField",
+          entityId: field.id,
+          newValues: JSON.parse(JSON.stringify(fieldData)),
+        },
+      });
 
       const response: FormResponse = {
         success: true,
@@ -192,6 +562,7 @@ router.post(
 
       res.status(201).json(response);
     } catch (error) {
+      console.error("Error creating field:", error);
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
@@ -203,15 +574,40 @@ router.post(
 );
 
 router.get(
-  "/:formId/fields",
+  "/:tenant/forms/:formId/fields",
   requireAuth,
-  requireInstitutionAdmin,
+  requireActiveUser,
+  requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-      const tenantId = req.auth?.ten || "";
-      const { formId } = req.params;
+      console.log("📋 GET FIELDS - Route handler executed");
+      const { formId, tenant } = req.params;
+      const tenantSlug = tenant;
 
-      const fields = await formBuilderService.getFormFields(formId, tenantId);
+      if (!tenantSlug) {
+        return res.status(400).json({
+          error: "Tenant slug is required",
+          code: "TENANT_REQUIRED",
+        });
+      }
+
+      // Get tenant
+      const tenantRecord = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true },
+      });
+
+      if (!tenantRecord) {
+        return res.status(404).json({
+          error: "Tenant not found",
+          code: "TENANT_NOT_FOUND",
+        });
+      }
+
+      const fields = await formBuilderService.getFormFields(
+        formId,
+        tenantRecord.id
+      );
 
       const response: FieldListResponse = {
         success: true,
@@ -223,6 +619,7 @@ router.get(
 
       res.json(response);
     } catch (error) {
+      console.error("Error fetching fields:", error);
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
@@ -234,21 +631,69 @@ router.get(
 );
 
 router.put(
-  "/:formId/fields/:fieldId",
+  "/:tenant/forms/:formId/fields/:fieldId",
   requireAuth,
-  requireInstitutionAdmin,
+  requireActiveUser,
+  requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-      const tenantId = req.auth?.ten || "";
-      const { formId, fieldId } = req.params;
-      const fieldData: UpdateFieldRequest = { ...req.body, id: fieldId };
+      console.log("✏️ UPDATE FIELD - Route handler executed");
+      const { formId, fieldId, tenant } = req.params;
+      const tenantSlug = tenant;
+
+      if (!tenantSlug) {
+        return res.status(400).json({
+          error: "Tenant slug is required",
+          code: "TENANT_REQUIRED",
+        });
+      }
+
+      // Get tenant
+      const tenantRecord = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true },
+      });
+
+      if (!tenantRecord) {
+        return res.status(404).json({
+          error: "Tenant not found",
+          code: "TENANT_NOT_FOUND",
+        });
+      }
+
+      const validation = updateFieldSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Validation failed",
+          details: validation.error.issues,
+          code: "VALIDATION_ERROR",
+        });
+      }
+
+      const fieldData = validation.data;
 
       const field = await formBuilderService.updateField(
         fieldId,
         formId,
-        tenantId,
-        fieldData
+        tenantRecord.id,
+        {
+          ...fieldData,
+          id: fieldId,
+          type: fieldData.type as any,
+        }
       );
+
+      // Log field update
+      await prisma.auditLog.create({
+        data: {
+          tenantId: tenantRecord.id,
+          userId: req.auth!.sub,
+          action: "FIELD_UPDATED",
+          entity: "FormField",
+          entityId: fieldId,
+          newValues: JSON.parse(JSON.stringify(fieldData)),
+        },
+      });
 
       const response: FormResponse = {
         success: true,
@@ -258,6 +703,7 @@ router.put(
 
       res.json(response);
     } catch (error) {
+      console.error("Error updating field:", error);
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
@@ -269,21 +715,55 @@ router.put(
 );
 
 router.delete(
-  "/:formId/fields/:fieldId",
+  "/:tenant/forms/:formId/fields/:fieldId",
   requireAuth,
-  requireInstitutionAdmin,
+  requireActiveUser,
+  requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-      const tenantId = req.auth?.ten || "";
-      const { formId, fieldId } = req.params;
+      console.log("🗑️ DELETE FIELD - Route handler executed");
+      const { formId, fieldId, tenant } = req.params;
+      const tenantSlug = tenant;
 
-      await formBuilderService.deleteField(fieldId, formId, tenantId);
+      if (!tenantSlug) {
+        return res.status(400).json({
+          error: "Tenant slug is required",
+          code: "TENANT_REQUIRED",
+        });
+      }
+
+      // Get tenant
+      const tenantRecord = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true },
+      });
+
+      if (!tenantRecord) {
+        return res.status(404).json({
+          error: "Tenant not found",
+          code: "TENANT_NOT_FOUND",
+        });
+      }
+
+      await formBuilderService.deleteField(fieldId, formId, tenantRecord.id);
+
+      // Log field deletion
+      await prisma.auditLog.create({
+        data: {
+          tenantId: tenantRecord.id,
+          userId: req.auth!.sub,
+          action: "FIELD_DELETED",
+          entity: "FormField",
+          entityId: fieldId,
+        },
+      });
 
       res.json({
         success: true,
         message: "Field deleted successfully",
       });
     } catch (error) {
+      console.error("Error deleting field:", error);
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
@@ -434,6 +914,349 @@ router.get(
         data: analytics,
       });
     } catch (error) {
+      const formError = error as FormBuilderError;
+      res.status(400).json({
+        success: false,
+        error: formError.message,
+        code: formError.code,
+      });
+    }
+  }
+);
+
+// Step Management Routes
+router.post(
+  "/:tenant/forms/:formId/steps",
+  requireAuth,
+  requireActiveUser,
+  requireRole(["INSTITUTION_ADMIN"]),
+  async (req: AuthedRequest, res: Response) => {
+    try {
+      console.log("➕ CREATE STEP - Route handler executed");
+      const { formId, tenant } = req.params;
+      const tenantSlug = tenant;
+
+      if (!tenantSlug) {
+        return res.status(400).json({
+          error: "Tenant slug is required",
+          code: "TENANT_REQUIRED",
+        });
+      }
+
+      // Get tenant
+      const tenantRecord = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true },
+      });
+
+      if (!tenantRecord) {
+        return res.status(404).json({
+          error: "Tenant not found",
+          code: "TENANT_NOT_FOUND",
+        });
+      }
+
+      const stepData = req.body;
+      const step = await formBuilderService.createStep(
+        formId,
+        tenantRecord.id,
+        stepData
+      );
+
+      // Log step creation
+      await prisma.auditLog.create({
+        data: {
+          tenantId: tenantRecord.id,
+          userId: req.auth!.sub,
+          action: "STEP_CREATED",
+          entity: "FormStep",
+          entityId: step.id,
+          newValues: JSON.parse(JSON.stringify(stepData)),
+        },
+      });
+
+      const response: FormResponse = {
+        success: true,
+        data: step,
+        message: "Step created successfully",
+      };
+
+      res.status(201).json(response);
+    } catch (error) {
+      console.error("Error creating step:", error);
+      const formError = error as FormBuilderError;
+      res.status(400).json({
+        success: false,
+        error: formError.message,
+        code: formError.code,
+      });
+    }
+  }
+);
+
+router.get(
+  "/:tenant/forms/:formId/steps",
+  requireAuth,
+  requireActiveUser,
+  requireRole(["INSTITUTION_ADMIN"]),
+  async (req: AuthedRequest, res: Response) => {
+    try {
+      console.log("📋 GET STEPS - Route handler executed");
+      const { formId, tenant } = req.params;
+      const tenantSlug = tenant;
+
+      if (!tenantSlug) {
+        return res.status(400).json({
+          error: "Tenant slug is required",
+          code: "TENANT_REQUIRED",
+        });
+      }
+
+      // Get tenant
+      const tenantRecord = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true },
+      });
+
+      if (!tenantRecord) {
+        return res.status(404).json({
+          error: "Tenant not found",
+          code: "TENANT_NOT_FOUND",
+        });
+      }
+
+      const steps = await formBuilderService.getFormSteps(
+        formId,
+        tenantRecord.id
+      );
+
+      const response: FieldListResponse = {
+        success: true,
+        data: {
+          fields: steps,
+          total: steps.length,
+        },
+      };
+
+      res.json(response);
+    } catch (error) {
+      console.error("Error fetching steps:", error);
+      const formError = error as FormBuilderError;
+      res.status(400).json({
+        success: false,
+        error: formError.message,
+        code: formError.code,
+      });
+    }
+  }
+);
+
+router.put(
+  "/:tenant/forms/:formId/steps/:stepId",
+  requireAuth,
+  requireActiveUser,
+  requireRole(["INSTITUTION_ADMIN"]),
+  async (req: AuthedRequest, res: Response) => {
+    try {
+      console.log("✏️ UPDATE STEP - Route handler executed");
+      const { formId, stepId, tenant } = req.params;
+      const tenantSlug = tenant;
+
+      if (!tenantSlug) {
+        return res.status(400).json({
+          error: "Tenant slug is required",
+          code: "TENANT_REQUIRED",
+        });
+      }
+
+      // Get tenant
+      const tenantRecord = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true },
+      });
+
+      if (!tenantRecord) {
+        return res.status(404).json({
+          error: "Tenant not found",
+          code: "TENANT_NOT_FOUND",
+        });
+      }
+
+      const stepData = req.body;
+      const step = await formBuilderService.updateStep(
+        stepId,
+        formId,
+        tenantRecord.id,
+        stepData
+      );
+
+      // Log step update
+      await prisma.auditLog.create({
+        data: {
+          tenantId: tenantRecord.id,
+          userId: req.auth!.sub,
+          action: "STEP_UPDATED",
+          entity: "FormStep",
+          entityId: stepId,
+          newValues: JSON.parse(JSON.stringify(stepData)),
+        },
+      });
+
+      const response: FormResponse = {
+        success: true,
+        data: step,
+        message: "Step updated successfully",
+      };
+
+      res.json(response);
+    } catch (error) {
+      console.error("Error updating step:", error);
+      const formError = error as FormBuilderError;
+      res.status(400).json({
+        success: false,
+        error: formError.message,
+        code: formError.code,
+      });
+    }
+  }
+);
+
+router.delete(
+  "/:tenant/forms/:formId/steps/:stepId",
+  requireAuth,
+  requireActiveUser,
+  requireRole(["INSTITUTION_ADMIN"]),
+  async (req: AuthedRequest, res: Response) => {
+    try {
+      console.log("🗑️ DELETE STEP - Route handler executed");
+      const { formId, stepId, tenant } = req.params;
+      const tenantSlug = tenant;
+
+      if (!tenantSlug) {
+        return res.status(400).json({
+          error: "Tenant slug is required",
+          code: "TENANT_REQUIRED",
+        });
+      }
+
+      // Get tenant
+      const tenantRecord = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true },
+      });
+
+      if (!tenantRecord) {
+        return res.status(404).json({
+          error: "Tenant not found",
+          code: "TENANT_NOT_FOUND",
+        });
+      }
+
+      await formBuilderService.deleteStep(stepId, formId, tenantRecord.id);
+
+      // Log step deletion
+      await prisma.auditLog.create({
+        data: {
+          tenantId: tenantRecord.id,
+          userId: req.auth!.sub,
+          action: "STEP_DELETED",
+          entity: "FormStep",
+          entityId: stepId,
+        },
+      });
+
+      res.json({
+        success: true,
+        message: "Step deleted successfully",
+      });
+    } catch (error) {
+      console.error("Error deleting step:", error);
+      const formError = error as FormBuilderError;
+      res.status(400).json({
+        success: false,
+        error: formError.message,
+        code: formError.code,
+      });
+    }
+  }
+);
+
+// Payment Field Validation Route
+router.post(
+  "/:tenant/forms/:formId/validate-payment",
+  requireAuth,
+  requireActiveUser,
+  requireRole(["INSTITUTION_ADMIN"]),
+  async (req: AuthedRequest, res: Response) => {
+    try {
+      console.log("💰 VALIDATE PAYMENT - Route handler executed");
+      const { formId, tenant } = req.params;
+      const tenantSlug = tenant;
+
+      if (!tenantSlug) {
+        return res.status(400).json({
+          error: "Tenant slug is required",
+          code: "TENANT_REQUIRED",
+        });
+      }
+
+      // Get tenant
+      const tenantRecord = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true },
+      });
+
+      if (!tenantRecord) {
+        return res.status(404).json({
+          error: "Tenant not found",
+          code: "TENANT_NOT_FOUND",
+        });
+      }
+
+      const { paymentData } = req.body;
+
+      // Validate payment data structure
+      if (!paymentData || !Array.isArray(paymentData.paymentItems)) {
+        return res.status(400).json({
+          success: false,
+          error: "Invalid payment data structure",
+          code: "INVALID_PAYMENT_DATA",
+        });
+      }
+
+      // Validate each payment item
+      for (const item of paymentData.paymentItems) {
+        if (
+          !item.id ||
+          !item.name ||
+          typeof item.amount !== "number" ||
+          item.amount < 0
+        ) {
+          return res.status(400).json({
+            success: false,
+            error: "Invalid payment item structure",
+            code: "INVALID_PAYMENT_ITEM",
+          });
+        }
+      }
+
+      // Calculate total amount
+      const totalAmount = paymentData.paymentItems.reduce(
+        (sum: number, item: any) => sum + item.amount,
+        0
+      );
+
+      res.json({
+        success: true,
+        data: {
+          isValid: true,
+          totalAmount,
+          itemCount: paymentData.paymentItems.length,
+        },
+        message: "Payment data is valid",
+      });
+    } catch (error) {
+      console.error("Error validating payment:", error);
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,

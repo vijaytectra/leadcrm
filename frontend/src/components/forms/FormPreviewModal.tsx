@@ -4,18 +4,32 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-    X,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import {
     Eye,
+    EyeOff,
     Smartphone,
     Tablet,
     Monitor,
-    RotateCcw,
-    Download,
-    Share2
+    X
 } from "lucide-react";
 import { useFormBuilder } from "./FormBuilderProvider";
 import { FormFieldRenderer } from "./FormFieldRenderer";
+import { StepBasedFormPreview } from "./StepBasedFormPreview";
 import { toast } from "sonner";
+import type { FormField, Action } from "@/types/form-builder";
 
 interface FormPreviewModalProps {
     onClose: () => void;
@@ -26,26 +40,102 @@ type DeviceType = "desktop" | "tablet" | "mobile";
 export function FormPreviewModal({ onClose }: FormPreviewModalProps) {
     const { state } = useFormBuilder();
     const [deviceType, setDeviceType] = useState<DeviceType>("desktop");
-    const [formData, setFormData] = useState<Record<string, any>>({});
+    const [formData, setFormData] = useState<Record<string, unknown>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showStepPreview, setShowStepPreview] = useState(false);
 
-    const handleInputChange = (fieldId: string, value: any) => {
+    const hasSteps = state.steps && state.steps.length > 0;
+    const fields = state.fields || [];
+
+    // Evaluate conditional logic for a field
+    const evaluateConditionalLogic = (field: FormField): boolean => {
+        // Check field-level conditional logic first
+        if (field.conditionalLogic?.enabled && field.conditionalLogic?.conditions?.length) {
+            return field.conditionalLogic.conditions.every(condition => {
+                const triggerField = state.fields.find(f => f.id === condition.fieldId);
+                if (!triggerField) return false;
+
+                const triggerValue = formData[triggerField.id];
+                const conditionValue = condition.value;
+
+                switch (condition.operator) {
+                    case 'equals':
+                        return triggerValue === conditionValue;
+                    case 'not_equals':
+                        return triggerValue !== conditionValue;
+                    case 'contains':
+                        return String(triggerValue).includes(String(conditionValue));
+                    case 'not_contains':
+                        return !String(triggerValue).includes(String(conditionValue));
+                    default:
+                        return true;
+                }
+            });
+        }
+
+        // Check step-level conditional logic
+        const currentStep = state.steps?.find(step => step.fields.includes(field.id));
+        if (currentStep?.conditions?.enabled && currentStep.conditions?.conditions?.length) {
+            const targetRules = currentStep.conditions.actions?.filter((action: Action) =>
+                action.targetFieldId === field.id
+            ) || [];
+
+            if (targetRules.length > 0) {
+                return targetRules.some((_action: Action) => {
+                    // Find the condition that matches this action
+                    const condition = currentStep.conditions?.conditions.find((_c: { fieldId: string }) => {
+                        // This is a simplified approach - in a real implementation, you'd need to track
+                        // which condition created which action
+                        return true; // For now, check all conditions
+                    });
+
+                    if (!condition) return false;
+
+                    const triggerField = state.fields.find(f => f.id === condition.fieldId);
+                    if (!triggerField) return false;
+
+                    const triggerValue = formData[triggerField.id];
+                    const conditionValue = condition.value;
+
+                    switch (condition.operator) {
+                        case 'equals':
+                            return triggerValue === conditionValue;
+                        case 'not_equals':
+                            return triggerValue !== conditionValue;
+                        case 'contains':
+                            return String(triggerValue).includes(String(conditionValue));
+                        case 'not_contains':
+                            return !String(triggerValue).includes(String(conditionValue));
+                        default:
+                            return true;
+                    }
+                });
+            }
+        }
+
+        return true; // Show field if no conditional logic
+    };
+
+    // Get visible fields based on conditional logic
+    const getVisibleFields = (): FormField[] => {
+        return fields.filter(field => evaluateConditionalLogic(field));
+    };
+
+    const handleFieldChange = (fieldId: string, value: unknown) => {
         setFormData(prev => ({
             ...prev,
             [fieldId]: value
         }));
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async () => {
         setIsSubmitting(true);
-
         try {
             // Simulate form submission
             await new Promise(resolve => setTimeout(resolve, 1000));
             toast.success("Form submitted successfully!");
-            setFormData({});
-        } catch (error) {
+            onClose();
+        } catch {
             toast.error("Failed to submit form");
         } finally {
             setIsSubmitting(false);
@@ -55,186 +145,191 @@ export function FormPreviewModal({ onClose }: FormPreviewModalProps) {
     const getDeviceClass = () => {
         switch (deviceType) {
             case "mobile":
-                return "max-w-sm";
+                return "max-w-sm mx-auto";
             case "tablet":
-                return "max-w-2xl";
+                return "max-w-2xl mx-auto";
             default:
-                return "max-w-4xl";
+                return "max-w-4xl mx-auto";
         }
     };
 
-    const getDeviceIcon = (type: DeviceType) => {
-        switch (type) {
+    const getDeviceIcon = () => {
+        switch (deviceType) {
             case "mobile":
-                return Smartphone;
+                return <Smartphone className="h-4 w-4" />;
             case "tablet":
-                return Tablet;
+                return <Tablet className="h-4 w-4" />;
             default:
-                return Monitor;
+                return <Monitor className="h-4 w-4" />;
         }
     };
+
+    const canSubmit = () => {
+        const requiredFields = fields.filter(field => field.required);
+        return requiredFields.every(field => {
+            const value = formData[field.id];
+            return value !== undefined && value !== null && value !== "";
+        });
+    };
+
+    if (showStepPreview && hasSteps) {
+        return <StepBasedFormPreview onClose={() => setShowStepPreview(false)} />;
+    }
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full h-full max-w-7xl max-h-[90vh] flex flex-col">
-                {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-slate-200">
-                    <div className="flex items-center space-x-4">
-                        <h3 className="text-lg font-semibold text-slate-900">
-                            Form Preview
-                        </h3>
-                        <Badge variant="outline" className="text-xs">
-                            {state.fields.length} field{state.fields.length !== 1 ? 's' : ''}
-                        </Badge>
-                    </div>
+        <Dialog open onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-6xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                        <Eye className="h-5 w-5" />
+                        Form Preview
+                    </DialogTitle>
+                    <DialogDescription>
+                        Preview how your form will look to users
+                    </DialogDescription>
+                </DialogHeader>
 
-                    <div className="flex items-center space-x-2">
-                        {/* Device Selector */}
-                        <div className="flex items-center space-x-1 bg-slate-100 rounded-lg p-1">
-                            {(["desktop", "tablet", "mobile"] as DeviceType[]).map((device) => {
-                                const IconComponent = getDeviceIcon(device);
-                                return (
-                                    <Button
-                                        key={device}
-                                        size="sm"
-                                        variant={deviceType === device ? "default" : "ghost"}
-                                        onClick={() => setDeviceType(device)}
-                                        className="h-8 w-8 p-0"
-                                    >
-                                        <IconComponent className="h-4 w-4" />
-                                    </Button>
-                                );
-                            })}
-                        </div>
-
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setFormData({})}
-                            className="text-slate-600"
-                        >
-                            <RotateCcw className="h-4 w-4 mr-2" />
-                            Reset
-                        </Button>
-
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                                navigator.clipboard.writeText(window.location.href);
-                                toast.success("Preview link copied to clipboard");
-                            }}
-                            className="text-slate-600"
-                        >
-                            <Share2 className="h-4 w-4 mr-2" />
-                            Share
-                        </Button>
-
-                        <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={onClose}
-                            className="text-slate-600"
-                        >
-                            <X className="h-4 w-4" />
-                        </Button>
-                    </div>
-                </div>
-
-                {/* Preview Content */}
-                <div className="flex-1 overflow-auto bg-slate-50 p-6">
-                    <div className={`mx-auto ${getDeviceClass()}`}>
-                        <div className="bg-white rounded-lg shadow-lg p-6">
-                            {/* Form Header */}
-                            <div className="mb-6">
-                                <h1 className="text-2xl font-bold text-slate-900 mb-2">
-                                    {state.currentForm?.title || "Untitled Form"}
-                                </h1>
-                                {state.currentForm?.description && (
-                                    <p className="text-slate-600">
-                                        {state.currentForm.description}
-                                    </p>
-                                )}
+                <div className="flex flex-col h-full ">
+                    {/* Preview Controls */}
+                    <div className="flex items-center justify-between p-4 border-b bg-gray-50">
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">Device:</span>
+                                <Select value={deviceType} onValueChange={(value: DeviceType) => setDeviceType(value)}>
+                                    <SelectTrigger className="w-32">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="desktop">
+                                            <div className="flex items-center gap-2">
+                                                <Monitor className="h-4 w-4" />
+                                                Desktop
+                                            </div>
+                                        </SelectItem>
+                                        <SelectItem value="tablet">
+                                            <div className="flex items-center gap-2">
+                                                <Tablet className="h-4 w-4" />
+                                                Tablet
+                                            </div>
+                                        </SelectItem>
+                                        <SelectItem value="mobile">
+                                            <div className="flex items-center gap-2">
+                                                <Smartphone className="h-4 w-4" />
+                                                Mobile
+                                            </div>
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
 
-                            {/* Form Fields */}
-                            <form onSubmit={handleSubmit} className="space-y-6">
-                                {state.fields.map((field) => (
-                                    <div key={field.id} className="space-y-2">
-                                        <FormFieldRenderer
-                                            field={field}
-                                            isPreview={true}
-                                            isSelected={false}
-                                            onUpdate={(updates) => {
-                                                // In preview mode, we don't update the field
-                                                // Instead, we update the form data
-                                                if (updates.label !== undefined) {
-                                                    handleInputChange(field.id, updates.label);
-                                                }
-                                            }}
-                                        />
-                                    </div>
-                                ))}
-
-                                {/* Submit Button */}
-                                <div className="pt-6 border-t border-slate-200">
-                                    <Button
-                                        type="submit"
-                                        disabled={isSubmitting}
-                                        className="w-full bg-blue-600 hover:bg-blue-700"
-                                    >
-                                        {isSubmitting ? "Submitting..." : "Submit Form"}
-                                    </Button>
-                                </div>
-                            </form>
+                            {hasSteps && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setShowStepPreview(true)}
+                                    className="flex items-center gap-2"
+                                >
+                                    <Eye className="h-4 w-4" />
+                                    Step Preview
+                                </Button>
+                            )}
                         </div>
-                    </div>
-                </div>
 
-                {/* Footer */}
-                <div className="border-t border-slate-200 bg-white p-4">
-                    <div className="flex items-center justify-between">
-                        <div className="text-sm text-slate-600">
-                            Preview mode • {deviceType} view
-                        </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="flex items-center gap-1">
+                                {getDeviceIcon()}
+                                {deviceType.charAt(0).toUpperCase() + deviceType.slice(1)}
+                            </Badge>
                             <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                    const formData = {
-                                        form: state.currentForm,
-                                        fields: state.fields
-                                    };
-                                    const blob = new Blob([JSON.stringify(formData, null, 2)], {
-                                        type: "application/json"
-                                    });
-                                    const url = URL.createObjectURL(blob);
-                                    const a = document.createElement("a");
-                                    a.href = url;
-                                    a.download = `${state.currentForm?.title || "form"}_preview.json`;
-                                    document.body.appendChild(a);
-                                    a.click();
-                                    document.body.removeChild(a);
-                                    URL.revokeObjectURL(url);
-                                    toast.success("Form data exported");
-                                }}
-                                className="text-slate-600"
-                            >
-                                <Download className="h-4 w-4 mr-2" />
-                                Export
-                            </Button>
-                            <Button
+                                variant="ghost"
                                 size="sm"
                                 onClick={onClose}
-                                className="bg-blue-600 hover:bg-blue-700"
                             >
-                                Close Preview
+                                <X className="h-4 w-4" />
                             </Button>
                         </div>
                     </div>
+
+                    {/* Preview Content */}
+                    <div className="flex-1 overflow-y-auto p-6">
+                        <div className={getDeviceClass()}>
+                            <div className="bg-white border rounded-lg shadow-sm p-6 space-y-6">
+                                {/* Form Header */}
+                                <div className="text-center space-y-2">
+                                    <h2 className="text-2xl font-bold text-gray-900">
+                                        {state.currentForm?.title || "Untitled Form"}
+                                    </h2>
+                                    {state.currentForm?.description && (
+                                        <p className="text-gray-600">
+                                            {state.currentForm.description}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Form Fields */}
+                                {fields.length > 0 ? (
+                                    <div className="space-y-4">
+                                        {getVisibleFields()
+                                            .sort((a, b) => a.order - b.order)
+                                            .map(field => (
+                                                <FormFieldRenderer
+                                                    key={field.id}
+                                                    field={field}
+                                                    value={formData[field.id]}
+                                                    onChange={(value) => handleFieldChange(field.id, value)}
+                                                    isPreview={true}
+                                                />
+                                            ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-12 text-gray-500">
+                                        <EyeOff className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                                        <p className="text-lg font-medium">No fields added</p>
+                                        <p className="text-sm">Add fields to your form to see them here</p>
+                                    </div>
+                                )}
+
+                                {/* Submit Button */}
+                                {fields.length > 0 && (
+                                    <div className="flex justify-center pt-6">
+                                        <Button
+                                            onClick={handleSubmit}
+                                            disabled={!canSubmit() || isSubmitting}
+                                            size="lg"
+                                            className="px-8"
+                                        >
+                                            {isSubmitting ? "Submitting..." : "Submit Form"}
+                                        </Button>
+                                    </div>
+                                )}
+
+                                {/* Form Info */}
+                                <div className="text-center text-sm text-gray-500 space-y-1">
+                                    <p>Form Status: {state.isDraft ? "Draft" : "Published"}</p>
+                                    <p>Fields: {fields.length}</p>
+                                    {hasSteps && <p>Steps: {state.steps.length}</p>}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Form Data Debug (Development Only) */}
+                    {process.env.NODE_ENV === 'development' && (
+                        <details className="p-4 border-t bg-gray-50">
+                            <summary className="cursor-pointer font-medium text-sm">Debug Info</summary>
+                            <pre className="mt-2 text-xs overflow-auto max-h-32">
+                                {JSON.stringify({
+                                    form: state.currentForm?.title,
+                                    fields: fields.length,
+                                    steps: state.steps?.length || 0,
+                                    formData,
+                                    deviceType
+                                }, null, 2)}
+                            </pre>
+                        </details>
+                    )}
                 </div>
-            </div>
-        </div>
+            </DialogContent>
+        </Dialog>
     );
 }

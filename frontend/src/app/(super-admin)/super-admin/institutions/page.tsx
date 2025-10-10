@@ -35,7 +35,7 @@ import {
     Clock,
     TrendingUp
 } from "lucide-react";
-import { getClientToken } from "@/stores/auth";
+import { getClientToken } from "@/lib/client-token";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 interface Institution {
@@ -259,7 +259,7 @@ export default function InstitutionsPage() {
                 subscriptionTier: filters.subscription,
             });
 
-   
+
             const response = await apiGetClient<{
                 success: boolean;
                 data: {
@@ -434,402 +434,402 @@ export default function InstitutionsPage() {
 
     return (
         <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>
-        <div className="relative space-y-8 bg-gradient-to-br from-slate-50 via-white to-slate-100 p-6">
-            {/* Page Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-4 sm:space-y-0">
-                <div>
-                    <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-slate-900 via-purple-900 to-slate-900 bg-clip-text text-transparent">
-                        Institutions
-                    </h1>
-                    <p className="text-slate-600 mt-2">
-                        Manage all educational institutions on the platform
-                    </p>
-                </div>
-                <div className="flex items-center space-x-3">
-                    <Button
-                        variant="outline"
-                        className="hidden sm:flex border-slate-300 hover:border-purple-400 hover:bg-purple-50 transition-all duration-200"
-                    >
-                        <Download className="h-4 w-4 mr-2" />
-                        Export
-                    </Button>
-                    <Button
-                        variant="outline"
-                        className="hidden sm:flex border-slate-300 hover:border-purple-400 hover:bg-purple-50 transition-all duration-200"
-                    >
-                        <Upload className="h-4 w-4 mr-2" />
-                        Import
-                    </Button>
-                    <Button
-                        onClick={() => setIsAddModalOpen(true)}
-                        className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
-                    >
-                        <Plus className="h-4 w-4 mr-2" />
-                        <span className="hidden sm:inline">Add Institution</span>
-                        <span className="sm:hidden">Add</span>
-                    </Button>
-                </div>
-            </div>
-
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <Card className="border-0 shadow-xl bg-gradient-to-br from-blue-500 via-blue-600 to-cyan-600 text-white hover:shadow-2xl transition-all duration-300 hover:scale-105">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-blue-100">Total Institutions</CardTitle>
-                        <Building2 className="h-5 w-5 text-blue-200" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-white">{stats.total}</div>
-                        <p className="text-xs text-blue-100 flex items-center mt-1">
-                            <TrendingUp className="h-3 w-3 mr-1" />
-                            {stats.total > 0 ? '+3 from last month' : 'No institutions yet'}
+            <div className="relative space-y-8 bg-gradient-to-br from-slate-50 via-white to-slate-100 p-6">
+                {/* Page Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-4 sm:space-y-0">
+                    <div>
+                        <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-slate-900 via-purple-900 to-slate-900 bg-clip-text text-transparent">
+                            Institutions
+                        </h1>
+                        <p className="text-slate-600 mt-2">
+                            Manage all educational institutions on the platform
                         </p>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-0 shadow-xl bg-gradient-to-br from-emerald-500 via-teal-500 to-green-600 text-white hover:shadow-2xl transition-all duration-300 hover:scale-105">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-emerald-100">Active</CardTitle>
-                        <Users className="h-5 w-5 text-emerald-200" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-white">{stats.active}</div>
-                        <p className="text-xs text-emerald-100 flex items-center mt-1">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            {stats.total > 0 ? `${((stats.active / stats.total) * 100).toFixed(1)}% active rate` : '0% active rate'}
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-0 shadow-xl bg-gradient-to-br from-amber-500 via-orange-500 to-yellow-500 text-white hover:shadow-2xl transition-all duration-300 hover:scale-105">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-amber-100">Pending</CardTitle>
-                        <Clock className="h-5 w-5 text-amber-200" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-white">{stats.pending}</div>
-                        <p className="text-xs text-amber-100 flex items-center mt-1">
-                            <Clock className="h-3 w-3 mr-1" />
-                            Awaiting approval
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-0 shadow-xl bg-gradient-to-br from-purple-600 via-violet-600 to-indigo-600 text-white hover:shadow-2xl transition-all duration-300 hover:scale-105">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-purple-100">Total Revenue</CardTitle>
-                        <DollarSign className="h-5 w-5 text-purple-200" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-white">₹{new Intl.NumberFormat('en-US').format(stats.totalRevenue)}</div>
-                        <p className="text-xs text-purple-100 flex items-center mt-1">
-                            <TrendingUp className="h-3 w-3 mr-1" />
-                            +15.2% from last month
-                        </p>
-                    </CardContent>
-                </Card>
-            </div>
-
-            {/* Main Content */}
-            <Card className="flex-1 flex flex-col overflow-hidden border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-                <CardHeader className="flex-shrink-0 bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
-                    <div className="flex flex-col space-y-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <CardTitle className="text-xl text-slate-800">All Institutions</CardTitle>
-                                <CardDescription className="text-slate-600">
-                                    Manage and monitor all educational institutions
-                                </CardDescription>
-                            </div>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => fetchInstitutions(true)}
-                                className="hover:bg-purple-100 hover:text-purple-700 transition-all duration-200"
-                            >
-                                <RefreshCw className="h-4 w-4" />
-                            </Button>
-                        </div>
-
-                        {/* Search and Filters */}
-                        <div className="flex flex-col lg:flex-row gap-4">
-                            <div className="relative flex-1 min-w-0">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500" />
-                                <Input
-                                    type="text"
-                                    placeholder="Search institutions, emails, or addresses..."
-                                    className="pl-10 border-slate-300 focus:border-purple-400 focus:ring-purple-400/20 text-black"
-                                    onChange={(e) => debouncedSearch(e.target.value)}
-                                />
-                            </div>
-
-                            <div className="flex gap-2">
-                                <Select
-                                    value={filters.status}
-                                    onValueChange={(value) => {
-                                        setFilters(prev => ({ ...prev, status: value }));
-                                        setPagination(prev => ({ ...prev, page: 1 }));
-                                    }}
-                                >
-                                    <SelectTrigger className="w-[140px] border-slate-300 focus:border-purple-400">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent className="border-slate-200">
-                                        <SelectItem value="all">All Status</SelectItem>
-                                        <SelectItem value="ACTIVE">Active</SelectItem>
-                                        <SelectItem value="INACTIVE">Inactive</SelectItem>
-                                        <SelectItem value="SUSPENDED">Suspended</SelectItem>
-                                    </SelectContent>
-                                </Select>
-
-                                <Select
-                                    value={filters.subscription}
-                                    onValueChange={(value) => {
-                                        setFilters(prev => ({ ...prev, subscription: value }));
-                                        setPagination(prev => ({ ...prev, page: 1 }));
-                                    }}
-                                >
-                                    <SelectTrigger className="w-[120px] border-slate-300 focus:border-purple-400">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent className="border-slate-200">
-                                        <SelectItem value="all">All Plans</SelectItem>
-                                        <SelectItem value="STARTER">Starter</SelectItem>
-                                        <SelectItem value="PRO">Pro</SelectItem>
-                                        <SelectItem value="MAX">Max</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-
-                        {/* Bulk Actions */}
-                        {selectedInstitutions.length > 0 && (
-                            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl shadow-sm">
-                                <div className="flex items-center space-x-4">
-                                    <span className="text-sm font-medium text-blue-900">
-                                        {selectedInstitutions.length} selected
-                                    </span>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => setSelectedInstitutions([])}
-                                        className="hover:bg-blue-100 text-blue-700"
-                                    >
-                                        <X className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                                <div className="flex space-x-2">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => handleBulkAction("activate")}
-                                        className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
-                                    >
-                                        <CheckCircle className="h-4 w-4 mr-1" />
-                                        Activate
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => handleBulkAction("suspend")}
-                                        className="border-amber-300 text-amber-700 hover:bg-amber-50"
-                                    >
-                                        <Clock className="h-4 w-4 mr-1" />
-                                        Suspend
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => handleBulkAction("delete")}
-                                        className="border-red-300 text-red-700 hover:bg-red-50"
-                                    >
-                                        <Trash2 className="h-4 w-4 mr-1" />
-                                        Delete
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
                     </div>
-                </CardHeader>
+                    <div className="flex items-center space-x-3">
+                        <Button
+                            variant="outline"
+                            className="hidden sm:flex border-slate-300 hover:border-purple-400 hover:bg-purple-50 transition-all duration-200"
+                        >
+                            <Download className="h-4 w-4 mr-2" />
+                            Export
+                        </Button>
+                        <Button
+                            variant="outline"
+                            className="hidden sm:flex border-slate-300 hover:border-purple-400 hover:bg-purple-50 transition-all duration-200"
+                        >
+                            <Upload className="h-4 w-4 mr-2" />
+                            Import
+                        </Button>
+                        <Button
+                            onClick={() => setIsAddModalOpen(true)}
+                            className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                        >
+                            <Plus className="h-4 w-4 mr-2" />
+                            <span className="hidden sm:inline">Add Institution</span>
+                            <span className="sm:hidden">Add</span>
+                        </Button>
+                    </div>
+                </div>
 
-                <CardContent className="flex-1 overflow-hidden p-0">
-                    {error ? (
-                        <ErrorState onRetry={() => fetchInstitutions(true)} />
-                    ) : institutions.length === 0 ? (
-                        <EmptyState onAddInstitution={() => setIsAddModalOpen(true)} />
-                    ) : (
-                        <div className="overflow-auto">
-                            <Table>
-                                <TableHeader className="bg-gradient-to-r from-slate-50 to-slate-100">
-                                    <TableRow className="border-slate-200 hover:bg-slate-50">
-                                        <TableHead className="w-12">
-                                            <Checkbox
-                                                checked={isAllSelected}
-                                                ref={(el) => {
-                                                    if (el) (el as HTMLInputElement).indeterminate = isIndeterminate;
-                                                }}
-                                                onCheckedChange={handleSelectAll}
-                                                className="border-slate-300 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
-                                            />
-                                        </TableHead>
-                                        <TableHead className="text-slate-700 font-semibold">Institution</TableHead>
-                                        <TableHead className="text-slate-700 font-semibold">Contact</TableHead>
-                                        <TableHead className="text-slate-700 font-semibold">Status</TableHead>
-                                        <TableHead className="text-slate-700 font-semibold">Plan</TableHead>
-                                        <TableHead className="text-slate-700 font-semibold">Revenue</TableHead>
-                                        <TableHead className="text-slate-700 font-semibold">Users</TableHead>
-                                        <TableHead className="text-slate-700 font-semibold">Joined</TableHead>
-                                        <TableHead className="w-32 text-slate-700 font-semibold">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {institutions.map((institution) => (
-                                        <TableRow
-                                            key={institution.id}
-                                            className="border-slate-100 hover:bg-gradient-to-r hover:from-slate-50 hover:to-purple-50 transition-all duration-200"
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <Card className="border-0 shadow-xl bg-gradient-to-br from-blue-500 via-blue-600 to-cyan-600 text-white hover:shadow-2xl transition-all duration-300 hover:scale-105">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-blue-100">Total Institutions</CardTitle>
+                            <Building2 className="h-5 w-5 text-blue-200" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold text-white">{stats.total}</div>
+                            <p className="text-xs text-blue-100 flex items-center mt-1">
+                                <TrendingUp className="h-3 w-3 mr-1" />
+                                {stats.total > 0 ? '+3 from last month' : 'No institutions yet'}
+                            </p>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-0 shadow-xl bg-gradient-to-br from-emerald-500 via-teal-500 to-green-600 text-white hover:shadow-2xl transition-all duration-300 hover:scale-105">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-emerald-100">Active</CardTitle>
+                            <Users className="h-5 w-5 text-emerald-200" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold text-white">{stats.active}</div>
+                            <p className="text-xs text-emerald-100 flex items-center mt-1">
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                {stats.total > 0 ? `${((stats.active / stats.total) * 100).toFixed(1)}% active rate` : '0% active rate'}
+                            </p>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-0 shadow-xl bg-gradient-to-br from-amber-500 via-orange-500 to-yellow-500 text-white hover:shadow-2xl transition-all duration-300 hover:scale-105">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-amber-100">Pending</CardTitle>
+                            <Clock className="h-5 w-5 text-amber-200" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold text-white">{stats.pending}</div>
+                            <p className="text-xs text-amber-100 flex items-center mt-1">
+                                <Clock className="h-3 w-3 mr-1" />
+                                Awaiting approval
+                            </p>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-0 shadow-xl bg-gradient-to-br from-purple-600 via-violet-600 to-indigo-600 text-white hover:shadow-2xl transition-all duration-300 hover:scale-105">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-purple-100">Total Revenue</CardTitle>
+                            <DollarSign className="h-5 w-5 text-purple-200" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold text-white">₹{new Intl.NumberFormat('en-US').format(stats.totalRevenue)}</div>
+                            <p className="text-xs text-purple-100 flex items-center mt-1">
+                                <TrendingUp className="h-3 w-3 mr-1" />
+                                +15.2% from last month
+                            </p>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Main Content */}
+                <Card className="flex-1 flex flex-col overflow-hidden border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+                    <CardHeader className="flex-shrink-0 bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+                        <div className="flex flex-col space-y-4">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <CardTitle className="text-xl text-slate-800">All Institutions</CardTitle>
+                                    <CardDescription className="text-slate-600">
+                                        Manage and monitor all educational institutions
+                                    </CardDescription>
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => fetchInstitutions(true)}
+                                    className="hover:bg-purple-100 hover:text-purple-700 transition-all duration-200"
+                                >
+                                    <RefreshCw className="h-4 w-4" />
+                                </Button>
+                            </div>
+
+                            {/* Search and Filters */}
+                            <div className="flex flex-col lg:flex-row gap-4">
+                                <div className="relative flex-1 min-w-0">
+                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500" />
+                                    <Input
+                                        type="text"
+                                        placeholder="Search institutions, emails, or addresses..."
+                                        className="pl-10 border-slate-300 focus:border-purple-400 focus:ring-purple-400/20 text-black"
+                                        onChange={(e) => debouncedSearch(e.target.value)}
+                                    />
+                                </div>
+
+                                <div className="flex gap-2">
+                                    <Select
+                                        value={filters.status}
+                                        onValueChange={(value) => {
+                                            setFilters(prev => ({ ...prev, status: value }));
+                                            setPagination(prev => ({ ...prev, page: 1 }));
+                                        }}
+                                    >
+                                        <SelectTrigger className="w-[140px] border-slate-300 focus:border-purple-400">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="border-slate-200">
+                                            <SelectItem value="all">All Status</SelectItem>
+                                            <SelectItem value="ACTIVE">Active</SelectItem>
+                                            <SelectItem value="INACTIVE">Inactive</SelectItem>
+                                            <SelectItem value="SUSPENDED">Suspended</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+
+                                    <Select
+                                        value={filters.subscription}
+                                        onValueChange={(value) => {
+                                            setFilters(prev => ({ ...prev, subscription: value }));
+                                            setPagination(prev => ({ ...prev, page: 1 }));
+                                        }}
+                                    >
+                                        <SelectTrigger className="w-[120px] border-slate-300 focus:border-purple-400">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="border-slate-200">
+                                            <SelectItem value="all">All Plans</SelectItem>
+                                            <SelectItem value="STARTER">Starter</SelectItem>
+                                            <SelectItem value="PRO">Pro</SelectItem>
+                                            <SelectItem value="MAX">Max</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+
+                            {/* Bulk Actions */}
+                            {selectedInstitutions.length > 0 && (
+                                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl shadow-sm">
+                                    <div className="flex items-center space-x-4">
+                                        <span className="text-sm font-medium text-blue-900">
+                                            {selectedInstitutions.length} selected
+                                        </span>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setSelectedInstitutions([])}
+                                            className="hover:bg-blue-100 text-blue-700"
                                         >
-                                            <TableCell>
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                    <div className="flex space-x-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleBulkAction("activate")}
+                                            className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                                        >
+                                            <CheckCircle className="h-4 w-4 mr-1" />
+                                            Activate
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleBulkAction("suspend")}
+                                            className="border-amber-300 text-amber-700 hover:bg-amber-50"
+                                        >
+                                            <Clock className="h-4 w-4 mr-1" />
+                                            Suspend
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleBulkAction("delete")}
+                                            className="border-red-300 text-red-700 hover:bg-red-50"
+                                        >
+                                            <Trash2 className="h-4 w-4 mr-1" />
+                                            Delete
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </CardHeader>
+
+                    <CardContent className="flex-1 overflow-hidden p-0">
+                        {error ? (
+                            <ErrorState onRetry={() => fetchInstitutions(true)} />
+                        ) : institutions.length === 0 ? (
+                            <EmptyState onAddInstitution={() => setIsAddModalOpen(true)} />
+                        ) : (
+                            <div className="overflow-auto">
+                                <Table>
+                                    <TableHeader className="bg-gradient-to-r from-slate-50 to-slate-100">
+                                        <TableRow className="border-slate-200 hover:bg-slate-50">
+                                            <TableHead className="w-12">
                                                 <Checkbox
-                                                    checked={selectedInstitutions.includes(institution.id)}
-                                                    onCheckedChange={() => handleSelectOne(institution.id)}
+                                                    checked={isAllSelected}
+                                                    ref={(el) => {
+                                                        if (el) (el as HTMLInputElement).indeterminate = isIndeterminate;
+                                                    }}
+                                                    onCheckedChange={handleSelectAll}
                                                     className="border-slate-300 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
                                                 />
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex items-center space-x-3">
-                                                    <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center shadow-sm">
-                                                        <Building2 className="h-5 w-5 text-purple-600" />
+                                            </TableHead>
+                                            <TableHead className="text-slate-700 font-semibold">Institution</TableHead>
+                                            <TableHead className="text-slate-700 font-semibold">Contact</TableHead>
+                                            <TableHead className="text-slate-700 font-semibold">Status</TableHead>
+                                            <TableHead className="text-slate-700 font-semibold">Plan</TableHead>
+                                            <TableHead className="text-slate-700 font-semibold">Revenue</TableHead>
+                                            <TableHead className="text-slate-700 font-semibold">Users</TableHead>
+                                            <TableHead className="text-slate-700 font-semibold">Joined</TableHead>
+                                            <TableHead className="w-32 text-slate-700 font-semibold">Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {institutions.map((institution) => (
+                                            <TableRow
+                                                key={institution.id}
+                                                className="border-slate-100 hover:bg-gradient-to-r hover:from-slate-50 hover:to-purple-50 transition-all duration-200"
+                                            >
+                                                <TableCell>
+                                                    <Checkbox
+                                                        checked={selectedInstitutions.includes(institution.id)}
+                                                        onCheckedChange={() => handleSelectOne(institution.id)}
+                                                        className="border-slate-300 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center space-x-3">
+                                                        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center shadow-sm">
+                                                            <Building2 className="h-5 w-5 text-purple-600" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-semibold text-slate-900">{institution.name}</p>
+                                                            <p className="text-sm text-slate-600 truncate max-w-xs">
+                                                                {institution.address}
+                                                            </p>
+                                                        </div>
                                                     </div>
+                                                </TableCell>
+                                                <TableCell>
                                                     <div>
-                                                        <p className="font-semibold text-slate-900">{institution.name}</p>
-                                                        <p className="text-sm text-slate-600 truncate max-w-xs">
-                                                            {institution.address}
+                                                        <p className="text-sm font-medium text-slate-900">{institution.email}</p>
+                                                        <p className="text-sm text-slate-600">{institution.phone}</p>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <StatusBadge status={institution.status} />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <PlanBadge plan={institution.subscription} />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div>
+                                                        <p className="font-semibold text-slate-900">
+                                                            ₹{new Intl.NumberFormat('en-US').format(institution.revenue)}
+                                                        </p>
+                                                        <p className="text-sm text-slate-500">Total revenue</p>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center space-x-2 text-slate-700">
+                                                        <Users className="h-4 w-4 text-slate-500" />
+                                                        <span className="font-medium">{institution.users}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div>
+                                                        <p className="text-sm font-medium text-slate-900">
+                                                            {new Date(institution.joinedDate).toLocaleDateString('en-GB')}
+                                                        </p>
+                                                        <p className="text-xs text-slate-500">
+                                                            Last: {new Date(institution.lastActive).toLocaleDateString('en-GB')}
                                                         </p>
                                                     </div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div>
-                                                    <p className="text-sm font-medium text-slate-900">{institution.email}</p>
-                                                    <p className="text-sm text-slate-600">{institution.phone}</p>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <StatusBadge status={institution.status} />
-                                            </TableCell>
-                                            <TableCell>
-                                                <PlanBadge plan={institution.subscription} />
-                                            </TableCell>
-                                            <TableCell>
-                                                <div>
-                                                    <p className="font-semibold text-slate-900">
-                                                        ₹{new Intl.NumberFormat('en-US').format(institution.revenue)}
-                                                    </p>
-                                                    <p className="text-sm text-slate-500">Total revenue</p>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex items-center space-x-2 text-slate-700">
-                                                    <Users className="h-4 w-4 text-slate-500" />
-                                                    <span className="font-medium">{institution.users}</span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div>
-                                                    <p className="text-sm font-medium text-slate-900">
-                                                        {new Date(institution.joinedDate).toLocaleDateString('en-GB')}
-                                                    </p>
-                                                    <p className="text-xs text-slate-500">
-                                                        Last: {new Date(institution.lastActive).toLocaleDateString('en-GB')}
-                                                    </p>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex items-center space-x-1">
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-blue-100 hover:text-blue-700 transition-all duration-200">
-                                                        <Eye className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-emerald-100 hover:text-emerald-700 transition-all duration-200">
-                                                        <Edit className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-purple-100 hover:text-purple-700 transition-all duration-200">
-                                                        <Mail className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-slate-100 hover:text-slate-700 transition-all duration-200">
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center space-x-1">
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-blue-100 hover:text-blue-700 transition-all duration-200">
+                                                            <Eye className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-emerald-100 hover:text-emerald-700 transition-all duration-200">
+                                                            <Edit className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-purple-100 hover:text-purple-700 transition-all duration-200">
+                                                            <Mail className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-slate-100 hover:text-slate-700 transition-all duration-200">
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        )}
+                    </CardContent>
+
+                    {/* Pagination */}
+                    {!error && institutions.length > 0 && (
+                        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100">
+                            <div className="flex items-center space-x-2">
+                                <p className="text-sm text-slate-600">
+                                    Showing {((pagination.page - 1) * pagination.pageSize) + 1} to{' '}
+                                    {Math.min(pagination.page * pagination.pageSize, pagination.total)} of{' '}
+                                    {pagination.total} results
+                                </p>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+                                    disabled={pagination.page === 1}
+                                    className="border-slate-300 hover:border-purple-400 hover:bg-purple-50 disabled:opacity-50"
+                                >
+                                    <ChevronLeft className="h-4 w-4" />
+                                    Previous
+                                </Button>
+                                <div className="flex items-center space-x-1">
+                                    {[...Array(Math.min(5, pagination.totalPages))].map((_, i) => {
+                                        const pageNum = i + 1;
+                                        return (
+                                            <Button
+                                                key={pageNum}
+                                                variant={pagination.page === pageNum ? "default" : "outline"}
+                                                size="sm"
+                                                className={`w-8 h-8 p-0 ${pagination.page === pageNum
+                                                    ? "bg-gradient-to-r from-purple-600 to-violet-600 text-white shadow-md"
+                                                    : "border-slate-300 hover:border-purple-400 hover:bg-purple-50"
+                                                    }`}
+                                                onClick={() => setPagination(prev => ({ ...prev, page: pageNum }))}
+                                            >
+                                                {pageNum}
+                                            </Button>
+                                        );
+                                    })}
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                                    disabled={pagination.page === pagination.totalPages}
+                                    className="border-slate-300 hover:border-purple-400 hover:bg-purple-50 disabled:opacity-50"
+                                >
+                                    Next
+                                    <ChevronRight className="h-4 w-4" />
+                                </Button>
+                            </div>
                         </div>
                     )}
-                </CardContent>
+                </Card>
 
-                {/* Pagination */}
-                {!error && institutions.length > 0 && (
-                    <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100">
-                        <div className="flex items-center space-x-2">
-                            <p className="text-sm text-slate-600">
-                                Showing {((pagination.page - 1) * pagination.pageSize) + 1} to{' '}
-                                {Math.min(pagination.page * pagination.pageSize, pagination.total)} of{' '}
-                                {pagination.total} results
-                            </p>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-                                disabled={pagination.page === 1}
-                                className="border-slate-300 hover:border-purple-400 hover:bg-purple-50 disabled:opacity-50"
-                            >
-                                <ChevronLeft className="h-4 w-4" />
-                                Previous
-                            </Button>
-                            <div className="flex items-center space-x-1">
-                                {[...Array(Math.min(5, pagination.totalPages))].map((_, i) => {
-                                    const pageNum = i + 1;
-                                    return (
-                                        <Button
-                                            key={pageNum}
-                                            variant={pagination.page === pageNum ? "default" : "outline"}
-                                            size="sm"
-                                            className={`w-8 h-8 p-0 ${pagination.page === pageNum
-                                                ? "bg-gradient-to-r from-purple-600 to-violet-600 text-white shadow-md"
-                                                : "border-slate-300 hover:border-purple-400 hover:bg-purple-50"
-                                                }`}
-                                            onClick={() => setPagination(prev => ({ ...prev, page: pageNum }))}
-                                        >
-                                            {pageNum}
-                                        </Button>
-                                    );
-                                })}
-                            </div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-                                disabled={pagination.page === pagination.totalPages}
-                                className="border-slate-300 hover:border-purple-400 hover:bg-purple-50 disabled:opacity-50"
-                            >
-                                Next
-                                <ChevronRight className="h-4 w-4" />
-                            </Button>
-                        </div>
-                    </div>
-                )}
-            </Card>
-
-            {/* Add Institution Modal */}
-            <AddInstitutionModal
-                isOpen={isAddModalOpen}
-                onClose={() => setIsAddModalOpen(false)}
-                onSubmit={handleAddInstitution}
-            />
-        </div>
+                {/* Add Institution Modal */}
+                <AddInstitutionModal
+                    isOpen={isAddModalOpen}
+                    onClose={() => setIsAddModalOpen(false)}
+                    onSubmit={handleAddInstitution}
+                />
+            </div>
         </ProtectedRoute>
 
 

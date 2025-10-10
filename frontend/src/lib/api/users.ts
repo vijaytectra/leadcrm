@@ -1,5 +1,10 @@
-import { getClientToken } from "../../stores/auth";
-import { apiGetClientNew, apiPostClientNew, apiPutClient } from "../utils";
+import { getClientToken } from "../client-token";
+import {
+  apiGetClientNew,
+  apiPostClientNew,
+  apiPutClient,
+  apiDeleteClient,
+} from "../utils";
 
 export interface User {
   id: string;
@@ -49,7 +54,6 @@ export interface CreateUserResponse {
  */
 export async function getUsers(tenantSlug: string): Promise<User[]> {
   try {
-
     const token = getClientToken();
     if (!token) {
       throw new Error("No token found");
@@ -61,7 +65,7 @@ export async function getUsers(tenantSlug: string): Promise<User[]> {
         token: token,
       }
     );
-    
+
     return response.users;
   } catch (error) {
     console.error("Error fetching users:", error);
@@ -155,11 +159,7 @@ export async function deleteUser(
     throw new Error("No token found");
   }
   try {
-    await apiPostClientNew(
-      `/${tenantSlug}/users/${userId}`,
-      {},
-      { token: token }
-    );
+    await apiDeleteClient(`/${tenantSlug}/users/${userId}`, { token: token });
   } catch (error) {
     console.error("Error deleting user:", error);
     throw error;

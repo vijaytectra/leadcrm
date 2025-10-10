@@ -2,15 +2,14 @@ import {
   apiGetClientNew,
   apiPostClientNew,
   apiPutClient,
+  apiDeleteClient,
   ApiRequestOptions,
 } from "../utils";
 import type {
   FormBuilderConfig,
   FormField,
-  FormSubmission,
-  FormWidget,
   FormTemplate,
-  FormAnalytics,
+  FormAnalyticsProps,
   CreateFormRequest,
   UpdateFormRequest,
   CreateFieldRequest,
@@ -28,101 +27,115 @@ import type {
 export const formsApi = {
   // Form CRUD operations
   async createForm(
+    tenantSlug: string,
     data: CreateFormRequest,
     options?: ApiRequestOptions
   ): Promise<FormResponse> {
-    return apiPostClientNew<FormResponse>("/forms", data, {
-      token: "true",
+    return apiPostClientNew<FormResponse>(`/${tenantSlug}/forms`, data, {
+      token: options?.token,
       ...options,
     });
   },
 
   async getForms(
+    tenantSlug: string,
     page = 1,
     limit = 10,
     options?: ApiRequestOptions
   ): Promise<FormListResponse> {
     return apiGetClientNew<FormListResponse>(
-      `/forms?page=${page}&limit=${limit}`,
+      `/${tenantSlug}/forms?page=${page}&limit=${limit}`,
       { token: "true", ...options }
     );
   },
 
   async getForm(
+    tenantSlug: string,
     formId: string,
     options?: ApiRequestOptions
   ): Promise<FormResponse> {
-    return apiGetClientNew<FormResponse>(`/forms/${formId}`, {
+    return apiGetClientNew<FormResponse>(`/${tenantSlug}/forms/${formId}`, {
       token: "true",
       ...options,
     });
   },
 
   async updateForm(
+    tenantSlug: string,
     formId: string,
     data: UpdateFormRequest,
     options?: ApiRequestOptions
   ): Promise<FormResponse> {
-    return apiPutClient<FormResponse>(`/forms/${formId}`, data, {
+    return apiPutClient<FormResponse>(`/${tenantSlug}/forms/${formId}`, data, {
       token: "true",
       ...options,
     });
   },
 
   async deleteForm(
+    tenantSlug: string,
     formId: string,
     options?: ApiRequestOptions
   ): Promise<{ success: boolean; message: string }> {
-    return apiPostClientNew<{ success: boolean; message: string }>(
-      `/forms/${formId}`,
-      {},
+    return apiDeleteClient<{ success: boolean; message: string }>(
+      `/${tenantSlug}/forms/${formId}`,
       { token: "true", ...options }
     );
   },
 
   // Field Management
   async createField(
+    tenantSlug: string,
     formId: string,
     data: CreateFieldRequest,
     options?: ApiRequestOptions
   ): Promise<FormResponse> {
-    return apiPostClientNew<FormResponse>(`/forms/${formId}/fields`, data, {
-      token: "true",
-      ...options,
-    });
+    return apiPostClientNew<FormResponse>(
+      `/${tenantSlug}/forms/${formId}/fields`,
+      data,
+      {
+        token: "true",
+        ...options,
+      }
+    );
   },
 
   async getFormFields(
+    tenantSlug: string,
     formId: string,
     options?: ApiRequestOptions
   ): Promise<FieldListResponse> {
-    return apiGetClientNew<FieldListResponse>(`/forms/${formId}/fields`, {
-      token: "true",
-      ...options,
-    });
+    return apiGetClientNew<FieldListResponse>(
+      `/${tenantSlug}/forms/${formId}/fields`,
+      {
+        token: "true",
+        ...options,
+      }
+    );
   },
 
   async updateField(
+    tenantSlug: string,
     formId: string,
     fieldId: string,
     data: UpdateFieldRequest,
     options?: ApiRequestOptions
   ): Promise<FormResponse> {
     return apiPutClient<FormResponse>(
-      `/forms/${formId}/fields/${fieldId}`,
+      `/${tenantSlug}/forms/${formId}/fields/${fieldId}`,
       data,
       { token: "true", ...options }
     );
   },
 
   async deleteField(
+    tenantSlug: string,
     formId: string,
     fieldId: string,
     options?: ApiRequestOptions
   ): Promise<{ success: boolean; message: string }> {
-    return apiPostClientNew<{ success: boolean; message: string }>(
-      `/forms/${formId}/fields/${fieldId}`,
-      {},
+    return apiDeleteClient<{ success: boolean; message: string }>(
+      `/${tenantSlug}/forms/${formId}/fields/${fieldId}`,
       { token: "true", ...options }
     );
   },
@@ -174,9 +187,86 @@ export const formsApi = {
     startDate: Date,
     endDate: Date,
     options?: ApiRequestOptions
-  ): Promise<{ success: boolean; data: FormAnalytics }> {
-    return apiGetClientNew<{ success: boolean; data: FormAnalytics }>(
+  ): Promise<{ success: boolean; data: FormAnalyticsProps }> {
+    return apiGetClientNew<{ success: boolean; data: FormAnalyticsProps }>(
       `/forms/${formId}/analytics?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`,
+      { token: "true", ...options }
+    );
+  },
+
+  // Step Management
+  async createStep(
+    tenantSlug: string,
+    formId: string,
+    data: {
+      title: string;
+      description?: string;
+      order: number;
+      isActive?: boolean;
+      isPayment?: boolean;
+      paymentAmount?: number;
+      fields?: string[];
+      conditions?: Record<string, unknown>;
+      settings?: Record<string, unknown>;
+    },
+    options?: ApiRequestOptions
+  ): Promise<FormResponse> {
+    return apiPostClientNew<FormResponse>(
+      `/${tenantSlug}/forms/${formId}/steps`,
+      data,
+      {
+        token: "true",
+        ...options,
+      }
+    );
+  },
+
+  async getFormSteps(
+    tenantSlug: string,
+    formId: string,
+    options?: ApiRequestOptions
+  ): Promise<FieldListResponse> {
+    return apiGetClientNew<FieldListResponse>(
+      `/${tenantSlug}/forms/${formId}/steps`,
+      {
+        token: "true",
+        ...options,
+      }
+    );
+  },
+
+  async updateStep(
+    tenantSlug: string,
+    formId: string,
+    stepId: string,
+    data: {
+      title?: string;
+      description?: string;
+      order?: number;
+      isActive?: boolean;
+      isPayment?: boolean;
+      paymentAmount?: number;
+      fields?: string[];
+      conditions?: Record<string, unknown>;
+      settings?: Record<string, unknown>;
+    },
+    options?: ApiRequestOptions
+  ): Promise<FormResponse> {
+    return apiPutClient<FormResponse>(
+      `/${tenantSlug}/forms/${formId}/steps/${stepId}`,
+      data,
+      { token: "true", ...options }
+    );
+  },
+
+  async deleteStep(
+    tenantSlug: string,
+    formId: string,
+    stepId: string,
+    options?: ApiRequestOptions
+  ): Promise<{ success: boolean; message: string }> {
+    return apiDeleteClient<{ success: boolean; message: string }>(
+      `/${tenantSlug}/forms/${formId}/steps/${stepId}`,
       { token: "true", ...options }
     );
   },

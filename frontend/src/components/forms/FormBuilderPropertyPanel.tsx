@@ -60,7 +60,7 @@ export function FormBuilderPropertyPanel() {
         const newChoice = {
             id: `choice_${Date.now()}`,
             label: "New Option",
-            value: "new_option",
+            value: `option_${Date.now()}`, // Dynamic value based on timestamp
             isDefault: false,
             isDisabled: false
         };
@@ -271,7 +271,7 @@ export function FormBuilderPropertyPanel() {
     const renderOptionsTab = () => (
         <div className="space-y-4  h-screen overflow-auto">
             {/* Choice Fields */}
-            {(selectedField.type === "select" || selectedField.type === "radio" || selectedField.type === "checkbox") && (
+            {(selectedField.type === "select" || selectedField.type === "radio" || selectedField.type === "checkbox" || selectedField.type === "multiselect") && (
                 <div>
                     <div className="flex items-center justify-between mb-3">
                         <Label className="text-sm font-medium text-slate-700">Options</Label>
@@ -292,13 +292,13 @@ export function FormBuilderPropertyPanel() {
                                 <Input
                                     value={choice.label}
                                     onChange={(e) => handleUpdateChoice(choice.id, { label: e.target.value })}
-                                    className="flex-1"
+                                    className="flex-1 text-black"
                                     placeholder="Option label"
                                 />
                                 <Input
                                     value={choice.value}
                                     onChange={(e) => handleUpdateChoice(choice.id, { value: e.target.value })}
-                                    className="flex-1"
+                                    className="flex-1 text-black"
                                     placeholder="Option value"
                                 />
                                 <Button
@@ -329,11 +329,11 @@ export function FormBuilderPropertyPanel() {
                         </Label>
                         <Input
                             id="allowed-types"
-                            value={selectedField.options?.allowedTypes?.join(", ") || ""}
+                            value={selectedField.options?.allowedFileTypes?.join(", ") || ""}
                             onChange={(e) => handleFieldUpdate({
                                 options: {
                                     ...selectedField.options,
-                                    allowedTypes: e.target.value.split(",").map(type => type.trim()).filter(Boolean)
+                                    allowedFileTypes: e.target.value.split(",").map(type => type.trim()).filter(Boolean)
                                 }
                             })}
                             className="mt-1 text-black"
