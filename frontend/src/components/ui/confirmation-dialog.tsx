@@ -90,12 +90,12 @@ export function ConfirmationDialog({
                         {description}
                     </DialogDescription>
                 </DialogHeader>
-                <DialogFooter className="flex gap-2 sm:gap-0">
+                <DialogFooter className="flex gap-2 ">
                     <Button
                         variant="outline"
                         onClick={handleCancel}
                         disabled={isLoading}
-                        className="flex-1 sm:flex-none"
+                        className="flex-1 sm:flex-none w-24"
                     >
                         {cancelText}
                     </Button>
@@ -103,7 +103,7 @@ export function ConfirmationDialog({
                         variant={variant === "destructive" ? "destructive" : "default"}
                         onClick={handleConfirm}
                         disabled={isLoading}
-                        className="flex-1 sm:flex-none"
+                        className="flex-1 sm:flex-none w-24"
                     >
                         {isLoading ? "Loading..." : getConfirmText()}
                     </Button>

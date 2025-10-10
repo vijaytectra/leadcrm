@@ -1,4 +1,5 @@
-import { getClientToken } from "../client-token";
+// Removed unused import
+import { getToken } from "../getToken";
 import {
   apiGetClientNew,
   apiPostClientNew,
@@ -25,7 +26,6 @@ export interface CreateUserRequest {
   lastName: string;
   phone?: string;
   role: string;
-  password?: string;
 }
 
 export interface UpdateUserRequest {
@@ -46,7 +46,7 @@ export interface UserResponse {
 
 export interface CreateUserResponse {
   user: User;
-  generatedPassword?: string;
+  message: string;
 }
 
 /**
@@ -54,7 +54,7 @@ export interface CreateUserResponse {
  */
 export async function getUsers(tenantSlug: string): Promise<User[]> {
   try {
-    const token = getClientToken();
+    const token = await getToken();
     if (!token) {
       throw new Error("No token found");
     }
@@ -80,7 +80,7 @@ export async function getUser(
   tenantSlug: string,
   userId: string
 ): Promise<User> {
-  const token = getClientToken();
+  const token = await getToken();
   if (!token) {
     throw new Error("No token found");
   }
@@ -105,7 +105,7 @@ export async function createUser(
   tenantSlug: string,
   userData: CreateUserRequest
 ): Promise<CreateUserResponse> {
-  const token = getClientToken();
+  const token = await getToken();
   if (!token) {
     throw new Error("No token found");
   }
@@ -130,7 +130,7 @@ export async function updateUser(
   userId: string,
   userData: UpdateUserRequest
 ): Promise<User> {
-  const token = getClientToken();
+  const token = await getToken();
   if (!token) {
     throw new Error("No token found");
   }
@@ -154,7 +154,7 @@ export async function deleteUser(
   tenantSlug: string,
   userId: string
 ): Promise<void> {
-  const token = getClientToken();
+  const token = await getToken();
   if (!token) {
     throw new Error("No token found");
   }

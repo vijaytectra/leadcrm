@@ -1,6 +1,6 @@
 import { Metadata } from "next";
-import { UserManagement } from "@/components/institution-admin/UserManagement";
-import { getUsers } from "@/lib/api/users";
+import { UserManagementOptimized } from "@/components/users/UserManagementOptimized";
+import { getUsersServer } from "@/lib/api/users-server";
 
 export const metadata: Metadata = {
   title: "User Management",
@@ -35,8 +35,8 @@ export default async function UserManagementPage({
   }
 
   try {
-    const users = await getUsers(tenantSlug);
-    return <UserManagement users={users} tenantSlug={tenantSlug} />;
+    const users = await getUsersServer(tenantSlug);
+    return <UserManagementOptimized users={users} tenantSlug={tenantSlug} />;
   } catch (error) {
     console.error("Error loading users:", error);
     return (

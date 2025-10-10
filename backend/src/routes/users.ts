@@ -29,10 +29,6 @@ const createUserSchema = z.object({
     "ADMISSION_TEAM",
     "ADMISSION_HEAD",
   ]),
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .optional(),
 });
 
 const updateUserSchema = z.object({
@@ -65,7 +61,6 @@ router.get(
   async (req: AuthedRequest, res) => {
     try {
       const tenantSlug = req.params.tenant;
-     
 
       if (!tenantSlug) {
         return res.status(400).json({
@@ -113,7 +108,7 @@ router.get(
         },
         orderBy: { createdAt: "desc" },
       });
-    
+
       res.json({ users });
     } catch (error) {
       console.error("Get users error:", error);
@@ -148,8 +143,7 @@ router.post(
         });
       }
 
-      const { email, firstName, lastName, phone, role, password } =
-        validation.data;
+      const { email, firstName, lastName, phone, role } = validation.data;
 
       // Check if tenant exists
       const tenant = await prisma.tenant.findUnique({
@@ -175,8 +169,8 @@ router.post(
         });
       }
 
-      // Generate password if not provided
-      const userPassword = password || generateSecurePassword(12);
+      // Always generate a secure password
+      const userPassword = generateSecurePassword(12);
       const passwordHash = await hashPassword(userPassword);
 
       // Create user
@@ -203,37 +197,36 @@ router.post(
         },
       });
 
-      // Send email with credentials if password was generated
-      if (!password) {
-        try {
-          const emailTemplate = generateUserCredentialsEmail({
-            email: user.email,
-            password: userPassword,
-            firstName: user.firstName || "",
-            lastName: user.lastName || "",
-            role: user.role,
-            institutionName: tenant.name,
-            loginUrl: `${
-              process.env.FRONTEND_URL || "http://localhost:3000"
-            }/login?tenant=${tenantSlug}`,
-          });
+      // Always send email with credentials
+      try {
+        const emailTemplate = generateUserCredentialsEmail({
+          email: user.email,
+          password: userPassword,
+          firstName: user.firstName || "",
+          lastName: user.lastName || "",
+          role: user.role,
+          institutionName: tenant.name,
+          loginUrl: `${
+            process.env.FRONTEND_URL || "http://localhost:3000"
+          }/login?tenant=${tenantSlug}`,
+        });
+      
 
-          await emailService.sendEmail(
-            user.email,
-            emailTemplate.subject,
-            emailTemplate.html,
-            emailTemplate.text
-          );
-        } catch (emailError) {
-          console.error("Failed to send user credentials email:", emailError);
-          // Don't fail the user creation if email fails
-        }
+        await emailService.sendEmail(
+          user.email,
+          emailTemplate.subject,
+          emailTemplate.html,
+          emailTemplate.text
+        );
+      } catch (emailError) {
+        console.error("Failed to send user credentials email:", emailError);
+        // Don't fail the user creation if email fails
       }
 
       res.status(201).json({
         user,
-        // Only return password if it was generated (not provided)
-        ...(password ? {} : { generatedPassword: userPassword }),
+        message:
+          "User created successfully. Login credentials have been sent to their email.",
       });
     } catch (error) {
       console.error("Create user error:", error);
