@@ -16,6 +16,8 @@ import leadRoutes from "./routes/leads";
 import settingsRoutes from "./routes/settings";
 import formRoutes from "./routes/forms";
 import telecallerRoutes from "./routes/telecaller";
+import communicationRoutes from "./routes/communications";
+import notificationRoutes from "./routes/notifications";
 
 const app = express();
 app.use(helmet());
@@ -54,6 +56,8 @@ app.use("/api", analyticsRoutes);
 app.use("/api", leadRoutes);
 app.use("/api", formRoutes);
 app.use("/api", telecallerRoutes);
+app.use("/api", communicationRoutes);
+app.use("/api", notificationRoutes);
 
 // Debug middleware to log all requests
 app.use((req, res, next) => {

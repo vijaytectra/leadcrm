@@ -65,7 +65,6 @@ router.get(
   requireRole(["SUPER_ADMIN"]),
   async (req: AuthedRequest, res) => {
     try {
-
       const { page, limit, search, status, subscriptionTier } =
         querySchema.parse(req.query);
 
@@ -385,25 +384,15 @@ router.post(
           process.env.SENDGRID_FROM_EMAIL || "support@lead101.com";
         const supportPhone = process.env.SUPPORT_PHONE || "+91-9876543210";
 
-        const emailTemplate = generateInstitutionCredentialsEmail({
-          institutionName: institution.name,
-          adminEmail: adminUser.email,
-          adminPassword: adminPassword,
-          adminFirstName: adminUser.firstName || "Admin",
-          adminLastName: adminUser.lastName || institution.name,
-          loginUrl,
-          features: [
-            "Lead Management System",
-            "Student Application Tracking",
-            "Payment Processing",
-            "Team Member Management",
-            "Analytics Dashboard",
-            "Document Verification",
-            "Communication Tools",
-          ],
-          supportEmail,
-          supportPhone,
-        });
+        const emailTemplate = generateInstitutionCredentialsEmail(
+          institution.name,
+          `${adminUser.firstName || "Admin"} ${
+            adminUser.lastName || institution.name
+          }`,
+          adminUser.email,
+          adminPassword,
+          loginUrl
+        );
 
         // Send email using the email service
         await emailService.sendInstitutionCredentials({
@@ -414,8 +403,6 @@ router.post(
           loginUrl,
           supportEmail,
         });
-
-      
       } catch (emailError) {
         console.error("Failed to send welcome email:", emailError);
         // Don't fail the institution creation if email fails

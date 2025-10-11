@@ -1,402 +1,594 @@
-interface EmailTemplate {
-  subject: string;
-  html: string;
-  text: string;
+import { z } from "zod";
+
+// Email template variable types
+export const EmailTemplateVariableSchema = z.object({
+  name: z.string(),
+  type: z.enum(["string", "number", "date", "boolean", "object"]),
+  required: z.boolean().default(false),
+  description: z.string().optional(),
+  defaultValue: z.any().optional(),
+});
+
+export type EmailTemplateVariable = z.infer<typeof EmailTemplateVariableSchema>;
+
+// Email template categories
+export enum EmailTemplateCategory {
+  GENERAL = "GENERAL",
+  LEAD = "LEAD",
+  PAYMENT = "PAYMENT",
+  NOTIFICATION = "NOTIFICATION",
+  SYSTEM = "SYSTEM",
+  ADMISSION = "ADMISSION",
+  DOCUMENT = "DOCUMENT",
+  FINANCE = "FINANCE",
 }
 
-interface UserCredentials {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-  institutionName: string;
-  loginUrl: string;
+// Template variable substitution
+export interface TemplateVariables {
+  [key: string]: string | number | Date | boolean | object;
 }
 
-interface InstitutionCredentials {
-  institutionName: string;
-  adminEmail: string;
-  adminPassword: string;
-  adminFirstName: string;
-  adminLastName: string;
-  loginUrl: string;
-  features: string[];
-  supportEmail: string;
-  supportPhone: string;
-}
+// System email templates with predefined variables
+export const SYSTEM_EMAIL_TEMPLATES = {
+  WELCOME_LEAD: {
+    name: "Welcome New Lead",
+    subject: "Welcome to {{institutionName}} - Your Application Journey Begins",
+    category: EmailTemplateCategory.LEAD,
+    variables: [
+      {
+        name: "leadName",
+        type: "string",
+        required: true,
+        description: "Lead's full name",
+      },
+      {
+        name: "institutionName",
+        type: "string",
+        required: true,
+        description: "Institution name",
+      },
+      {
+        name: "courseName",
+        type: "string",
+        required: false,
+        description: "Course of interest",
+      },
+      {
+        name: "nextSteps",
+        type: "string",
+        required: false,
+        description: "Next steps information",
+      },
+      {
+        name: "contactInfo",
+        type: "object",
+        required: false,
+        description: "Contact information",
+      },
+    ],
+  },
+  PAYMENT_CONFIRMATION: {
+    name: "Payment Confirmation",
+    subject: "Payment Confirmed - {{institutionName}}",
+    category: EmailTemplateCategory.PAYMENT,
+    variables: [
+      {
+        name: "studentName",
+        type: "string",
+        required: true,
+        description: "Student's name",
+      },
+      {
+        name: "institutionName",
+        type: "string",
+        required: true,
+        description: "Institution name",
+      },
+      {
+        name: "amount",
+        type: "number",
+        required: true,
+        description: "Payment amount",
+      },
+      {
+        name: "transactionId",
+        type: "string",
+        required: true,
+        description: "Transaction ID",
+      },
+      {
+        name: "paymentDate",
+        type: "date",
+        required: true,
+        description: "Payment date",
+      },
+      {
+        name: "receiptUrl",
+        type: "string",
+        required: false,
+        description: "Receipt download URL",
+      },
+    ],
+  },
+  DOCUMENT_REQUEST: {
+    name: "Document Request",
+    subject: "Required Documents - {{institutionName}}",
+    category: EmailTemplateCategory.DOCUMENT,
+    variables: [
+      {
+        name: "studentName",
+        type: "string",
+        required: true,
+        description: "Student's name",
+      },
+      {
+        name: "institutionName",
+        type: "string",
+        required: true,
+        description: "Institution name",
+      },
+      {
+        name: "requiredDocuments",
+        type: "object",
+        required: true,
+        description: "List of required documents",
+      },
+      {
+        name: "deadline",
+        type: "date",
+        required: false,
+        description: "Document submission deadline",
+      },
+      {
+        name: "uploadUrl",
+        type: "string",
+        required: false,
+        description: "Document upload URL",
+      },
+    ],
+  },
+  ADMISSION_OFFER: {
+    name: "Admission Offer",
+    subject: "Congratulations! Admission Offer from {{institutionName}}",
+    category: EmailTemplateCategory.ADMISSION,
+    variables: [
+      {
+        name: "studentName",
+        type: "string",
+        required: true,
+        description: "Student's name",
+      },
+      {
+        name: "institutionName",
+        type: "string",
+        required: true,
+        description: "Institution name",
+      },
+      {
+        name: "courseName",
+        type: "string",
+        required: true,
+        description: "Course name",
+      },
+      {
+        name: "offerDetails",
+        type: "object",
+        required: true,
+        description: "Offer details",
+      },
+      {
+        name: "acceptanceDeadline",
+        type: "date",
+        required: true,
+        description: "Acceptance deadline",
+      },
+      {
+        name: "nextSteps",
+        type: "string",
+        required: false,
+        description: "Next steps information",
+      },
+    ],
+  },
+  FOLLOW_UP_REMINDER: {
+    name: "Follow-up Reminder",
+    subject: "Follow-up Reminder - {{institutionName}}",
+    category: EmailTemplateCategory.LEAD,
+    variables: [
+      {
+        name: "leadName",
+        type: "string",
+        required: true,
+        description: "Lead's name",
+      },
+      {
+        name: "institutionName",
+        type: "string",
+        required: true,
+        description: "Institution name",
+      },
+      {
+        name: "lastContact",
+        type: "date",
+        required: false,
+        description: "Last contact date",
+      },
+      {
+        name: "nextAction",
+        type: "string",
+        required: false,
+        description: "Next action required",
+      },
+      {
+        name: "contactInfo",
+        type: "object",
+        required: false,
+        description: "Contact information",
+      },
+    ],
+  },
+} as const;
 
-/**
- * Generate user credentials email template
- */
-export function generateUserCredentialsEmail(
-  credentials: UserCredentials
-): EmailTemplate {
-  const {
-    email,
-    password,
-    firstName,
-    lastName,
-    role,
-    institutionName,
-    loginUrl,
-  } = credentials;
-
-  const roleDisplayName = getRoleDisplayName(role);
-
-  const subject = `Welcome to ${institutionName} - Your Account Credentials`;
-
-  const html = `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to ${institutionName}</title>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
-        .credentials { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea; }
-        .button { display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
-        .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
-        .highlight { background: #e8f4fd; padding: 15px; border-radius: 6px; margin: 15px 0; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Welcome to ${institutionName}!</h1>
-            <p>Your account has been created successfully</p>
-        </div>
-        
-        <div class="content">
-            <h2>Hello ${firstName} ${lastName},</h2>
-            
-            <p>Welcome to ${institutionName}! Your account has been created with the role of <strong>${roleDisplayName}</strong>.</p>
-            
-            <div class="credentials">
-                <h3>Your Login Credentials:</h3>
-                <p><strong>Email:</strong> ${email}</p>
-                <p><strong>Password:</strong> ${password}</p>
-                <p><strong>Role:</strong> ${roleDisplayName}</p>
-            </div>
-            
-            <div class="highlight">
-                <p><strong>Important:</strong> Please change your password after your first login for security purposes.</p>
-            </div>
-            
-            <p>You can now access your account using the following link:</p>
-            <a href="${loginUrl}" class="button">Login to Your Account</a>
-            
-            <h3>What's Next?</h3>
-            <ul>
-                <li>Log in using your credentials above</li>
-                <li>Complete your profile setup</li>
-                <li>Explore the features available to your role</li>
-                <li>Change your password for security</li>
-            </ul>
-            
-            <p>If you have any questions or need assistance, please don't hesitate to contact our support team.</p>
-            
-            <p>Best regards,<br>
-            The ${institutionName} Team</p>
-        </div>
-        
-        <div class="footer">
-            <p>This is an automated message. Please do not reply to this email.</p>
-            <p>© ${new Date().getFullYear()} ${institutionName}. All rights reserved.</p>
-        </div>
-    </div>
-</body>
-</html>`;
-
-  const text = `
-Welcome to ${institutionName}!
-
-Hello ${firstName} ${lastName},
-
-Your account has been created successfully with the role of ${roleDisplayName}.
-
-Your Login Credentials:
-Email: ${email}
-Password: ${password}
-Role: ${roleDisplayName}
-
-Important: Please change your password after your first login for security purposes.
-
-Login URL: ${loginUrl}
-
-What's Next?
-- Log in using your credentials above
-- Complete your profile setup
-- Explore the features available to your role
-- Change your password for security
-
-If you have any questions or need assistance, please don't hesitate to contact our support team.
-
-Best regards,
-The ${institutionName} Team
-
-This is an automated message. Please do not reply to this email.
-© ${new Date().getFullYear()} ${institutionName}. All rights reserved.
-`;
-
-  return { subject, html, text };
-}
-
-/**
- * Generate institution credentials email template
- */
-export function generateInstitutionCredentialsEmail(
-  credentials: InstitutionCredentials
-): EmailTemplate {
-  const {
-    institutionName,
-    adminEmail,
-    adminPassword,
-    adminFirstName,
-    adminLastName,
-    loginUrl,
-    features,
-    supportEmail,
-    supportPhone,
-  } = credentials;
-
-  const subject = `Welcome to LEAD101 - ${institutionName} Account Setup Complete`;
-
-  const html = `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to LEAD101 - ${institutionName}</title>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
-        .credentials { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea; }
-        .button { display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
-        .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
-        .highlight { background: #e8f4fd; padding: 15px; border-radius: 6px; margin: 15px 0; }
-        .features { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
-        .feature-item { margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 4px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Welcome to LEAD101!</h1>
-            <p>Your institution account has been set up successfully</p>
-        </div>
-        
-        <div class="content">
-            <h2>Hello ${adminFirstName} ${adminLastName},</h2>
-            
-            <p>Congratulations! Your institution <strong>${institutionName}</strong> has been successfully onboarded to the LEAD101 platform.</p>
-            
-            <div class="credentials">
-                <h3>Your Admin Account Credentials:</h3>
-                <p><strong>Email:</strong> ${adminEmail}</p>
-                <p><strong>Password:</strong> ${adminPassword}</p>
-                <p><strong>Role:</strong> Institution Administrator</p>
-            </div>
-            
-            <div class="highlight">
-                <p><strong>Important:</strong> Please change your password after your first login for security purposes.</p>
-            </div>
-            
-            <p>You can now access your institution dashboard using the following link:</p>
-            <a href="${loginUrl}" class="button">Access Your Dashboard</a>
-            
-            <div class="features">
-                <h3>Available Features:</h3>
-                ${features
-                  .map(
-                    (feature) => `<div class="feature-item">✓ ${feature}</div>`
-                  )
-                  .join("")}
-            </div>
-            
-            <h3>Getting Started:</h3>
-            <ol>
-                <li>Log in using your admin credentials</li>
-                <li>Complete your institution profile</li>
-                <li>Set up your team members and their roles</li>
-                <li>Configure your lead capture forms</li>
-                <li>Start managing your leads and applications</li>
-            </ol>
-            
-            <h3>Support & Assistance:</h3>
-            <p>If you need any help getting started or have questions about the platform:</p>
-            <ul>
-                <li><strong>Email:</strong> ${supportEmail}</li>
-                <li><strong>Phone:</strong> ${supportPhone}</li>
-            </ul>
-            
-            <p>We're excited to have you on board and look forward to helping you streamline your lead management process!</p>
-            
-            <p>Best regards,<br>
-            The LEAD101 Team</p>
-        </div>
-        
-        <div class="footer">
-            <p>This is an automated message. Please do not reply to this email.</p>
-            <p>© ${new Date().getFullYear()} LEAD101. All rights reserved.</p>
-        </div>
-    </div>
-</body>
-</html>`;
-
-  const text = `
-Welcome to LEAD101 - ${institutionName} Account Setup Complete!
-
-Hello ${adminFirstName} ${adminLastName},
-
-Congratulations! Your institution ${institutionName} has been successfully onboarded to the LEAD101 platform.
-
-Your Admin Account Credentials:
-Email: ${adminEmail}
-Password: ${adminPassword}
-Role: Institution Administrator
-
-Important: Please change your password after your first login for security purposes.
-
-Login URL: ${loginUrl}
-
-Available Features:
-${features.map((feature) => `✓ ${feature}`).join("\n")}
-
-Getting Started:
-1. Log in using your admin credentials
-2. Complete your institution profile
-3. Set up your team members and their roles
-4. Configure your lead capture forms
-5. Start managing your leads and applications
-
-Support & Assistance:
-If you need any help getting started or have questions about the platform:
-Email: ${supportEmail}
-Phone: ${supportPhone}
-
-We're excited to have you on board and look forward to helping you streamline your lead management process!
-
-Best regards,
-The LEAD101 Team
-
-This is an automated message. Please do not reply to this email.
-© ${new Date().getFullYear()} LEAD101. All rights reserved.
-`;
-
-  return { subject, html, text };
-}
-
-/**
- * Generate password reset email template
- */
+// Template variable substitution utility
+// Email template generators for specific use cases
 export function generatePasswordResetEmail(
-  email: string,
-  resetUrl: string,
-  institutionName: string
-): EmailTemplate {
-  const subject = `Password Reset Request - ${institutionName}`;
+  userName: string,
+  resetToken: string,
+  resetUrl: string
+): { subject: string; html: string; text: string } {
+  return {
+    subject: "Password Reset Request",
+    html: `
+      <h2>Password Reset Request</h2>
+      <p>Hello ${userName},</p>
+      <p>You requested a password reset. Click the link below to reset your password:</p>
+      <p><a href="${resetUrl}">Reset Password</a></p>
+      <p>This link will expire in 1 hour.</p>
+      <p>If you didn't request this, please ignore this email.</p>
+    `,
+    text: `Password Reset Request\n\nHello ${userName},\n\nYou requested a password reset. Visit: ${resetUrl}\n\nThis link will expire in 1 hour.\n\nIf you didn't request this, please ignore this email.`,
+  };
+}
 
-  const html = `
+export function generateInstitutionCredentialsEmail(
+  institutionName: string,
+  adminName: string,
+  adminEmail: string,
+  adminPassword: string,
+  loginUrl: string
+): { subject: string; html: string; text: string } {
+  return {
+    subject: "Your Institution Account Credentials",
+    html: `
+      <h2>Welcome to LEAD101!</h2>
+      <p>Hello ${adminName},</p>
+      <p>Your institution "${institutionName}" has been successfully set up on LEAD101.</p>
+      <p><strong>Login Credentials:</strong></p>
+      <ul>
+        <li>Email: ${adminEmail}</li>
+        <li>Password: ${adminPassword}</li>
+      </ul>
+      <p><a href="${loginUrl}">Login to your account</a></p>
+      <p>Please change your password after first login.</p>
+    `,
+    text: `Welcome to LEAD101!\n\nHello ${adminName},\n\nYour institution "${institutionName}" has been successfully set up.\n\nLogin Credentials:\nEmail: ${adminEmail}\nPassword: ${adminPassword}\n\nLogin: ${loginUrl}\n\nPlease change your password after first login.`,
+  };
+}
+
+export function generateUserCredentialsEmail(
+  userName: string,
+  userEmail: string,
+  userPassword: string,
+  institutionName: string,
+  loginUrl: string
+): { subject: string; html: string; text: string } {
+  return {
+    subject: "Your User Account Credentials",
+    html: `
+      <h2>Welcome to ${institutionName}!</h2>
+      <p>Hello ${userName},</p>
+      <p>Your user account has been created for ${institutionName}.</p>
+      <p><strong>Login Credentials:</strong></p>
+      <ul>
+        <li>Email: ${userEmail}</li>
+        <li>Password: ${userPassword}</li>
+      </ul>
+      <p><a href="${loginUrl}">Login to your account</a></p>
+      <p>Please change your password after first login.</p>
+    `,
+    text: `Welcome to ${institutionName}!\n\nHello ${userName},\n\nYour user account has been created.\n\nLogin Credentials:\nEmail: ${userEmail}\nPassword: ${userPassword}\n\nLogin: ${loginUrl}\n\nPlease change your password after first login.`,
+  };
+}
+
+export class TemplateEngine {
+  /**
+   * Replace variables in template content
+   */
+  static substituteVariables(
+    template: string,
+    variables: TemplateVariables
+  ): string {
+    let result = template;
+
+    // Replace {{variable}} patterns
+    result = result.replace(/\{\{(\w+)\}\}/g, (match, variableName) => {
+      const value = variables[variableName];
+      if (value === undefined || value === null) {
+        console.warn(`Template variable '${variableName}' not found`);
+        return match; // Keep original if variable not found
+      }
+      return String(value);
+    });
+
+    // Replace {{object.property}} patterns
+    result = result.replace(
+      /\{\{(\w+)\.(\w+)\}\}/g,
+      (match, objectName, propertyName) => {
+        const obj = variables[objectName];
+        if (obj && typeof obj === "object" && propertyName in obj) {
+          return String((obj as any)[propertyName]);
+        }
+        console.warn(
+          `Template variable '${objectName}.${propertyName}' not found`
+        );
+        return match;
+      }
+    );
+
+    return result;
+  }
+
+  /**
+   * Validate template variables against schema
+   */
+  static validateVariables(
+    variables: TemplateVariables,
+    schema: EmailTemplateVariable[]
+  ): { valid: boolean; errors: string[] } {
+    const errors: string[] = [];
+
+    for (const variable of schema) {
+      if (variable.required && !(variable.name in variables)) {
+        errors.push(`Required variable '${variable.name}' is missing`);
+        continue;
+      }
+
+      const value = variables[variable.name];
+      if (value !== undefined) {
+        const typeCheck = this.validateVariableType(value, variable.type);
+        if (!typeCheck.valid) {
+          errors.push(
+            `Variable '${variable.name}' type mismatch: expected ${variable.type}, got ${typeCheck.actualType}`
+          );
+        }
+      }
+    }
+
+    return { valid: errors.length === 0, errors };
+  }
+
+  /**
+   * Validate variable type
+   */
+  private static validateVariableType(
+    value: any,
+    expectedType: string
+  ): { valid: boolean; actualType: string } {
+    const actualType = typeof value;
+
+    switch (expectedType) {
+      case "string":
+        return { valid: actualType === "string", actualType };
+      case "number":
+        return { valid: actualType === "number" && !isNaN(value), actualType };
+      case "boolean":
+        return { valid: actualType === "boolean", actualType };
+      case "date":
+        return {
+          valid: value instanceof Date || !isNaN(Date.parse(value)),
+          actualType,
+        };
+      case "object":
+        return { valid: actualType === "object" && value !== null, actualType };
+      default:
+        return { valid: false, actualType };
+    }
+  }
+
+  /**
+   * Extract variables from template content
+   */
+  static extractVariables(template: string): string[] {
+    const variables = new Set<string>();
+
+    // Extract {{variable}} patterns
+    const simpleMatches = template.match(/\{\{(\w+)\}\}/g);
+    if (simpleMatches) {
+      simpleMatches.forEach((match) => {
+        const variable = match.replace(/\{\{|\}\}/g, "");
+        variables.add(variable);
+      });
+    }
+
+    // Extract {{object.property}} patterns
+    const objectMatches = template.match(/\{\{(\w+)\.(\w+)\}\}/g);
+    if (objectMatches) {
+      objectMatches.forEach((match) => {
+        const variable = match.replace(/\{\{|\}\}/g, "");
+        variables.add(variable);
+      });
+    }
+
+    return Array.from(variables);
+  }
+}
+
+// Email template builder utility
+export class EmailTemplateBuilder {
+  /**
+   * Create HTML email template with modern styling
+   */
+  static createHTMLTemplate(
+    title: string,
+    content: string,
+    institutionName: string,
+    supportEmail?: string
+  ): string {
+    return `
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Password Reset - ${institutionName}</title>
+    <title>${title}</title>
     <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
-        .button { display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
-        .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
-        .highlight { background: #fff3cd; padding: 15px; border-radius: 6px; margin: 15px 0; border-left: 4px solid #ffc107; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f8fafc;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .content h2 {
+            color: #1f2937;
+            margin-top: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .content p {
+            margin-bottom: 20px;
+            font-size: 16px;
+            line-height: 1.7;
+        }
+        .highlight {
+            background: #f0f9ff;
+            border-left: 4px solid #0ea5e9;
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+        .button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 28px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 20px 0;
+            transition: transform 0.2s ease;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+        }
+        .footer {
+            background-color: #f8fafc;
+            padding: 30px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 14px;
+            border-top: 1px solid #e5e7eb;
+        }
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        .divider {
+            height: 1px;
+            background-color: #e5e7eb;
+            margin: 30px 0;
+        }
+        @media (max-width: 600px) {
+            .container {
+                margin: 0;
+                border-radius: 0;
+            }
+            .header, .content, .footer {
+                padding: 20px;
+            }
+            .header h1 {
+                font-size: 24px;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Password Reset Request</h1>
-            <p>Reset your password for ${institutionName}</p>
+            <h1>${institutionName}</h1>
+            <p>Your Education Partner</p>
         </div>
         
         <div class="content">
-            <h2>Password Reset Request</h2>
-            
-            <p>We received a request to reset your password for your ${institutionName} account.</p>
-            
-            <p>If you requested this password reset, please click the button below to set a new password:</p>
-            
-            <a href="${resetUrl}" class="button">Reset My Password</a>
-            
-            <div class="highlight">
-                <p><strong>Security Notice:</strong> This link will expire in 24 hours for security reasons. If you didn't request this password reset, please ignore this email.</p>
-            </div>
-            
-            <p>If the button above doesn't work, you can copy and paste this link into your browser:</p>
-            <p style="word-break: break-all; background: #f8f9fa; padding: 10px; border-radius: 4px;">${resetUrl}</p>
-            
-            <p>If you have any questions or need assistance, please contact our support team.</p>
-            
-            <p>Best regards,<br>
-            The ${institutionName} Team</p>
+            ${content}
         </div>
         
         <div class="footer">
-            <p>This is an automated message. Please do not reply to this email.</p>
+            <p>This email was sent by <strong>${institutionName}</strong></p>
+            ${
+              supportEmail
+                ? `<p>Need help? Contact us at <a href="mailto:${supportEmail}">${supportEmail}</a></p>`
+                : ""
+            }
             <p>© ${new Date().getFullYear()} ${institutionName}. All rights reserved.</p>
         </div>
     </div>
 </body>
 </html>`;
+  }
 
-  const text = `
-Password Reset Request - ${institutionName}
+  /**
+   * Create plain text version of email
+   */
+  static createTextTemplate(
+    title: string,
+    content: string,
+    institutionName: string,
+    supportEmail?: string
+  ): string {
+    const textContent = content.replace(/<[^>]*>/g, ""); // Strip HTML tags
 
-Password Reset Request
+    return `
+${title}
 
-We received a request to reset your password for your ${institutionName} account.
+${textContent}
 
-If you requested this password reset, please click the link below to set a new password:
-
-${resetUrl}
-
-Security Notice: This link will expire in 24 hours for security reasons. If you didn't request this password reset, please ignore this email.
-
-If you have any questions or need assistance, please contact our support team.
-
-Best regards,
-The ${institutionName} Team
-
-This is an automated message. Please do not reply to this email.
+---
+This email was sent by ${institutionName}
+${supportEmail ? `Need help? Contact us at ${supportEmail}` : ""}
 © ${new Date().getFullYear()} ${institutionName}. All rights reserved.
 `;
-
-  return { subject, html, text };
-}
-
-/**
- * Get display name for role
- */
-function getRoleDisplayName(role: string): string {
-  const roleMap: Record<string, string> = {
-    SUPER_ADMIN: "Super Administrator",
-    INSTITUTION_ADMIN: "Institution Administrator",
-    TELECALLER: "Telecaller",
-    DOCUMENT_VERIFIER: "Document Verifier",
-    FINANCE_TEAM: "Finance Team Member",
-    ADMISSION_TEAM: "Admission Team Member",
-    ADMISSION_HEAD: "Admission Head",
-    STUDENT: "Student",
-    PARENT: "Parent",
-  };
-  return roleMap[role] || role;
+  }
 }

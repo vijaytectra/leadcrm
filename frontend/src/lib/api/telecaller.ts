@@ -213,10 +213,22 @@ async function makeRequest<T>(
     });
     console.log("Response", response);
 
+    // Check if response is HTML (error page) instead of JSON
+    const contentType = response.headers.get("content-type");
+    if (contentType && !contentType.includes("application/json")) {
+      const text = await response.text();
+      console.error("Received non-JSON response:", text.substring(0, 200));
+      throw new Error(
+        `Server returned HTML instead of JSON. Status: ${response.status}`
+      );
+    }
+
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || "Request failed");
+      throw new Error(
+        data.error || `Request failed with status ${response.status}`
+      );
     }
 
     return { success: true, data: data.data || data };

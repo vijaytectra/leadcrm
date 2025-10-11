@@ -24,21 +24,25 @@ model Tenant {
     createdAt          DateTime           @default(now())
     updatedAt          DateTime           @updatedAt
 
-    users                 User[]
-    leads                 Lead[]
-    forms                 Form[]
-    payments              Payment[]
-    applications          Application[]
-    documents             Document[]
-    communications        Communication[]
-    auditLogs             AuditLog[]
-    feeStructures         FeeStructure[]
-    subscriptions         Subscription[]
-    appointments          Appointment[]
-    assets                Asset[]
-    callLogs              CallLog[]
-    telecallerPerformance TelecallerPerformance[]
-    followUpReminders     FollowUpReminder[]
+    users                   User[]
+    leads                   Lead[]
+    forms                   Form[]
+    payments                Payment[]
+    applications            Application[]
+    documents               Document[]
+    communications          Communication[]
+    auditLogs               AuditLog[]
+    feeStructures           FeeStructure[]
+    subscriptions           Subscription[]
+    appointments            Appointment[]
+    assets                  Asset[]
+    callLogs                CallLog[]
+    telecallerPerformance   TelecallerPerformance[]
+    followUpReminders       FollowUpReminder[]
+    emailTemplates          EmailTemplate[]
+    emailQueues             EmailQueue[]
+    notificationPreferences NotificationPreference[]
+    Notification            Notification[]
 }
 
 enum SubscriptionTier {
@@ -68,20 +72,22 @@ model User {
     createdAt    DateTime  @default(now())
     updatedAt    DateTime  @updatedAt
 
-    tenant                Tenant                  @relation(fields: [tenantId], references: [id])
-    leadNotes             LeadNote[]
-    assignedLeads         Lead[]                  @relation("LeadAssignee")
-    refreshTokens         RefreshToken[]
-    applications          Application[]           @relation("ApplicationAssignee")
-    documents             Document[]              @relation("DocumentVerifier")
-    communications        Communication[]         @relation("CommunicationSender")
-    auditLogs             AuditLog[]              @relation("AuditLogUser")
-    appointments          Appointment[]           @relation("AppointmentAssignee")
-    performanceLogs       PerformanceLog[]
-    assets                Asset[]                 @relation("AssetUploader")
-    callLogs              CallLog[]               @relation("CallLogTelecaller")
-    telecallerPerformance TelecallerPerformance[] @relation("TelecallerPerformance")
-    followUpReminders     FollowUpReminder[]      @relation("FollowUpReminderTelecaller")
+    tenant                  Tenant                   @relation(fields: [tenantId], references: [id])
+    leadNotes               LeadNote[]
+    assignedLeads           Lead[]                   @relation("LeadAssignee")
+    refreshTokens           RefreshToken[]
+    applications            Application[]            @relation("ApplicationAssignee")
+    documents               Document[]               @relation("DocumentVerifier")
+    communications          Communication[]          @relation("CommunicationSender")
+    auditLogs               AuditLog[]               @relation("AuditLogUser")
+    appointments            Appointment[]            @relation("AppointmentAssignee")
+    performanceLogs         PerformanceLog[]
+    assets                  Asset[]                  @relation("AssetUploader")
+    callLogs                CallLog[]                @relation("CallLogTelecaller")
+    telecallerPerformance   TelecallerPerformance[]  @relation("TelecallerPerformance")
+    followUpReminders       FollowUpReminder[]       @relation("FollowUpReminderTelecaller")
+    notificationPreferences NotificationPreference[] @relation("NotificationPreference")
+    notifications           Notification[]           @relation("NotificationUser")
 }
 
 enum Role {
@@ -427,6 +433,100 @@ enum CommunicationStatus {
     READ
     FAILED
     BOUNCED
+}
+
+// Email Template Models
+model EmailTemplate {
+    id          String   @id @default(cuid())
+    tenantId    String
+    name        String
+    subject     String
+    htmlContent String
+    textContent String?
+    variables   Json // Dynamic variables schema
+    category    String   @default("GENERAL") // GENERAL, LEAD, PAYMENT, NOTIFICATION, etc.
+    isActive    Boolean  @default(true)
+    isSystem    Boolean  @default(false) // System templates cannot be deleted
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    tenant Tenant @relation(fields: [tenantId], references: [id])
+
+    @@index([tenantId])
+    @@index([category])
+    @@index([isActive])
+}
+
+// Notification Preferences
+model NotificationPreference {
+    id              String   @id @default(cuid())
+    tenantId        String
+    userId          String
+    emailEnabled    Boolean  @default(true)
+    smsEnabled      Boolean  @default(false)
+    whatsappEnabled Boolean  @default(false)
+    pushEnabled     Boolean  @default(true)
+    frequency       String   @default("IMMEDIATE") // IMMEDIATE, DAILY, WEEKLY
+    categories      Json // Notification categories preferences
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+
+    tenant Tenant @relation(fields: [tenantId], references: [id])
+    user   User   @relation("NotificationPreference", fields: [userId], references: [id])
+
+    @@unique([tenantId, userId])
+    @@index([tenantId])
+    @@index([userId])
+}
+
+// Email Queue for Redis-based processing
+model EmailQueue {
+    id           String    @id @default(cuid())
+    tenantId     String
+    to           String
+    subject      String
+    htmlContent  String
+    textContent  String?
+    variables    Json?
+    priority     Int       @default(0) // Higher number = higher priority
+    status       String    @default("PENDING") // PENDING, PROCESSING, SENT, FAILED
+    attempts     Int       @default(0)
+    maxAttempts  Int       @default(3)
+    scheduledAt  DateTime  @default(now())
+    processedAt  DateTime?
+    errorMessage String?
+    createdAt    DateTime  @default(now())
+    updatedAt    DateTime  @updatedAt
+
+    tenant Tenant @relation(fields: [tenantId], references: [id])
+
+    @@index([tenantId])
+    @@index([status])
+    @@index([scheduledAt])
+    @@index([priority])
+}
+
+// Notification model
+model Notification {
+    id        String   @id @default(cuid())
+    tenantId  String
+    userId    String
+    title     String
+    message   String
+    type      String   @default("INFO") // INFO, SUCCESS, WARNING, ERROR, SYSTEM
+    category  String   @default("GENERAL")
+    data      Json?
+    read      Boolean  @default(false)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    tenant Tenant @relation(fields: [tenantId], references: [id])
+    user   User   @relation("NotificationUser", fields: [userId], references: [id])
+
+    @@index([tenantId])
+    @@index([userId])
+    @@index([read])
+    @@index([createdAt])
 }
 
 // Audit and Activity Logging

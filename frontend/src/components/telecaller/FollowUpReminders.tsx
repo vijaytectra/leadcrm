@@ -10,7 +10,6 @@ import {
     Calendar,
     Clock,
     Search,
-    Filter,
     Phone,
     Mail,
     MessageSquare,
@@ -38,12 +37,10 @@ interface FollowUpReminder {
 
 interface FollowUpRemindersProps {
     tenantSlug: string;
-    onFollowUp: (leadId: string) => void;
 }
 
 export const FollowUpReminders = memo(function FollowUpReminders({
-    tenantSlug,
-    onFollowUp
+    tenantSlug
 }: FollowUpRemindersProps) {
     const [reminders, setReminders] = useState<FollowUpReminder[]>([]);
     const [loading, setLoading] = useState(true);
@@ -59,11 +56,13 @@ export const FollowUpReminders = memo(function FollowUpReminders({
             // const response = await getFollowUpReminders(tenantSlug, { ... });
             // For now, using mock data
             setReminders([]);
+            // TODO: Use tenantSlug when implementing actual API call
         } catch (error) {
             console.error("Failed to fetch follow-up reminders:", error);
         } finally {
             setLoading(false);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tenantSlug]);
 
     useEffect(() => {
@@ -303,7 +302,7 @@ export const FollowUpReminders = memo(function FollowUpReminders({
                                             <>
                                                 <Button
                                                     size="sm"
-                                                    onClick={() => onFollowUp(reminder.lead.id)}
+                                                    onClick={() => console.log('Follow up for lead:', reminder.lead.id)}
                                                     className="flex items-center gap-2"
                                                 >
                                                     {getTypeIcon(reminder.type)}

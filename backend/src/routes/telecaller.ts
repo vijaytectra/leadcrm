@@ -417,6 +417,139 @@ router.get(
 );
 
 /**
+ * GET /api/:tenant/telecaller/call-logs
+ * Get call logs for telecaller
+ */
+router.get(
+  "/:tenant/telecaller/call-logs",
+  requireAuth,
+  requireActiveUser,
+  requireRole(["TELECALLER"]),
+  async (req: AuthedRequest, res) => {
+    try {
+      const tenantSlug = req.params.tenant;
+      const userId = req.auth!.sub;
+      const {
+        page = "1",
+        limit = "20",
+        status,
+        outcome,
+        search,
+        sortBy = "createdAt",
+        sortOrder = "desc",
+      } = req.query;
+
+      if (!tenantSlug) {
+        return res.status(400).json({
+          error: "Tenant slug is required",
+          code: "TENANT_REQUIRED",
+        });
+      }
+
+      // Get tenant
+      const tenant = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true },
+      });
+
+      if (!tenant) {
+        return res.status(404).json({
+          error: "Tenant not found",
+          code: "TENANT_NOT_FOUND",
+        });
+      }
+
+      const pageNum = parseInt(page as string);
+      const limitNum = parseInt(limit as string);
+      const skip = (pageNum - 1) * limitNum;
+
+      // Build where clause
+      const where: any = {
+        tenantId: tenant.id,
+        telecallerId: userId,
+      };
+
+      if (status) {
+        where.status = status;
+      }
+      if (outcome) {
+        where.outcome = outcome;
+      }
+      if (search) {
+        where.OR = [
+          { notes: { contains: search as string, mode: "insensitive" } },
+          {
+            lead: { name: { contains: search as string, mode: "insensitive" } },
+          },
+          {
+            lead: {
+              phone: { contains: search as string, mode: "insensitive" },
+            },
+          },
+        ];
+      }
+
+      // Build order by clause
+      const orderBy: any = {};
+      orderBy[sortBy as string] = sortOrder === "desc" ? "desc" : "asc";
+
+      // Get call logs with pagination
+      const [callLogs, total] = await Promise.all([
+        prisma.callLog.findMany({
+          where,
+          select: {
+            id: true,
+            callType: true,
+            status: true,
+            outcome: true,
+            duration: true,
+            notes: true,
+            recordingUrl: true,
+            recordingId: true,
+            scheduledAt: true,
+            startedAt: true,
+            endedAt: true,
+            createdAt: true,
+            updatedAt: true,
+            lead: {
+              select: {
+                id: true,
+                name: true,
+                phone: true,
+                status: true,
+              },
+            },
+          },
+          orderBy,
+          skip,
+          take: limitNum,
+        }),
+        prisma.callLog.count({ where }),
+      ]);
+
+      res.json({
+        success: true,
+        data: {
+          callLogs,
+          pagination: {
+            page: pageNum,
+            limit: limitNum,
+            total,
+            pages: Math.ceil(total / limitNum),
+          },
+        },
+      });
+    } catch (error) {
+      console.error("Get call logs error:", error);
+      res.status(500).json({
+        error: "Failed to fetch call logs",
+        code: "CALL_LOGS_ERROR",
+      });
+    }
+  }
+);
+
+/**
  * POST /api/:tenant/telecaller/call-logs
  * Create a new call log
  */
@@ -623,6 +756,139 @@ router.put(
       res.status(500).json({
         error: "Failed to update call log",
         code: "CALL_LOG_UPDATE_ERROR",
+      });
+    }
+  }
+);
+
+/**
+ * GET /api/:tenant/telecaller/follow-ups
+ * Get follow-up reminders for telecaller
+ */
+router.get(
+  "/:tenant/telecaller/follow-ups",
+  requireAuth,
+  requireActiveUser,
+  requireRole(["TELECALLER"]),
+  async (req: AuthedRequest, res) => {
+    try {
+      const tenantSlug = req.params.tenant;
+      const userId = req.auth!.sub;
+      const {
+        page = "1",
+        limit = "20",
+        status,
+        priority,
+        type,
+        search,
+        sortBy = "scheduledAt",
+        sortOrder = "asc",
+      } = req.query;
+
+      if (!tenantSlug) {
+        return res.status(400).json({
+          error: "Tenant slug is required",
+          code: "TENANT_REQUIRED",
+        });
+      }
+
+      // Get tenant
+      const tenant = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true },
+      });
+
+      if (!tenant) {
+        return res.status(404).json({
+          error: "Tenant not found",
+          code: "TENANT_NOT_FOUND",
+        });
+      }
+
+      const pageNum = parseInt(page as string);
+      const limitNum = parseInt(limit as string);
+      const skip = (pageNum - 1) * limitNum;
+
+      // Build where clause
+      const where: any = {
+        tenantId: tenant.id,
+        telecallerId: userId,
+      };
+
+      if (status) {
+        where.status = status;
+      }
+      if (priority) {
+        where.priority = priority;
+      }
+      if (type) {
+        where.type = type;
+      }
+      if (search) {
+        where.OR = [
+          { notes: { contains: search as string, mode: "insensitive" } },
+          {
+            lead: { name: { contains: search as string, mode: "insensitive" } },
+          },
+          {
+            lead: {
+              phone: { contains: search as string, mode: "insensitive" },
+            },
+          },
+        ];
+      }
+
+      // Build order by clause
+      const orderBy: any = {};
+      orderBy[sortBy as string] = sortOrder === "desc" ? "desc" : "asc";
+
+      // Get follow-up reminders with pagination
+      const [reminders, total] = await Promise.all([
+        prisma.followUpReminder.findMany({
+          where,
+          select: {
+            id: true,
+            type: true,
+            priority: true,
+            status: true,
+            scheduledAt: true,
+            notes: true,
+            completedAt: true,
+            createdAt: true,
+            updatedAt: true,
+            lead: {
+              select: {
+                id: true,
+                name: true,
+                phone: true,
+                status: true,
+              },
+            },
+          },
+          orderBy,
+          skip,
+          take: limitNum,
+        }),
+        prisma.followUpReminder.count({ where }),
+      ]);
+
+      res.json({
+        success: true,
+        data: {
+          reminders,
+          pagination: {
+            page: pageNum,
+            limit: limitNum,
+            total,
+            pages: Math.ceil(total / limitNum),
+          },
+        },
+      });
+    } catch (error) {
+      console.error("Get follow-up reminders error:", error);
+      res.status(500).json({
+        error: "Failed to fetch follow-up reminders",
+        code: "FOLLOW_UPS_ERROR",
       });
     }
   }

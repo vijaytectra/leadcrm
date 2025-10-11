@@ -266,6 +266,7 @@ export async function apiGetClientNew<TResponse>(
   opts?: ApiRequestOptions
 ): Promise<TResponse> {
   let token: string | undefined = undefined;
+  console.log("token", opts?.token);
   if (opts?.token) {
     const clientToken = getClientToken();
     token = clientToken || undefined;

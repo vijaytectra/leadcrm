@@ -8,6 +8,7 @@ export default function TelecallerLayout({
     return (
         <TelecallerLayoutWrapper>
             {children}
+            
         </TelecallerLayoutWrapper>
     );
 }

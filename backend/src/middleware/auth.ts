@@ -51,8 +51,8 @@ export function requireAuth(
     //     code: "TENANT_MISMATCH",
     //   });
     // }
- 
 
+    console.log("payload", payload);
     req.auth = payload;
     next();
   } catch (error) {
@@ -153,6 +153,7 @@ export async function requireActiveUser(
       data: { lastLoginAt: new Date() },
     });
 
+    console.log("user", user);
     next();
   } catch (error) {
     return res.status(500).json({
@@ -184,7 +185,7 @@ export function requireTenantAccess(
       code: "TENANT_REQUIRED",
     });
   }
-
+  console.log("req.tenantSlug", req.tenantSlug);
   // For super admin, allow access to any tenant
   if (req.auth.rol === "SUPER_ADMIN") {
     return next();

@@ -43,12 +43,9 @@ export default async function TelecallerFollowUpsPage({ searchParams }: Telecall
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-
       <FollowUpReminders
         tenantSlug={tenant}
-        onFollowUp={(leadId) => console.log('Follow up for:', leadId)}
       />
-
     </div>
   );
 }

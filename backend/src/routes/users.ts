@@ -199,18 +199,15 @@ router.post(
 
       // Always send email with credentials
       try {
-        const emailTemplate = generateUserCredentialsEmail({
-          email: user.email,
-          password: userPassword,
-          firstName: user.firstName || "",
-          lastName: user.lastName || "",
-          role: user.role,
-          institutionName: tenant.name,
-          loginUrl: `${
+        const emailTemplate = generateUserCredentialsEmail(
+          `${user.firstName || ""} ${user.lastName || ""}`.trim(),
+          user.email,
+          userPassword,
+          tenant.name,
+          `${
             process.env.FRONTEND_URL || "http://localhost:3000"
-          }/login?tenant=${tenantSlug}`,
-        });
-      
+          }/login?tenant=${tenantSlug}`
+        );
 
         await emailService.sendEmail(
           user.email,

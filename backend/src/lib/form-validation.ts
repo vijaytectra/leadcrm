@@ -345,8 +345,10 @@ export class FormValidationService {
     // Check file size limit
     if (options?.maxFileSize) {
       for (const file of value) {
-        if (file.fileSize > options.maxFileSize) {
-          return false;
+        if (typeof file === "object" && file !== null && "fileSize" in file) {
+          if ((file as any).fileSize > options.maxFileSize) {
+            return false;
+          }
         }
       }
     }
@@ -354,8 +356,10 @@ export class FormValidationService {
     // Check allowed file types
     if (options?.allowedTypes && options.allowedTypes.length > 0) {
       for (const file of value) {
-        if (!options.allowedTypes.includes(file.fileType)) {
-          return false;
+        if (typeof file === "object" && file !== null && "fileType" in file) {
+          if (!options.allowedTypes.includes((file as any).fileType)) {
+            return false;
+          }
         }
       }
     }
