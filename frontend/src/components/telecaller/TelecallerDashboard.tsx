@@ -24,6 +24,7 @@ import { PerformanceMetrics } from "./PerformanceMetrics";
 import { LeadStatusUpdate } from "./LeadStatusUpdate";
 import { CallLogForm } from "./CallLogForm";
 import { FollowUpForm } from "./FollowUpForm";
+import { useAuthStore } from "@/stores/auth";
 
 interface TelecallerDashboardProps {
     tenantSlug: string;
@@ -79,7 +80,8 @@ export const TelecallerDashboard = memo(function TelecallerDashboard({
     const [showCallLogForm, setShowCallLogForm] = useState(false);
     const [showFollowUpForm, setShowFollowUpForm] = useState(false);
     const [showStatusUpdate, setShowStatusUpdate] = useState(false);
-
+    const { user } = useAuthStore();
+    console.log(user);
     const handleLeadSelect = useCallback((leadId: string) => {
         setSelectedLead(leadId);
     }, []);
@@ -320,7 +322,6 @@ export const TelecallerDashboard = memo(function TelecallerDashboard({
                 <TabsContent value="followups">
                     <FollowUpReminders
                         tenantSlug={tenantSlug}
-                        onFollowUp={handleFollowUp}
                     />
                 </TabsContent>
 

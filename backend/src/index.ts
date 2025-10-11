@@ -18,6 +18,7 @@ import formRoutes from "./routes/forms";
 import telecallerRoutes from "./routes/telecaller";
 import communicationRoutes from "./routes/communications";
 import notificationRoutes from "./routes/notifications";
+import documentRoutes from "./routes/documents";
 
 const app = express();
 app.use(helmet());
@@ -58,6 +59,7 @@ app.use("/api", formRoutes);
 app.use("/api", telecallerRoutes);
 app.use("/api", communicationRoutes);
 app.use("/api", notificationRoutes);
+app.use("/api", documentRoutes);
 
 // Debug middleware to log all requests
 app.use((req, res, next) => {

@@ -30,6 +30,8 @@ model Tenant {
     payments                Payment[]
     applications            Application[]
     documents               Document[]
+    documentTypes           DocumentType[]
+    documentChecklists      DocumentChecklist[]
     communications          Communication[]
     auditLogs               AuditLog[]
     feeStructures           FeeStructure[]
@@ -43,6 +45,9 @@ model Tenant {
     emailQueues             EmailQueue[]
     notificationPreferences NotificationPreference[]
     Notification            Notification[]
+    refundRequests          RefundRequest[]
+    financialAuditLogs      FinancialAuditLog[]
+    scholarships            Scholarship[]
 }
 
 enum SubscriptionTier {
@@ -88,6 +93,7 @@ model User {
     followUpReminders       FollowUpReminder[]       @relation("FollowUpReminderTelecaller")
     notificationPreferences NotificationPreference[] @relation("NotificationPreference")
     notifications           Notification[]           @relation("NotificationUser")
+    refundApprovals         RefundApproval[]         @relation("RefundApprover")
 }
 
 enum Role {
@@ -316,9 +322,10 @@ model Payment {
     createdAt            DateTime @default(now())
     updatedAt            DateTime @updatedAt
 
-    tenant      Tenant          @relation(fields: [tenantId], references: [id])
-    application Application?    @relation("ApplicationPayment", fields: [applicationId], references: [id])
-    submission  FormSubmission? @relation("SubmissionPayment", fields: [submissionId], references: [id])
+    tenant         Tenant          @relation(fields: [tenantId], references: [id])
+    application    Application?    @relation("ApplicationPayment", fields: [applicationId], references: [id])
+    submission     FormSubmission? @relation("SubmissionPayment", fields: [submissionId], references: [id])
+    refundRequests RefundRequest[]
 }
 
 model RefreshToken {
@@ -351,12 +358,13 @@ model Application {
     submittedAt  DateTime          @default(now())
     updatedAt    DateTime          @updatedAt
 
-    tenant       Tenant        @relation(fields: [tenantId], references: [id])
-    lead         Lead?         @relation(fields: [leadId], references: [id])
-    assignee     User?         @relation("ApplicationAssignee", fields: [assigneeId], references: [id])
-    documents    Document[]
-    payments     Payment[]     @relation("ApplicationPayment")
-    appointments Appointment[]
+    tenant         Tenant          @relation(fields: [tenantId], references: [id])
+    lead           Lead?           @relation(fields: [leadId], references: [id])
+    assignee       User?           @relation("ApplicationAssignee", fields: [assigneeId], references: [id])
+    documents      Document[]
+    payments       Payment[]       @relation("ApplicationPayment")
+    appointments   Appointment[]
+    refundRequests RefundRequest[]
 }
 
 enum ApplicationStatus {
@@ -376,6 +384,7 @@ model Document {
     id              String         @id @default(cuid())
     tenantId        String
     applicationId   String?
+    documentTypeId  String?
     fileName        String
     filePath        String
     fileType        String
@@ -388,9 +397,10 @@ model Document {
     createdAt       DateTime       @default(now())
     updatedAt       DateTime       @updatedAt
 
-    tenant      Tenant       @relation(fields: [tenantId], references: [id])
-    application Application? @relation(fields: [applicationId], references: [id])
-    verifier    User?        @relation("DocumentVerifier", fields: [verifierId], references: [id])
+    tenant       Tenant        @relation(fields: [tenantId], references: [id])
+    application  Application?  @relation(fields: [applicationId], references: [id])
+    documentType DocumentType? @relation(fields: [documentTypeId], references: [id])
+    verifier     User?         @relation("DocumentVerifier", fields: [verifierId], references: [id])
 }
 
 enum DocumentStatus {
@@ -793,4 +803,172 @@ enum FollowUpStatus {
     COMPLETED
     CANCELLED
     OVERDUE
+}
+
+// Document Type Configuration Models
+model DocumentType {
+    id             String   @id @default(cuid())
+    tenantId       String
+    name           String
+    description    String?
+    category       String   @default("GENERAL") // GENERAL, ACADEMIC, IDENTITY, FINANCIAL
+    isRequired     Boolean  @default(true)
+    maxFileSize    Int      @default(10485760) // 10MB in bytes
+    allowedFormats Json // Array of allowed MIME types
+    isActive       Boolean  @default(true)
+    createdAt      DateTime @default(now())
+    updatedAt      DateTime @updatedAt
+
+    tenant     Tenant              @relation(fields: [tenantId], references: [id])
+    checklists DocumentChecklist[]
+    documents  Document[]
+
+    @@index([tenantId])
+    @@index([category])
+    @@index([isActive])
+}
+
+model DocumentChecklist {
+    id             String   @id @default(cuid())
+    tenantId       String
+    documentTypeId String
+    title          String
+    description    String?
+    isRequired     Boolean  @default(true)
+    order          Int      @default(0)
+    isActive       Boolean  @default(true)
+    createdAt      DateTime @default(now())
+    updatedAt      DateTime @updatedAt
+
+    tenant       Tenant       @relation(fields: [tenantId], references: [id])
+    documentType DocumentType @relation(fields: [documentTypeId], references: [id])
+
+    @@index([tenantId])
+    @@index([documentTypeId])
+    @@index([order])
+}
+
+// Refund Management Models
+model RefundRequest {
+    id              String       @id @default(cuid())
+    tenantId        String
+    applicationId   String?
+    paymentId       String?
+    studentName     String
+    studentEmail    String
+    studentPhone    String?
+    amount          Int
+    reason          String
+    status          RefundStatus @default(PENDING)
+    requestedBy     String? // User ID who requested
+    approvedBy      String? // User ID who approved
+    rejectedBy      String? // User ID who rejected
+    rejectionReason String?
+    requestedAt     DateTime     @default(now())
+    approvedAt      DateTime?
+    rejectedAt      DateTime?
+    processedAt     DateTime?
+    createdAt       DateTime     @default(now())
+    updatedAt       DateTime     @updatedAt
+
+    tenant      Tenant              @relation(fields: [tenantId], references: [id])
+    application Application?        @relation(fields: [applicationId], references: [id])
+    payment     Payment?            @relation(fields: [paymentId], references: [id])
+    approvals   RefundApproval[]
+    auditLogs   FinancialAuditLog[]
+
+    @@index([tenantId])
+    @@index([applicationId])
+    @@index([paymentId])
+    @@index([status])
+    @@index([requestedAt])
+}
+
+model RefundApproval {
+    id              String         @id @default(cuid())
+    refundRequestId String
+    approverId      String
+    status          ApprovalStatus @default(PENDING)
+    comments        String?
+    approvedAt      DateTime?
+    createdAt       DateTime       @default(now())
+    updatedAt       DateTime       @updatedAt
+
+    refundRequest RefundRequest @relation(fields: [refundRequestId], references: [id])
+    approver      User          @relation("RefundApprover", fields: [approverId], references: [id])
+
+    @@index([refundRequestId])
+    @@index([approverId])
+    @@index([status])
+}
+
+// Financial Audit and Tracking Models
+model FinancialAuditLog {
+    id              String   @id @default(cuid())
+    tenantId        String
+    refundRequestId String?
+    action          String // REFUND_REQUESTED, REFUND_APPROVED, REFUND_REJECTED, PAYMENT_PROCESSED
+    details         Json // Additional action details
+    performedBy     String // User ID
+    performedAt     DateTime @default(now())
+    ipAddress       String?
+    userAgent       String?
+
+    tenant        Tenant         @relation(fields: [tenantId], references: [id])
+    refundRequest RefundRequest? @relation(fields: [refundRequestId], references: [id])
+
+    @@index([tenantId])
+    @@index([refundRequestId])
+    @@index([action])
+    @@index([performedAt])
+}
+
+// Scholarship Management Model
+model Scholarship {
+    id                  String          @id @default(cuid())
+    tenantId            String
+    name                String
+    description         String?
+    amount              Int // Amount in paise
+    percentage          Float? // Percentage discount
+    type                ScholarshipType @default(MERIT)
+    criteria            Json // Scholarship criteria
+    isActive            Boolean         @default(true)
+    validFrom           DateTime
+    validUntil          DateTime?
+    maxApplications     Int?
+    currentApplications Int             @default(0)
+    createdAt           DateTime        @default(now())
+    updatedAt           DateTime        @updatedAt
+
+    tenant Tenant @relation(fields: [tenantId], references: [id])
+
+    @@index([tenantId])
+    @@index([type])
+    @@index([isActive])
+    @@index([validFrom])
+}
+
+// Enums for new models
+enum RefundStatus {
+    PENDING
+    APPROVED
+    REJECTED
+    PROCESSED
+    CANCELLED
+}
+
+enum ApprovalStatus {
+    PENDING
+    APPROVED
+    REJECTED
+}
+
+enum ScholarshipType {
+    MERIT
+    NEED_BASED
+    SPORTS
+    CULTURAL
+    ACADEMIC
+    SPECIAL
 }

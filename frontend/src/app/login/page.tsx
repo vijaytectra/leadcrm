@@ -34,58 +34,58 @@ const roleCredentials = [
     },
     {
         role: "Institution Admin",
-        tenant: "demo-school",
-        email: "admin@demoschool.com",
-        password: "Admin123!",
+        tenant: "arunai-engineering-college",
+        email: "vijay.r20799@gmail.com",
+        password: "Vijay@123",
         description: "School administrator"
     },
     {
         role: "Telecaller",
-        tenant: "demo-school",
-        email: "telecaller@demoschool.com",
-        password: "Telecaller123!",
+        tenant: "arunai-engineering-college",
+        email: "sigofix534@lorkex.com",
+        password: "Vijay@123",
         description: "Lead contact specialist"
     },
     {
         role: "Document Verifier",
-        tenant: "demo-school",
-        email: "verifier@demoschool.com",
-        password: "Verifier123!",
+        tenant: "arunai-engineering-college",
+        email: "ricojo2704@lorkex.com",
+        password: "Vijay@123",
         description: "Document validation specialist"
     },
     {
         role: "Finance Team",
-        tenant: "demo-school",
-        email: "finance@demoschool.com",
-        password: "Finance123!",
+        tenant: "arunai-engineering-college",
+        email: "tefano4892@gta5hx.com",
+        password: "Vijay@123",
         description: "Fee and payment management"
     },
     {
         role: "Admission Team",
-        tenant: "demo-school",
+        tenant: "arunai-engineering-college",
         email: "admission@demoschool.com",
-        password: "Admission123!",
+        password: "Vijay@123",
         description: "Admission counseling"
     },
     {
         role: "Admission Head",
-        tenant: "demo-school",
+        tenant: "arunai-engineering-college",
         email: "head@demoschool.com",
-        password: "Head123!",
+        password: "Vijay@123",
         description: "Final admission decisions"
     },
     {
         role: "Student",
-        tenant: "demo-school",
+        tenant: "arunai-engineering-college",
         email: "student@demoschool.com",
-        password: "Student123!",
+        password: "Vijay@123",
         description: "Student portal access"
     },
     {
         role: "Parent",
-        tenant: "demo-school",
+        tenant: "arunai-engineering-college",
         email: "parent@demoschool.com",
-        password: "Parent123!",
+        password: "Vijay@123",
         description: "Parent portal access"
     }
 ];
@@ -117,7 +117,7 @@ export default function LoginPage() {
             // Get the UPDATED user and tenant slug from the store AFTER login
             const { user, currentTenantSlug } = useAuthStore.getState();
 
-          
+
 
             // Now route based on the updated user role
             if (user?.role === "INSTITUTION_ADMIN") {
