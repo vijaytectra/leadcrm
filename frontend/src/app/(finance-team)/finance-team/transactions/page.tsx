@@ -56,9 +56,9 @@ async function getTransactionsData(tenantSlug: string, searchParams: {
     limit?: string;
 }) {
     try {
-        const token=await getToken();
-        if(!token){
-          throw new Error("No token found");
+        const token = await getToken();
+        if (!token) {
+            throw new Error("No token found");
         }
         const queryParams = new URLSearchParams();
         if (searchParams.status) queryParams.set("status", searchParams.status);
@@ -80,19 +80,53 @@ async function getTransactionsData(tenantSlug: string, searchParams: {
                         pages: number;
                     };
                 };
-            }>(`/${tenantSlug}/finance/payments?${queryParams.toString()}`, { token: token }),
+            }>(`/finance/${tenantSlug}/payments?${queryParams.toString()}`, { token: token }),
             apiGet<{
                 success: boolean;
                 data: {
-                    metrics: TransactionStats;
+                    period: string;
+                    dateRange: {
+                        start: string;
+                        end: string;
+                    };
+                    metrics: {
+                        totalTransactions: number;
+                        totalAmount: number;
+                        totalPlatformFees: number;
+                        totalInstitutionAmount: number;
+                        successfulTransactions: number;
+                        successfulAmount: number;
+                        failedTransactions: number;
+                        refundedAmount: number;
+                        refundedTransactions: number;
+                    };
+                    conversion: {
+                        successRate: number;
+                        averageTransactionValue: number;
+                    };
                 };
-            }>(`/${tenantSlug}/finance/metrics?period=30d`, { token: token })
+            }>(`/finance/${tenantSlug}/metrics?period=30d`, { token: token })
         ]);
+
+        // Transform backend response to expected format
+        const backendData = metricsResponse.data;
+        const transformedStats: TransactionStats = {
+            totalTransactions: backendData.metrics?.totalTransactions || 0,
+            totalAmount: backendData.metrics?.totalAmount || 0,
+            successfulTransactions: backendData.metrics?.successfulTransactions || 0,
+            failedTransactions: backendData.metrics?.failedTransactions || 0,
+            pendingTransactions: 0, // Not provided by backend
+            refundedTransactions: backendData.metrics?.refundedTransactions || 0,
+            successRate: backendData.conversion?.successRate || 0,
+            averageTransactionValue: backendData.conversion?.averageTransactionValue || 0,
+            totalPlatformFees: backendData.metrics?.totalPlatformFees || 0,
+            totalInstitutionAmount: backendData.metrics?.totalInstitutionAmount || 0,
+        };
 
         return {
             transactions: transactionsResponse.data.payments,
             pagination: transactionsResponse.data.pagination,
-            stats: metricsResponse.data.metrics,
+            stats: transformedStats,
         };
     } catch (error) {
         console.error("Error fetching transactions data:", error);

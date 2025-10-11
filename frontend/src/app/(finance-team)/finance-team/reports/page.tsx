@@ -59,8 +59,8 @@ async function getReportsData(tenantSlug: string, searchParams: {
   endDate?: string;
 }) {
   try {
-    const token=await getToken();
-    if(!token){
+    const token = await getToken();
+    if (!token) {
       throw new Error("No token found");
     }
     const queryParams = new URLSearchParams();
@@ -88,11 +88,11 @@ async function getReportsData(tenantSlug: string, searchParams: {
             endDate: string | null;
           };
         };
-      }>(`/${tenantSlug}/finance/reports/summary?${queryParams.toString()}`, { token: token }),
+      }>(`/finance/${tenantSlug}/finance/reports/summary?${queryParams.toString()}`, { token: token }),
       apiGet<{
         success: boolean;
         data: FinancialReport;
-      }>(`/${tenantSlug}/finance/reports?${queryParams.toString()}`, { token: token })
+      }>(`/finance/${tenantSlug}/reports?${queryParams.toString()}`, { token: token })
     ]);
 
     return {
@@ -126,8 +126,8 @@ function ReportsSkeleton() {
   );
 }
 
-export default async function ReportsPage({ 
-  searchParams 
+export default async function ReportsPage({
+  searchParams
 }: ReportsPageProps) {
   const resolvedSearchParams = await searchParams;
   const tenant = resolvedSearchParams.tenant || "demo-tenant";

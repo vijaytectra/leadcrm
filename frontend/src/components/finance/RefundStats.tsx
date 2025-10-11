@@ -25,7 +25,10 @@ export function RefundStats({ stats }: RefundStatsProps) {
         }).format(amount / 100); // Convert from paise to rupees
     };
 
-    const formatPercentage = (value: number) => {
+    const formatPercentage = (value: number | undefined) => {
+        if (value === undefined || value === null || isNaN(value)) {
+            return "0.0%";
+        }
         return `${value.toFixed(1)}%`;
     };
 

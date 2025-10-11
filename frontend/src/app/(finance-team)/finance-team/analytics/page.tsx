@@ -62,8 +62,8 @@ async function getAnalyticsData(tenantSlug: string, searchParams: {
   endDate?: string;
 }) {
   try {
-    const token=await getToken();
-    if(!token){
+    const token = await getToken();
+    if (!token) {
       throw new Error("No token found");
     }
     const queryParams = new URLSearchParams();
@@ -75,18 +75,52 @@ async function getAnalyticsData(tenantSlug: string, searchParams: {
       apiGet<{
         success: boolean;
         data: AnalyticsData;
-      }>(`/${tenantSlug}/finance/dashboard?${queryParams.toString()}`, { token: token }),
+      }>(`/finance/${tenantSlug}/finance/dashboard?${queryParams.toString()}`, { token: token }),
       apiGet<{
         success: boolean;
         data: {
-          metrics: AnalyticsData["metrics"];
+          period: string;
+          dateRange: {
+            start: string;
+            end: string;
+          };
+          metrics: {
+            totalTransactions: number;
+            totalAmount: number;
+            totalPlatformFees: number;
+            totalInstitutionAmount: number;
+            successfulTransactions: number;
+            successfulAmount: number;
+            failedTransactions: number;
+            refundedAmount: number;
+            refundedTransactions: number;
+          };
+          conversion: {
+            successRate: number;
+            averageTransactionValue: number;
+          };
         };
-      }>(`/${tenantSlug}/finance/metrics?${queryParams.toString()}`, { token: token })
+      }>(`/finance/${tenantSlug}/metrics?${queryParams.toString()}`, { token: token })
     ]);
+
+    // Transform backend metrics to expected format
+    const backendData = metricsResponse.data;
+    const transformedMetrics: AnalyticsData["metrics"] = {
+      totalTransactions: backendData.metrics?.totalTransactions || 0,
+      totalAmount: backendData.metrics?.totalAmount || 0,
+      successfulTransactions: backendData.metrics?.successfulTransactions || 0,
+      failedTransactions: backendData.metrics?.failedTransactions || 0,
+      pendingTransactions: 0, // Not provided by backend
+      refundedTransactions: backendData.metrics?.refundedTransactions || 0,
+      successRate: backendData.conversion?.successRate || 0,
+      averageTransactionValue: backendData.conversion?.averageTransactionValue || 0,
+      totalPlatformFees: backendData.metrics?.totalPlatformFees || 0,
+      totalInstitutionAmount: backendData.metrics?.totalInstitutionAmount || 0,
+    };
 
     return {
       analytics: dashboardResponse.data,
-      metrics: metricsResponse.data.metrics,
+      metrics: transformedMetrics,
     };
   } catch (error) {
     console.error("Error fetching analytics data:", error);
@@ -115,8 +149,8 @@ function AnalyticsSkeleton() {
   );
 }
 
-export default async function AnalyticsPage({ 
-  searchParams 
+export default async function AnalyticsPage({
+  searchParams
 }: AnalyticsPageProps) {
   const resolvedSearchParams = await searchParams;
   const tenant = resolvedSearchParams.tenant || "demo-tenant";

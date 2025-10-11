@@ -27,16 +27,19 @@ export function AnalyticsOverview({ metrics }: AnalyticsOverviewProps) {
     }).format(amount / 100); // Convert from paise to rupees
   };
 
-  const formatPercentage = (value: number) => {
+  const formatPercentage = (value: number | undefined) => {
+    if (value === undefined || value === null || isNaN(value)) {
+      return "0.0%";
+    }
     return `${value.toFixed(1)}%`;
   };
 
-  const platformFeePercentage = metrics.totalAmount > 0 
-    ? (metrics.totalPlatformFees / metrics.totalAmount) * 100 
+  const platformFeePercentage = metrics.totalAmount > 0
+    ? (metrics.totalPlatformFees / metrics.totalAmount) * 100
     : 0;
 
-  const refundPercentage = metrics.totalAmount > 0 
-    ? (metrics.refundedTransactions / metrics.totalTransactions) * 100 
+  const refundPercentage = metrics.totalAmount > 0
+    ? (metrics.refundedTransactions / metrics.totalTransactions) * 100
     : 0;
 
   return (

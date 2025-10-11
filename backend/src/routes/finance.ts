@@ -163,6 +163,7 @@ router.get(
   requireRole(["SUPER_ADMIN", "INSTITUTION_ADMIN", "FINANCE_TEAM"]),
   async (req: AuthedRequest, res) => {
     try {
+      console.log("req.query", req.query);
       const { period = "30d" } = req.query;
       const tenantId = req.auth?.ten;
 

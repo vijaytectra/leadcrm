@@ -74,40 +74,58 @@ async function getRefundsData(tenantSlug: string, searchParams: {
     limit?: string;
 }) {
     try {
-        const token=await getToken();
-        if(!token){
-          throw new Error("No token found");
+        const token = await getToken();
+        if (!token) {
+            throw new Error("No token found");
         }
         const queryParams = new URLSearchParams();
         if (searchParams.status) queryParams.set("status", searchParams.status);
         if (searchParams.page) queryParams.set("page", searchParams.page);
         if (searchParams.limit) queryParams.set("limit", searchParams.limit);
 
-        const [refundsResponse, dashboardResponse] = await Promise.all([
-            apiGet<{
-                success: boolean;
-                data: {
-                    refunds: RefundRequest[];
-                    pagination: {
-                        page: number;
-                        limit: number;
-                        total: number;
-                        pages: number;
-                    };
+        const refundsResponse = await apiGet<{
+            success: boolean;
+            data: {
+                refunds: RefundRequest[];
+                pagination: {
+                    page: number;
+                    limit: number;
+                    total: number;
+                    pages: number;
                 };
-            }>(`/${tenantSlug}/finance/refunds?${queryParams.toString()}`, { token: token }),
-            apiGet<{
-                success: boolean;
-                data: {
-                    metrics: RefundStats;
-                };
-            }>(`/${tenantSlug}/finance/dashboard`, { token: token })
-        ]);
+            };
+        }>(`/finance/${tenantSlug}/finance/refunds?${queryParams.toString()}`, { token: token });
+
+        // Calculate refund stats from the refunds data
+        const refunds = refundsResponse.data.refunds;
+        const totalRefunds = refunds.length;
+        const pendingRefunds = refunds.filter(r => r.status === 'PENDING').length;
+        const approvedRefunds = refunds.filter(r => r.status === 'APPROVED').length;
+        const rejectedRefunds = refunds.filter(r => r.status === 'REJECTED').length;
+        const processedRefunds = refunds.filter(r => r.status === 'PROCESSED').length;
+
+        const totalRefundAmount = refunds
+            .filter(r => r.status === 'APPROVED' || r.status === 'PROCESSED')
+            .reduce((sum, r) => sum + r.amount, 0);
+
+        const averageRefundAmount = approvedRefunds > 0 ? totalRefundAmount / approvedRefunds : 0;
+        const approvalRate = totalRefunds > 0 ? (approvedRefunds / totalRefunds) * 100 : 0;
+
+        const stats: RefundStats = {
+            totalRefunds,
+            pendingRefunds,
+            approvedRefunds,
+            rejectedRefunds,
+            processedRefunds,
+            totalRefundAmount,
+            averageRefundAmount,
+            approvalRate,
+        };
 
         return {
             refunds: refundsResponse.data.refunds,
             pagination: refundsResponse.data.pagination,
-            stats: dashboardResponse.data.metrics,
+            stats,
         };
     } catch (error) {
         console.error("Error fetching refunds data:", error);

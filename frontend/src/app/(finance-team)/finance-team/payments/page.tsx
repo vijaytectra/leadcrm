@@ -48,9 +48,9 @@ async function getPaymentsData(tenantSlug: string, searchParams: {
     limit?: string;
 }) {
     try {
-        const token=await getToken();
-        if(!token){
-          throw new Error("No token found");
+        const token = await getToken();
+        if (!token) {
+            throw new Error("No token found");
         }
         const queryParams = new URLSearchParams();
         if (searchParams.status) queryParams.set("status", searchParams.status);
@@ -75,15 +75,34 @@ async function getPaymentsData(tenantSlug: string, searchParams: {
             apiGet<{
                 success: boolean;
                 data: {
-                    metrics: PaymentStats;
+                    period: string;
+                    dateRange: {
+                        start: string;
+                        end: string;
+                    };
+                    metrics: {
+                        totalTransactions: number;
+                        totalAmount: number;
+                        totalPlatformFees: number;
+                        totalInstitutionAmount: number;
+                        successfulTransactions: number;
+                        successfulAmount: number;
+                        failedTransactions: number;
+                        refundedAmount: number;
+                        refundedTransactions: number;
+                    };
+                    conversion: {
+                        successRate: number;
+                        averageTransactionValue: number;
+                    };
                 };
-            }>(`/${tenantSlug}/finance/metrics?period=30d`, { token: token })
+            }>(`/finance/${tenantSlug}/metrics?period=30d`, { token: token })
         ]);
 
         return {
             payments: paymentsResponse.data.payments,
             pagination: paymentsResponse.data.pagination,
-            stats: metricsResponse.data.metrics,
+            stats: metricsResponse.data,
         };
     } catch (error) {
         console.error("Error fetching payments data:", error);

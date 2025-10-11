@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BarChart3, TrendingUp, DollarSign, Calendar, User, Mail, RefreshCw, AlertCircle } from "lucide-react";
+import { BarChart3, TrendingUp, DollarSign, Calendar, RefreshCw, AlertCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 interface AnalyticsData {
@@ -58,9 +58,6 @@ export function FinancialAnalytics({ analytics }: FinancialAnalyticsProps) {
     }).format(amount / 100); // Convert from paise to rupees
   };
 
-  const formatPercentage = (value: number) => {
-    return `${value.toFixed(1)}%`;
-  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -108,7 +105,7 @@ export function FinancialAnalytics({ analytics }: FinancialAnalyticsProps) {
               Revenue Trends
             </h4>
             <div className="space-y-2">
-              {analytics.revenueByPeriod.map((period) => (
+              {(analytics.revenueByPeriod || []).map((period) => (
                 <div key={period.period} className="flex items-center justify-between text-sm">
                   <span className="text-gray-600">{period.period}</span>
                   <div className="flex items-center gap-4">
@@ -127,7 +124,7 @@ export function FinancialAnalytics({ analytics }: FinancialAnalyticsProps) {
               Top Performing Periods
             </h4>
             <div className="space-y-2">
-              {analytics.topPerformingPeriods.map((period) => (
+              {(analytics.topPerformingPeriods || []).map((period) => (
                 <div key={period.period} className="flex items-center justify-between text-sm">
                   <span className="text-gray-600">{period.period}</span>
                   <div className="flex items-center gap-4">
@@ -148,7 +145,7 @@ export function FinancialAnalytics({ analytics }: FinancialAnalyticsProps) {
               Recent Transactions
             </h4>
             <div className="space-y-3">
-              {analytics.recentTransactions.slice(0, 5).map((transaction) => (
+              {(analytics.recentTransactions || []).slice(0, 5).map((transaction) => (
                 <div key={transaction.id} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     {getStatusIcon(transaction.status)}
@@ -179,32 +176,32 @@ export function FinancialAnalytics({ analytics }: FinancialAnalyticsProps) {
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">Completed</span>
-                <span className="font-medium text-green-600">{analytics.statusDistribution.COMPLETED}</span>
+                <span className="font-medium text-green-600">{analytics.statusDistribution?.COMPLETED || 0}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">Failed</span>
-                <span className="font-medium text-red-600">{analytics.statusDistribution.FAILED}</span>
+                <span className="font-medium text-red-600">{analytics.statusDistribution?.FAILED || 0}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">Pending</span>
-                <span className="font-medium text-yellow-600">{analytics.statusDistribution.PENDING}</span>
+                <span className="font-medium text-yellow-600">{analytics.statusDistribution?.PENDING || 0}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">Refunded</span>
-                <span className="font-medium text-orange-600">{analytics.statusDistribution.REFUNDED}</span>
+                <span className="font-medium text-orange-600">{analytics.statusDistribution?.REFUNDED || 0}</span>
               </div>
             </div>
           </div>
 
           {/* Pending Refunds Alert */}
-          {analytics.pendingRefunds > 0 && (
+          {(analytics.pendingRefunds || 0) > 0 && (
             <div className="border rounded-lg p-4 bg-orange-50 border-orange-200">
               <div className="flex items-center gap-2 mb-2">
                 <AlertCircle className="h-4 w-4 text-orange-500" />
                 <h4 className="text-sm font-medium text-orange-800">Pending Refunds</h4>
               </div>
               <p className="text-sm text-orange-700">
-                {analytics.pendingRefunds} refund requests are pending approval.
+                {analytics.pendingRefunds || 0} refund requests are pending approval.
               </p>
               <Button variant="outline" size="sm" className="mt-2 text-orange-600 border-orange-200 hover:bg-orange-100">
                 Review Refunds

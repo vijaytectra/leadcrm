@@ -13,11 +13,87 @@ interface PaymentStats {
     averageTransactionValue: number;
 }
 
+interface BackendMetricsResponse {
+    period: string;
+    dateRange: {
+        start: string;
+        end: string;
+    };
+    metrics: {
+        totalTransactions: number;
+        totalAmount: number;
+        totalPlatformFees: number;
+        totalInstitutionAmount: number;
+        successfulTransactions: number;
+        successfulAmount: number;
+        failedTransactions: number;
+        refundedAmount: number;
+        refundedTransactions: number;
+    };
+    conversion: {
+        successRate: number;
+        averageTransactionValue: number;
+    };
+}
+
 interface PaymentStatsProps {
-    stats: PaymentStats;
+    stats: PaymentStats | BackendMetricsResponse;
 }
 
 export function PaymentStats({ stats }: PaymentStatsProps) {
+    // Transform backend response to expected format
+    const transformStats = (data: PaymentStats | BackendMetricsResponse | null | undefined): PaymentStats => {
+        // Check if it's already in the expected format
+        if (data && 'totalPayments' in data) {
+            return data;
+        }
+
+        // Handle case where data might be undefined or null
+        if (!data) {
+            return {
+                totalPayments: 0,
+                totalAmount: 0,
+                successfulPayments: 0,
+                failedPayments: 0,
+                pendingPayments: 0,
+                refundedPayments: 0,
+                successRate: 0,
+                averageTransactionValue: 0,
+            };
+        }
+
+        // Transform backend response - handle both possible structures
+        const backendData = data as BackendMetricsResponse;
+
+        // Check if the data has the expected backend structure
+        if (backendData.metrics && backendData.conversion) {
+            return {
+                totalPayments: backendData.metrics.totalTransactions || 0,
+                totalAmount: backendData.metrics.totalAmount || 0,
+                successfulPayments: backendData.metrics.successfulTransactions || 0,
+                failedPayments: backendData.metrics.failedTransactions || 0,
+                pendingPayments: 0, // Not provided by backend, would need separate query
+                refundedPayments: backendData.metrics.refundedTransactions || 0,
+                successRate: backendData.conversion.successRate || 0,
+                averageTransactionValue: backendData.conversion.averageTransactionValue || 0,
+            };
+        }
+
+        // Fallback: return empty stats if structure is unexpected
+        return {
+            totalPayments: 0,
+            totalAmount: 0,
+            successfulPayments: 0,
+            failedPayments: 0,
+            pendingPayments: 0,
+            refundedPayments: 0,
+            successRate: 0,
+            averageTransactionValue: 0,
+        };
+    };
+
+    const transformedStats = transformStats(stats);
+
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat("en-IN", {
             style: "currency",
@@ -25,7 +101,10 @@ export function PaymentStats({ stats }: PaymentStatsProps) {
         }).format(amount / 100); // Convert from paise to rupees
     };
 
-    const formatPercentage = (value: number) => {
+    const formatPercentage = (value: number | undefined) => {
+        if (value === undefined || value === null || isNaN(value)) {
+            return "0.0%";
+        }
         return `${value.toFixed(1)}%`;
     };
 
@@ -37,7 +116,7 @@ export function PaymentStats({ stats }: PaymentStatsProps) {
                     <CreditCard className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{stats.totalPayments}</div>
+                    <div className="text-2xl font-bold">{transformedStats.totalPayments}</div>
                     <p className="text-xs text-muted-foreground">
                         All time transactions
                     </p>
@@ -50,7 +129,7 @@ export function PaymentStats({ stats }: PaymentStatsProps) {
                     <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{formatCurrency(stats.totalAmount)}</div>
+                    <div className="text-2xl font-bold">{formatCurrency(transformedStats.totalAmount)}</div>
                     <p className="text-xs text-muted-foreground">
                         Gross revenue collected
                     </p>
@@ -63,9 +142,9 @@ export function PaymentStats({ stats }: PaymentStatsProps) {
                     <CheckCircle className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{formatPercentage(stats.successRate)}</div>
+                    <div className="text-2xl font-bold">{formatPercentage(transformedStats.successRate)}</div>
                     <p className="text-xs text-muted-foreground">
-                        {stats.successfulPayments} successful payments
+                        {transformedStats.successfulPayments} successful payments
                     </p>
                 </CardContent>
             </Card>
@@ -76,7 +155,7 @@ export function PaymentStats({ stats }: PaymentStatsProps) {
                     <CreditCard className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{formatCurrency(stats.averageTransactionValue)}</div>
+                    <div className="text-2xl font-bold">{formatCurrency(transformedStats.averageTransactionValue)}</div>
                     <p className="text-xs text-muted-foreground">
                         Per successful transaction
                     </p>
@@ -98,11 +177,11 @@ export function PaymentStats({ stats }: PaymentStatsProps) {
                             <div className="flex-1">
                                 <div className="text-sm font-medium">Successful</div>
                                 <div className="text-xs text-muted-foreground">
-                                    {stats.successfulPayments} payments
+                                    {transformedStats.successfulPayments} payments
                                 </div>
                             </div>
                             <Badge variant="default" className="bg-green-100 text-green-800">
-                                {stats.totalPayments > 0 ? Math.round((stats.successfulPayments / stats.totalPayments) * 100) : 0}%
+                                {transformedStats.totalPayments > 0 ? Math.round((transformedStats.successfulPayments / transformedStats.totalPayments) * 100) : 0}%
                             </Badge>
                         </div>
 
@@ -111,11 +190,11 @@ export function PaymentStats({ stats }: PaymentStatsProps) {
                             <div className="flex-1">
                                 <div className="text-sm font-medium">Failed</div>
                                 <div className="text-xs text-muted-foreground">
-                                    {stats.failedPayments} payments
+                                    {transformedStats.failedPayments} payments
                                 </div>
                             </div>
                             <Badge variant="destructive">
-                                {stats.totalPayments > 0 ? Math.round((stats.failedPayments / stats.totalPayments) * 100) : 0}%
+                                {transformedStats.totalPayments > 0 ? Math.round((transformedStats.failedPayments / transformedStats.totalPayments) * 100) : 0}%
                             </Badge>
                         </div>
 
@@ -124,11 +203,11 @@ export function PaymentStats({ stats }: PaymentStatsProps) {
                             <div className="flex-1">
                                 <div className="text-sm font-medium">Pending</div>
                                 <div className="text-xs text-muted-foreground">
-                                    {stats.pendingPayments} payments
+                                    {transformedStats.pendingPayments} payments
                                 </div>
                             </div>
                             <Badge variant="outline" className="text-yellow-600 border-yellow-200">
-                                {stats.totalPayments > 0 ? Math.round((stats.pendingPayments / stats.totalPayments) * 100) : 0}%
+                                {transformedStats.totalPayments > 0 ? Math.round((transformedStats.pendingPayments / transformedStats.totalPayments) * 100) : 0}%
                             </Badge>
                         </div>
 
@@ -137,11 +216,11 @@ export function PaymentStats({ stats }: PaymentStatsProps) {
                             <div className="flex-1">
                                 <div className="text-sm font-medium">Refunded</div>
                                 <div className="text-xs text-muted-foreground">
-                                    {stats.refundedPayments} payments
+                                    {transformedStats.refundedPayments} payments
                                 </div>
                             </div>
                             <Badge variant="outline" className="text-orange-600 border-orange-200">
-                                {stats.totalPayments > 0 ? Math.round((stats.refundedPayments / stats.totalPayments) * 100) : 0}%
+                                {transformedStats.totalPayments > 0 ? Math.round((transformedStats.refundedPayments / transformedStats.totalPayments) * 100) : 0}%
                             </Badge>
                         </div>
                     </div>

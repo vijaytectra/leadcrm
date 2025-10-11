@@ -48,6 +48,9 @@ model Tenant {
     refundRequests          RefundRequest[]
     financialAuditLogs      FinancialAuditLog[]
     scholarships            Scholarship[]
+    admissionReviews        AdmissionReview[]
+    offerLetterTemplates    OfferLetterTemplate[]
+    offerLetters            OfferLetter[]
 }
 
 enum SubscriptionTier {
@@ -94,6 +97,8 @@ model User {
     notificationPreferences NotificationPreference[] @relation("NotificationPreference")
     notifications           Notification[]           @relation("NotificationUser")
     refundApprovals         RefundApproval[]         @relation("RefundApprover")
+    admissionReviews        AdmissionReview[]        @relation("AdmissionReviewer")
+    generatedOfferLetters   OfferLetter[]            @relation("OfferLetterGenerator")
 }
 
 enum Role {
@@ -358,13 +363,15 @@ model Application {
     submittedAt  DateTime          @default(now())
     updatedAt    DateTime          @updatedAt
 
-    tenant         Tenant          @relation(fields: [tenantId], references: [id])
-    lead           Lead?           @relation(fields: [leadId], references: [id])
-    assignee       User?           @relation("ApplicationAssignee", fields: [assigneeId], references: [id])
-    documents      Document[]
-    payments       Payment[]       @relation("ApplicationPayment")
-    appointments   Appointment[]
-    refundRequests RefundRequest[]
+    tenant          Tenant           @relation(fields: [tenantId], references: [id])
+    lead            Lead?            @relation(fields: [leadId], references: [id])
+    assignee        User?            @relation("ApplicationAssignee", fields: [assigneeId], references: [id])
+    documents       Document[]
+    payments        Payment[]        @relation("ApplicationPayment")
+    appointments    Appointment[]
+    refundRequests  RefundRequest[]
+    admissionReview AdmissionReview?
+    offerLetter     OfferLetter?
 }
 
 enum ApplicationStatus {
@@ -971,4 +978,80 @@ enum ScholarshipType {
     CULTURAL
     ACADEMIC
     SPECIAL
+}
+
+// Admission Management Models
+model AdmissionReview {
+    id              String                @id @default(cuid())
+    tenantId        String
+    applicationId   String                @unique
+    reviewerId      String
+    status          AdmissionReviewStatus @default(PENDING)
+    interviewNotes  String?
+    academicScore   Int?
+    recommendations String?
+    decision        String? // APPROVED, REJECTED, WAITLISTED
+    decisionReason  String?
+    reviewedAt      DateTime?
+    createdAt       DateTime              @default(now())
+    updatedAt       DateTime              @updatedAt
+
+    tenant      Tenant      @relation(fields: [tenantId], references: [id])
+    application Application @relation(fields: [applicationId], references: [id])
+    reviewer    User        @relation("AdmissionReviewer", fields: [reviewerId], references: [id])
+}
+
+enum AdmissionReviewStatus {
+    PENDING
+    IN_REVIEW
+    COMPLETED
+    APPROVED
+    REJECTED
+}
+
+model OfferLetterTemplate {
+    id          String   @id @default(cuid())
+    tenantId    String
+    name        String
+    description String?
+    content     Json // Rich text editor content
+    variables   Json // Available placeholders
+    isActive    Boolean  @default(true)
+    createdBy   String
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    tenant       Tenant        @relation(fields: [tenantId], references: [id])
+    offerLetters OfferLetter[]
+}
+
+model OfferLetter {
+    id            String            @id @default(cuid())
+    tenantId      String
+    applicationId String            @unique
+    templateId    String?
+    content       Json // Generated content
+    status        OfferLetterStatus @default(DRAFT)
+    generatedBy   String
+    sentAt        DateTime?
+    viewedAt      DateTime?
+    acceptedAt    DateTime?
+    declinedAt    DateTime?
+    pdfUrl        String?
+    createdAt     DateTime          @default(now())
+    updatedAt     DateTime          @updatedAt
+
+    tenant      Tenant               @relation(fields: [tenantId], references: [id])
+    application Application          @relation(fields: [applicationId], references: [id])
+    template    OfferLetterTemplate? @relation(fields: [templateId], references: [id])
+    generator   User                 @relation("OfferLetterGenerator", fields: [generatedBy], references: [id])
+}
+
+enum OfferLetterStatus {
+    DRAFT
+    SENT
+    VIEWED
+    ACCEPTED
+    DECLINED
+    EXPIRED
 }
