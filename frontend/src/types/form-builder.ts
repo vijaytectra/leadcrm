@@ -181,11 +181,19 @@ export interface FieldValidation {
 
 export interface ConditionalLogic {
   enabled: boolean;
-  conditions: Condition[];
+  logicOperator: "AND" | "OR";
+  ruleGroups: RuleGroup[];
   actions: Action[];
 }
 
+export interface RuleGroup {
+  id: string;
+  conditions: Condition[];
+  operator: "AND" | "OR";
+}
+
 export interface Condition {
+  id: string;
   fieldId: string;
   operator:
     | "equals"
@@ -193,13 +201,17 @@ export interface Condition {
     | "contains"
     | "not_contains"
     | "greater_than"
-    | "less_than";
-  value: string | number;
+    | "less_than"
+    | "is_empty"
+    | "is_not_empty";
+  value: string | number | boolean;
 }
 
 export interface Action {
+  id: string;
   type: "show" | "hide" | "require" | "disable";
   targetFieldId: string;
+  value?: string | number | boolean;
 }
 
 export interface FieldOptions {

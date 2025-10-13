@@ -29,7 +29,7 @@ export default function RootLayout({
       <body
         className={`${plusJakarta.variable} ${geistMono.variable} antialiased`}
       >
-        <Toaster position="top-right" expand={true} richColors />
+        <Toaster position="bottom-right" expand={true} richColors />
         {children}
       </body>
     </html>

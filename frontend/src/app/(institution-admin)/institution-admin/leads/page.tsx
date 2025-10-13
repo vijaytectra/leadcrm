@@ -62,7 +62,7 @@ export default function LeadsPage() {
     // Use ref to track if initial load is done
     const isInitialMount = useRef(true);
 
-    console.log(currentTenantSlug);
+
 
     // Remove toast from dependencies
     const loadLeads = useCallback(async () => {
@@ -71,6 +71,7 @@ export default function LeadsPage() {
         try {
             setLoading(true);
             const response = await getLeads(currentTenantSlug, filters);
+        
 
             setLeads(response.leads);
             setPagination(response.pagination);
@@ -107,7 +108,7 @@ export default function LeadsPage() {
 
 
             const stats = await getAssignmentStats(currentTenantSlug);
-            console.log("stats", stats);
+      
             setAssignmentStats(stats);
         } catch (error) {
             console.error("Error loading assignment stats:", error);

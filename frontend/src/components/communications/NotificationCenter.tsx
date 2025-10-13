@@ -70,11 +70,10 @@ export function NotificationCenter({ tenantSlug }: NotificationCenterProps) {
                 unreadOnly: showUnreadOnly.toString(),
             });
             const t = getClientToken();
-            console.log("t", t);
+         
             const data = await apiGetClientNew(`/${tenantSlug}/notifications?${params}`, { token: getClientToken() || undefined });
             setNotifications((data as { notifications: Notification[] }).notifications || []);
         } catch (error) {
-            console.error("Error fetching notifications:", error);
             toast.error("Failed to fetch notifications");
 
         } finally {
@@ -84,12 +83,10 @@ export function NotificationCenter({ tenantSlug }: NotificationCenterProps) {
 
     const fetchPreferences = async () => {
         try {
-            console.log("fetching preferences");
-            console.log("Tenant Slug", tenantSlug);
+           
             const data = await apiGetClientNew(`/${tenantSlug}/notifications/preferences`, { token: getClientToken() || undefined });
             setPreferences((data as { preferences: NotificationPreferences }).preferences);
         } catch (error) {
-            console.error("Error fetching preferences:", error);
         }
     };
 
@@ -104,7 +101,6 @@ export function NotificationCenter({ tenantSlug }: NotificationCenterProps) {
             fetchNotifications();
             setSelectedNotifications([]);
         } catch (error) {
-            console.error("Error marking notifications as read:", error);
             toast.error("Failed to mark notifications as read");
 
         }
@@ -123,7 +119,6 @@ export function NotificationCenter({ tenantSlug }: NotificationCenterProps) {
 
             fetchNotifications();
         } catch (error) {
-            console.error("Error marking all notifications as read:", error);
             toast.error("Failed to mark all notifications as read");
 
         }
@@ -138,7 +133,6 @@ export function NotificationCenter({ tenantSlug }: NotificationCenterProps) {
 
             fetchNotifications();
         } catch (error) {
-            console.error("Error deleting notification:", error);
             toast.error("Failed to delete notification");
 
         }
@@ -156,7 +150,6 @@ export function NotificationCenter({ tenantSlug }: NotificationCenterProps) {
 
             setPreferences(newPreferences);
         } catch (error) {
-            console.error("Error updating preferences:", error);
             toast.error("Failed to update notification preferences");
 
         }

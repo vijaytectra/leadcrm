@@ -473,4 +473,119 @@ export const formBuilderUtils = {
     };
     return categoryMap[type] || "Input";
   },
+
+  // Widget API methods
+  async getFormWidgets(
+    tenantSlug: string,
+    formId: string,
+    options?: ApiRequestOptions
+  ): Promise<{
+    success: boolean;
+    data: { widgets: any[]; total: number; page: number; limit: number };
+  }> {
+    return apiGetClientNew(`/${tenantSlug}/forms/${formId}/widgets`, options);
+  },
+};
+
+// Widget API methods
+export const widgetAPI = {
+  async createWidget(
+    tenantSlug: string,
+    formId: string,
+    data: {
+      name: string;
+      styling: {
+        theme: string;
+        primaryColor: string;
+        borderRadius: number;
+        width: string;
+        height: string;
+      };
+    },
+    options?: ApiRequestOptions
+  ): Promise<{ success: boolean; data: any }> {
+    return apiPostClientNew(
+      `/${tenantSlug}/forms/${formId}/widgets`,
+      data,
+      options
+    );
+  },
+
+  async getFormWidgets(
+    tenantSlug: string,
+    formId: string,
+    options?: ApiRequestOptions
+  ): Promise<{
+    success: boolean;
+    data: { widgets: any[]; total: number; page: number; limit: number };
+  }> {
+    return apiGetClientNew(`/${tenantSlug}/forms/${formId}/widgets`, options);
+  },
+
+  async getWidget(
+    tenantSlug: string,
+    widgetId: string,
+    options?: ApiRequestOptions
+  ): Promise<{ success: boolean; data: any }> {
+    return apiGetClientNew(`/${tenantSlug}/widgets/${widgetId}`, options);
+  },
+
+  async updateWidget(
+    tenantSlug: string,
+    widgetId: string,
+    data: {
+      name?: string;
+      styling?: {
+        theme?: string;
+        primaryColor?: string;
+        borderRadius?: number;
+        width?: string;
+        height?: string;
+      };
+    },
+    options?: ApiRequestOptions
+  ): Promise<{ success: boolean; data: any }> {
+    return apiPutClient(`/${tenantSlug}/widgets/${widgetId}`, data, options);
+  },
+
+  async deleteWidget(
+    tenantSlug: string,
+    widgetId: string,
+    options?: ApiRequestOptions
+  ): Promise<{ success: boolean; message: string }> {
+    return apiDeleteClient(`/${tenantSlug}/widgets/${widgetId}`, options);
+  },
+
+  async getWidgetAnalytics(
+    tenantSlug: string,
+    widgetId: string,
+    startDate: Date,
+    endDate: Date,
+    options?: ApiRequestOptions
+  ): Promise<{ success: boolean; data: any }> {
+    const params = new URLSearchParams({
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+    });
+    return apiGetClientNew(
+      `/${tenantSlug}/widgets/${widgetId}/analytics?${params}`,
+      options
+    );
+  },
+
+  async getAllWidgets(
+    tenantSlug: string,
+    page = 1,
+    limit = 10,
+    options?: ApiRequestOptions
+  ): Promise<{
+    success: boolean;
+    data: { widgets: any[]; total: number; page: number; limit: number };
+  }> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    return apiGetClientNew(`/${tenantSlug}/widgets?${params}`, options);
+  },
 };

@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useFormBuilder } from "./FormBuilderProvider";
 import { FormFieldRenderer } from "./FormFieldRenderer";
+import { evaluateConditionalLogic, getVisibleFields } from "@/lib/conditional-logic";
 import { toast } from "sonner";
 import type { FormField, Action } from "@/types/form-builder";
 
@@ -40,73 +41,36 @@ export function StepBasedFormPreview({ onClose }: StepBasedFormPreviewProps) {
 
     // Evaluate conditional logic for a field
     const evaluateConditionalLogic = (field: FormField): boolean => {
-        console.log(`Evaluating conditional logic for field ${field.id} (${field.label}):`, {
-            hasConditionalLogic: !!field.conditionalLogic,
-            enabled: field.conditionalLogic?.enabled,
-            conditions: field.conditionalLogic?.conditions,
-            conditionsLength: field.conditionalLogic?.conditions?.length,
-            stepConditions: currentStep?.conditions
-        });
+     
 
         // Check field-level conditional logic first
         if (field.conditionalLogic?.enabled && field.conditionalLogic?.conditions?.length) {
-            console.log(`Field ${field.label} has field-level conditional logic`);
+           
             return evaluateFieldConditionalLogic(field);
         }
 
         // Check step-level conditional logic
         if (currentStep?.conditions?.enabled && currentStep.conditions.conditions?.length) {
-            console.log(`Field ${field.label} checking step-level conditional logic`);
+            
             return evaluateStepConditionalLogic(field);
         }
 
-        console.log(`Field ${field.label} has no conditional logic, showing by default`);
+       
         return true; // Show field if no conditional logic
     };
 
-    // Evaluate field-level conditional logic
+    // Evaluate field-level conditional logic using utility
     const evaluateFieldConditionalLogic = (field: FormField): boolean => {
-        console.log(`Evaluating field-level conditional logic for field ${field.id}:`, {
-            field: field.label,
-            conditionalLogic: field.conditionalLogic,
-            formData,
-            currentStep: currentStepIndex
-        });
+ 
 
-        // Check if all conditions are met
-        const conditionsMet = field.conditionalLogic.conditions.every((condition: { fieldId: string; value: unknown; operator: string }) => {
-            const triggerField = state.fields.find(f => f.id === condition.fieldId);
-            if (!triggerField) {
-                console.log(`Trigger field not found for condition:`, condition);
-                return false;
-            }
-
-            const triggerValue = formData[triggerField.id];
-            const conditionValue = condition.value;
-
-            console.log(`Condition check:`, {
-                triggerField: triggerField.label,
-                triggerValue,
-                conditionValue,
-                operator: condition.operator,
-                result: evaluateCondition(triggerValue, conditionValue, condition.operator)
-            });
-
-            return Boolean(evaluateCondition(triggerValue, conditionValue, condition.operator));
-        });
-
-        console.log(`Field ${field.label} field-level conditional logic result:`, conditionsMet);
-        return conditionsMet;
+        const result = evaluateConditionalLogic(field, formData, state.fields);
+       
+        return result;
     };
 
     // Evaluate step-level conditional logic
     const evaluateStepConditionalLogic = (field: FormField): boolean => {
-        console.log(`Evaluating step-level conditional logic for field ${field.id}:`, {
-            field: field.label,
-            stepConditions: currentStep?.conditions,
-            formData,
-            currentStep: currentStepIndex
-        });
+     
 
         if (!currentStep?.conditions?.conditions?.length) {
             return true;
@@ -118,7 +82,7 @@ export function StepBasedFormPreview({ onClose }: StepBasedFormPreviewProps) {
         ) || [];
 
         if (targetRules.length === 0) {
-            console.log(`No step-level rules target field ${field.label}`);
+          
             return true;
         }
 
@@ -141,19 +105,12 @@ export function StepBasedFormPreview({ onClose }: StepBasedFormPreviewProps) {
             const conditionValue = condition.value;
 
             const conditionMet = evaluateCondition(triggerValue, conditionValue, condition.operator);
-            console.log(`Step-level condition check:`, {
-                triggerField: triggerField.label,
-                triggerValue,
-                conditionValue,
-                operator: condition.operator,
-                action: action.type,
-                result: conditionMet
-            });
+           
 
             return conditionMet;
         });
 
-        console.log(`Field ${field.label} step-level conditional logic result:`, anyRuleMet);
+       
         return anyRuleMet;
     };
 
@@ -168,12 +125,15 @@ export function StepBasedFormPreview({ onClose }: StepBasedFormPreviewProps) {
                 return String(triggerValue).includes(String(conditionValue));
             case 'not_contains':
                 return !String(triggerValue).includes(String(conditionValue));
+            case 'greater_than':
+                return Number(triggerValue) > Number(conditionValue);
+            case 'less_than':
+                return Number(triggerValue) < Number(conditionValue);
             case 'is_empty':
-                return !triggerValue || triggerValue === '';
+                return !triggerValue || String(triggerValue).trim() === '';
             case 'is_not_empty':
-                return Boolean(triggerValue && triggerValue !== '');
+                return triggerValue && String(triggerValue).trim() !== '';
             default:
-                console.warn(`Unknown operator: ${operator}`);
                 return true;
         }
     };
@@ -182,27 +142,17 @@ export function StepBasedFormPreview({ onClose }: StepBasedFormPreviewProps) {
     const getCurrentStepFields = (): FormField[] => {
         if (!currentStep) return [];
 
-        console.log('Getting fields for current step:', {
-            currentStep: currentStep.title,
-            stepFields: currentStep.fields,
-            allFields: state.fields.map(f => ({ id: f.id, label: f.label, type: f.type }))
-        });
+    
 
-        const stepFields = state.fields.filter(field => {
-            // Check if field is assigned to current step
-            const isAssignedToStep = currentStep.fields.includes(field.id);
-            console.log(`Field ${field.label} (${field.id}) assigned to step:`, isAssignedToStep);
+        // Get fields assigned to this step
+        const stepFields = state.fields.filter(field => currentStep.fields.includes(field.id));
 
-            if (!isAssignedToStep) return false;
+        // Apply conditional logic to get visible fields
+        const visibleFields = getVisibleFields(stepFields, formData, state.fields);
 
-            // Evaluate conditional logic
-            const shouldShow = evaluateConditionalLogic(field);
-            console.log(`Field ${field.label} should show:`, shouldShow);
-            return shouldShow;
-        }).sort((a, b) => a.order - b.order);
-
-        console.log('Final step fields:', stepFields.map(f => ({ id: f.id, label: f.label, type: f.type })));
-        return stepFields;
+        const sortedFields = visibleFields.sort((a, b) => a.order - b.order);
+        
+        return sortedFields;
     };
 
     const currentStepFields = getCurrentStepFields();
@@ -213,7 +163,7 @@ export function StepBasedFormPreview({ onClose }: StepBasedFormPreviewProps) {
 
     // Re-evaluate conditional logic when form data changes
     useEffect(() => {
-        console.log('Form data changed, re-evaluating conditional logic:', formData);
+      
         forceRerender();
     }, [formData]);
 

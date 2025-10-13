@@ -51,26 +51,25 @@ export function FormBuilderHeader({
     const [stepManagerOpen, setStepManagerOpen] = useState(false);
 
     const handleSave = async () => {
-        console.log("Save button clicked", { onSave, currentForm: state.currentForm });
+      
 
         if (onSave) {
-            console.log("Using onSave prop");
+         
             onSave();
         } else if (state.currentForm) {
             try {
-                console.log("Saving form via actions.saveForm()");
+              
                 setIsSaving(true);
                 await actions.saveForm();
                 toast.success("Form saved successfully");
                 setSaveDialogOpen(false); // Close the dialog after successful save
             } catch (error) {
-                console.error("Save failed:", error);
                 toast.error("Failed to save form");
             } finally {
                 setIsSaving(false);
             }
         } else {
-            console.log("No current form to save");
+           
             toast.error("No form to save");
         }
     };

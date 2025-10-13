@@ -41,49 +41,49 @@ const roleCredentials = [
     },
     {
         role: "Telecaller",
-        tenant: "arunai-engineering-college",
-        email: "sigofix534@lorkex.com",
-        password: "Vijay@123",
+        tenant: "arunai-engineerin-college",
+        email: "yixas41914@gta5hx.com",
+        password: "Uef0.0K_f3*U",
         description: "Lead contact specialist"
     },
     {
         role: "Document Verifier",
-        tenant: "arunai-engineering-college",
+        tenant: "arunai-engineerin-college",
         email: "ricojo2704@lorkex.com",
         password: "Vijay@123",
         description: "Document validation specialist"
     },
     {
         role: "Finance Team",
-        tenant: "arunai-engineering-college",
+        tenant: "arunai-engineerin-college",
         email: "tefano4892@gta5hx.com",
         password: "Vijay@123",
         description: "Fee and payment management"
     },
     {
         role: "Admission Team",
-        tenant: "arunai-engineering-college",
+        tenant: "arunai-engineerin-college",
         email: "yixas41914@gta5hx.com",
         password: "Vijay@123",
         description: "Admission counseling"
     },
     {
         role: "Admission Head",
-        tenant: "arunai-engineering-college",
+        tenant: "arunai-engineerin-college",
         email: "head@demoschool.com",
         password: "Vijay@123",
         description: "Final admission decisions"
     },
     {
         role: "Student",
-        tenant: "arunai-engineering-college",
+        tenant: "arunai-engineerin-college",
         email: "student@demoschool.com",
         password: "Vijay@123",
         description: "Student portal access"
     },
     {
         role: "Parent",
-        tenant: "arunai-engineering-college",
+        tenant: "arunai-engineerin-college",
         email: "parent@demoschool.com",
         password: "Vijay@123",
         description: "Parent portal access"

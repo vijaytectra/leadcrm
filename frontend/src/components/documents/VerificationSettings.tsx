@@ -60,9 +60,8 @@ export function VerificationSettings({ settings }: VerificationSettingsProps) {
         try {
             // Simulate API call
             await new Promise(resolve => setTimeout(resolve, 1000));
-            console.log("Settings saved:", formData);
+
         } catch (error) {
-            console.error("Error saving settings:", error);
         } finally {
             setIsSaving(false);
         }

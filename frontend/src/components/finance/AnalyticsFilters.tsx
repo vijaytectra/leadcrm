@@ -27,7 +27,7 @@ export function AnalyticsFilters() {
   };
 
   const applyFilters = () => {
-    console.log("Applying analytics filters:", filters);
+
     // This would trigger the analytics data refresh
   };
 

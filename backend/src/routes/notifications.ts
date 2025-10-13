@@ -80,9 +80,7 @@ router.get(
         where: { slug: tenantSlug },
         select: { id: true },
       });
-      console.log("tenant", tenant);
-      console.log("tenantSlug", tenantSlug);
-      console.log("userId", userId);
+     
       if (!tenant) {
         return res.status(404).json({ error: "Tenant not found" });
       }

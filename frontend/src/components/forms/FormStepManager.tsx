@@ -59,15 +59,7 @@ export function FormStepManager({ isOpen, onClose }: FormStepManagerProps) {
     const steps = state.steps || [];
 
     // Debug logging
-    console.log("FormStepManager steps:", {
-        stepsCount: steps.length,
-        steps: steps.map(step => ({
-            id: step.id,
-            title: step.title,
-            fields: step.fields,
-            fieldCount: step.fields?.length || 0
-        }))
-    });
+    
 
     const handleAddStep = () => {
         setStepForm({
@@ -83,7 +75,7 @@ export function FormStepManager({ isOpen, onClose }: FormStepManagerProps) {
     // Auto-create a default step if none exist
     useEffect(() => {
         if (steps.length === 0 && state.fields.length > 0) {
-            console.log("No steps found, creating default step");
+           
             const defaultStep: FormStep = {
                 id: `step_${Date.now()}`,
                 formId: state.currentForm?.id || "",
@@ -211,12 +203,7 @@ export function FormStepManager({ isOpen, onClose }: FormStepManagerProps) {
     };
 
     const handleConfigureFields = (step: FormStep) => {
-        console.log("Configuring fields for step:", {
-            stepId: step.id,
-            stepTitle: step.title,
-            currentFields: step.fields,
-            fieldCount: step.fields?.length || 0
-        });
+      
         setSelectedStep(step);
         setShowFieldAssignment(true);
     };
@@ -261,8 +248,8 @@ export function FormStepManager({ isOpen, onClose }: FormStepManagerProps) {
                                         <div
                                             key={step.id}
                                             className={`flex items-center justify-between p-3 border rounded-lg ${step.isPayment
-                                                    ? 'border-blue-200 bg-blue-50'
-                                                    : 'border-gray-200 bg-white'
+                                                ? 'border-blue-200 bg-blue-50'
+                                                : 'border-gray-200 bg-white'
                                                 }`}
                                         >
                                             <div className="flex items-center space-x-3">

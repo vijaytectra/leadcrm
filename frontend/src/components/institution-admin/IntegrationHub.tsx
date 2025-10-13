@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Settings, ExternalLink, CheckCircle, XCircle, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { apiGet } from '@/lib/utils';
+import { getToken } from '@/lib/getToken';
 
 interface Integration {
     id: string;
@@ -33,8 +34,9 @@ interface IntegrationHubData {
     tier: 'STARTER' | 'PRO' | 'MAX';
 }
 
-async function IntegrationHub() {
-    const data = await apiGet<IntegrationHubData>('/api/integrations');
+async function IntegrationHub({ tenantSlug }: { tenantSlug: string }) {
+    const token = await getToken();
+    const data = await apiGet<IntegrationHubData>(`/${tenantSlug}/integrations`, { token: token });
 
     const platformConfig = {
         GOOGLE_ADS: {
@@ -122,7 +124,7 @@ async function IntegrationHub() {
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {Object.entries(data.limits).map(([platform, limit]) => (
+                        {Object.entries(data.limits || {}).map(([platform, limit]) => (
                             <div key={platform} className="text-center">
                                 <div className="text-2xl font-bold">
                                     {limit.current}/{limit.limit === -1 ? '∞' : limit.limit}
@@ -139,7 +141,7 @@ async function IntegrationHub() {
             {/* Active Integrations */}
             <div className="space-y-4">
                 <h2 className="text-2xl font-semibold">Active Integrations</h2>
-                {data.integrations.length === 0 ? (
+                {(!data.integrations || data.integrations.length === 0) ? (
                     <Card>
                         <CardContent className="flex flex-col items-center justify-center py-12">
                             <div className="text-6xl mb-4">🔗</div>
@@ -157,7 +159,7 @@ async function IntegrationHub() {
                     </Card>
                 ) : (
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        {data.integrations.map((integration) => {
+                        {(data.integrations || []).map((integration) => {
                             const config = platformConfig[integration.platform];
                             return (
                                 <Card key={integration.id}>
@@ -218,10 +220,10 @@ async function IntegrationHub() {
     );
 }
 
-export default function IntegrationHubPage() {
+export default function IntegrationHubPage({ tenantSlug }: { tenantSlug: string }) {
     return (
         <Suspense fallback={<div>Loading...</div>}>
-            <IntegrationHub />
+            <IntegrationHub tenantSlug={tenantSlug} />
         </Suspense>
     );
 }

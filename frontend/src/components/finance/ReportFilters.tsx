@@ -28,12 +28,12 @@ export function ReportFilters() {
   };
 
   const generateReport = () => {
-    console.log("Generating report with filters:", filters);
+   
     // This would trigger the report generation
   };
 
   const downloadReport = () => {
-    console.log("Downloading report with filters:", filters);
+  
     // This would trigger the report download
   };
 

@@ -58,16 +58,14 @@ export function FormBuilderContainer({
             }
 
             // Store loaded data for FormBuilderProvider
-            console.log("Loaded form data:", formResponse.data);
-            console.log("Loaded fields:", fieldsResponse.data.fields);
-            console.log("Loaded steps:", formResponse.data.settings?.steps);
+          
 
             // Ensure steps are properly loaded from the form settings
             const formData = formResponse.data as FormBuilderConfig;
             if (formData.settings && formData.settings.steps) {
-                console.log("Steps found in form settings:", formData.settings.steps);
+              
             } else {
-                console.log("No steps found in form settings, creating default step");
+                
                 // Create a default step if none exist
                 formData.settings = {
                     ...formData.settings,
@@ -161,9 +159,9 @@ export function FormBuilderContainer({
 
     // Handle form preview
     const handlePreview = useCallback(() => {
-        console.log("Preview triggered:", { mode, formId, showPreview });
+     
         setShowPreview(true);
-        console.log("showPreview set to true");
+       
     }, [mode, formId, showPreview]);
 
     // Handle form publish
@@ -354,10 +352,10 @@ export function FormBuilderContainer({
 
             {showPreview && (
                 <>
-                    {console.log("Rendering FormPreviewModal")}
+                  
                     <FormPreviewModal
                         onClose={() => {
-                            console.log("Closing preview modal");
+                     
                             setShowPreview(false);
                         }}
                     />

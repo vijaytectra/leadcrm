@@ -21,12 +21,11 @@ export function VerificationActions({ documentId }: VerificationActionsProps) {
         setIsSubmitting(true);
         try {
             // API call to verify document
-            console.log("Verifying document:", documentId, { comments });
+       
             // await documentApi.verifyDocument(tenant, documentId, { status: "VERIFIED", comments });
             setAction(null);
             setComments("");
         } catch (error) {
-            console.error("Error verifying document:", error);
         } finally {
             setIsSubmitting(false);
         }
@@ -41,10 +40,7 @@ export function VerificationActions({ documentId }: VerificationActionsProps) {
         setIsSubmitting(true);
         try {
             // API call to reject document
-            console.log("Rejecting document:", documentId, {
-                rejectionReason,
-                comments
-            });
+     
             // await documentApi.verifyDocument(tenant, documentId, { 
             //     status: "REJECTED", 
             //     rejectionReason,
@@ -54,7 +50,6 @@ export function VerificationActions({ documentId }: VerificationActionsProps) {
             setRejectionReason("");
             setComments("");
         } catch (error) {
-            console.error("Error rejecting document:", error);
         } finally {
             setIsSubmitting(false);
         }

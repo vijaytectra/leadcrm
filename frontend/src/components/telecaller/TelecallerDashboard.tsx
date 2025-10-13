@@ -81,7 +81,7 @@ export const TelecallerDashboard = memo(function TelecallerDashboard({
     const [showFollowUpForm, setShowFollowUpForm] = useState(false);
     const [showStatusUpdate, setShowStatusUpdate] = useState(false);
     const { user } = useAuthStore();
-    console.log(user);
+    (user);
     const handleLeadSelect = useCallback((leadId: string) => {
         setSelectedLead(leadId);
     }, []);

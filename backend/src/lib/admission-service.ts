@@ -149,9 +149,7 @@ export async function sendOfferLetter(
     },
   });
 
-  // Here you would integrate with actual email/SMS/WhatsApp services
-  console.log("Offer letter sent via channels:", channels);
-  console.log("Communications created:", communications.length);
+
 }
 
 /**

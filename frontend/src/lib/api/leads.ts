@@ -457,7 +457,6 @@ export async function getAssignmentStats(
       throw new Error("No token found");
     }
 
-    console.log("Fetching assignment stats for tenant:", tenantSlug);
 
     // Fixed: Removed /api prefix since utils.ts already adds it
     const response = await apiGetClientNew<{ data: AssignmentStats }>(

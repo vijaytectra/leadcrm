@@ -159,8 +159,15 @@ export interface FieldValidation {
 
 export interface ConditionalLogic {
   enabled: boolean;
-  conditions: Condition[];
+  logicOperator: "AND" | "OR";
+  ruleGroups: RuleGroup[];
   actions: Action[];
+}
+
+export interface RuleGroup {
+  id: string;
+  conditions: Condition[];
+  operator: "AND" | "OR";
 }
 
 export interface Condition {
@@ -176,7 +183,6 @@ export interface Condition {
     | "is_empty"
     | "is_not_empty";
   value: string | number | boolean;
-  logic: "and" | "or";
 }
 
 export interface Action {

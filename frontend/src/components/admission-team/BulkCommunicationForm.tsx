@@ -50,10 +50,9 @@ export function BulkCommunicationForm({
         setIsSubmitting(true);
         try {
             // TODO: Implement bulk communication API call
-            console.log('Bulk communication data:', data);
+           
             // await sendBulkCommunication(data);
         } catch (error) {
-            console.error('Error sending bulk communication:', error);
         } finally {
             setIsSubmitting(false);
         }

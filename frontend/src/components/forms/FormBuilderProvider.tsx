@@ -708,14 +708,9 @@ export function FormBuilderProvider({
     }, [addField, state.fields]);
 
     const saveForm = useCallback(async () => {
-        console.log("FormBuilderProvider saveForm called", {
-            currentForm: state.currentForm,
-            currentTenantSlug,
-            hasFormId: !!state.currentForm?.id
-        });
-
+       
         if (!state.currentForm || !currentTenantSlug) {
-            console.log("Missing currentForm or currentTenantSlug");
+           
             return;
         }
 
@@ -769,12 +764,7 @@ export function FormBuilderProvider({
                 }
             } else {
                 // Create new form
-                console.log("Creating new form with data:", {
-                    title: state.currentForm.title,
-                    description: state.currentForm.description,
-                    fields: state.fields.length,
-                    steps: state.steps.length
-                });
+            
 
                 const response = await formsApi.createForm(
                     currentTenantSlug,
@@ -797,9 +787,9 @@ export function FormBuilderProvider({
                 setCurrentForm({ ...state.currentForm, id: response.data.id });
 
                 // Create fields with conditional logic
-                console.log("Creating fields:", state.fields.length);
+                
                 for (const field of state.fields) {
-                    console.log("Creating field:", field.label, field.type);
+                  
                     await formsApi.createField(currentTenantSlug, response.data.id, {
                         type: field.type,
                         label: field.label,
@@ -816,10 +806,9 @@ export function FormBuilderProvider({
                     });
                 }
             }
-            console.log("Form saved successfully");
+          
             setDirty(false);
         } catch (error) {
-            console.error("Error saving form:", error);
             setError("Failed to save form");
             throw error; // Re-throw to let the caller handle it
         } finally {
@@ -844,7 +833,6 @@ export function FormBuilderProvider({
             setDraftMode(false);
             setDirty(false);
         } catch (error) {
-            console.error("Error publishing form:", error);
             setError("Failed to publish form");
         } finally {
             setLoading(false);
@@ -877,7 +865,6 @@ export function FormBuilderProvider({
             }
             setDirty(false);
         } catch (error) {
-            console.error("Error loading form:", error);
             setError("Failed to load form");
         } finally {
             setLoading(false);
@@ -892,7 +879,6 @@ export function FormBuilderProvider({
             await formsApi.deleteForm(currentTenantSlug, formId);
             reset();
         } catch (error) {
-            console.error("Error deleting form:", error);
             setError("Failed to delete form");
         } finally {
             setLoading(false);
@@ -1059,7 +1045,6 @@ export function FormBuilderProvider({
                 actions.setPublished(false);
                 toast.success("Form saved as draft");
             } catch (error) {
-                console.error("Error saving form:", error);
                 actions.setError("Failed to save form");
                 toast.error("Failed to save form");
             } finally {
@@ -1111,7 +1096,6 @@ export function FormBuilderProvider({
                 // Redirect to forms list after successful publish
                 router.push('/institution-admin/forms');
             } catch (error) {
-                console.error("Error publishing form:", error);
                 actions.setError("Failed to publish form");
                 toast.error("Failed to publish form");
             } finally {
@@ -1150,7 +1134,6 @@ export function FormBuilderProvider({
                 }
                 actions.setDirty(false);
             } catch (error) {
-                console.error("Error loading form:", error);
                 actions.setError("Failed to load form");
                 toast.error("Failed to load form");
             } finally {
@@ -1175,7 +1158,6 @@ export function FormBuilderProvider({
                 // Redirect to forms list after successful deletion
                 router.push('/institution-admin/forms');
             } catch (error) {
-                console.error("Error deleting form:", error);
                 actions.setError("Failed to delete form");
                 toast.error("Failed to delete form");
             } finally {

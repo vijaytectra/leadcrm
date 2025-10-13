@@ -1,6 +1,12 @@
+"use client";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { UserForm } from "@/components/users/UserForm";
+import { useUserManagement } from "@/hooks/useUserManagement";
+import { User, CreateUserRequest, UpdateUserRequest } from "@/lib/api/users";
+import { ToastContainer } from "@/components/ui/toast";
 import {
   Users,
   UserPlus,
@@ -33,9 +39,22 @@ interface InstitutionStats {
 interface InstitutionDashboardProps {
   stats: InstitutionStats;
   tenantSlug: string;
+  users?: User[];
 }
 
-export function InstitutionDashboard({ stats, tenantSlug }: InstitutionDashboardProps) {
+export function InstitutionDashboard({ stats, tenantSlug, users = [] }: InstitutionDashboardProps) {
+  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+
+  // Use the user management hook for user operations
+  const {
+    handleCreateUser,
+    isLoading,
+    toasts,
+    dismiss
+  } = useUserManagement({
+    initialUsers: users,
+    tenantSlug
+  });
   const statCards = [
     {
       title: "Total Users",
@@ -145,7 +164,10 @@ export function InstitutionDashboard({ stats, tenantSlug }: InstitutionDashboard
               <Bell className="h-4 w-4 mr-2" />
               Notifications
             </Button>
-            <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
+            <Button
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+              onClick={() => setIsAddUserOpen(true)}
+            >
               <UserPlus className="h-4 w-4 mr-2" />
               Add User
             </Button>
@@ -176,18 +198,17 @@ export function InstitutionDashboard({ stats, tenantSlug }: InstitutionDashboard
                       {stat.value}
                     </p>
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-500">
                       {stat.description}
                     </span>
-                    <div className={`flex items-center space-x-1 text-xs px-2 py-1 rounded-full ${
-                      stat.trendType === "positive" 
-                        ? "bg-green-100 text-green-700" 
-                        : stat.trendType === "warning"
+                    <div className={`flex items-center space-x-1 text-xs px-2 py-1 rounded-full ${stat.trendType === "positive"
+                      ? "bg-green-100 text-green-700"
+                      : stat.trendType === "warning"
                         ? "bg-yellow-100 text-yellow-700"
                         : "bg-gray-100 text-gray-600"
-                    }`}>
+                      }`}>
                       {stat.trendType === "positive" && <ArrowUp className="h-3 w-3" />}
                       {stat.trendType === "warning" && <ArrowDown className="h-3 w-3" />}
                       <span>
@@ -225,7 +246,7 @@ export function InstitutionDashboard({ stats, tenantSlug }: InstitutionDashboard
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-gray-100">
-                {recentActivities.map((activity, index) => (
+                {recentActivities.map((activity) => (
                   <div
                     key={activity.id}
                     className="flex items-center space-x-4 p-6 hover:bg-gray-50 transition-colors"
@@ -264,7 +285,10 @@ export function InstitutionDashboard({ stats, tenantSlug }: InstitutionDashboard
               </div>
             </CardHeader>
             <CardContent className="p-6 space-y-3">
-              <Button className="w-full justify-start bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
+              <Button
+                className="w-full justify-start bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                onClick={() => setIsAddUserOpen(true)}
+              >
                 <UserPlus className="h-4 w-4 mr-3" />
                 Add New User
               </Button>
@@ -317,7 +341,7 @@ export function InstitutionDashboard({ stats, tenantSlug }: InstitutionDashboard
                   <span>Above industry average</span>
                 </div>
               </div>
-              
+
               <div className="text-center space-y-2">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-3">
                   <Users className="h-8 w-8 text-blue-600" />
@@ -331,7 +355,7 @@ export function InstitutionDashboard({ stats, tenantSlug }: InstitutionDashboard
                   <span>{Math.round((stats.activeUsers / stats.totalUsers) * 100)}% engagement</span>
                 </div>
               </div>
-              
+
               <div className="text-center space-y-2">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-3">
                   <DollarSign className="h-8 w-8 text-purple-600" />
@@ -340,11 +364,10 @@ export function InstitutionDashboard({ stats, tenantSlug }: InstitutionDashboard
                   ₹{stats.monthlyRevenue.toLocaleString()}
                 </div>
                 <div className="text-sm font-medium text-gray-600">Monthly Revenue</div>
-                <div className={`flex items-center justify-center space-x-1 text-xs px-2 py-1 rounded-full ${
-                  stats.revenueGrowth > 0 
-                    ? "text-green-600 bg-green-50" 
-                    : "text-gray-600 bg-gray-50"
-                }`}>
+                <div className={`flex items-center justify-center space-x-1 text-xs px-2 py-1 rounded-full ${stats.revenueGrowth > 0
+                  ? "text-green-600 bg-green-50"
+                  : "text-gray-600 bg-gray-50"
+                  }`}>
                   {stats.revenueGrowth > 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
                   <span>
                     {stats.revenueGrowth > 0 ? `+${stats.revenueGrowth}% growth` : "No growth"}
@@ -354,6 +377,17 @@ export function InstitutionDashboard({ stats, tenantSlug }: InstitutionDashboard
             </div>
           </CardContent>
         </Card>
+
+        {/* User Creation Modal */}
+        <UserForm
+          isOpen={isAddUserOpen}
+          onClose={() => setIsAddUserOpen(false)}
+          onSubmit={handleCreateUser as (data: CreateUserRequest | UpdateUserRequest) => Promise<void>}
+          isLoading={isLoading}
+        />
+
+        {/* Toast Container */}
+        <ToastContainer toasts={toasts} onDismiss={dismiss} />
       </div>
     </div>
   );

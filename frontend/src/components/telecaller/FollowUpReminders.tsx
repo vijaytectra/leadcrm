@@ -58,7 +58,6 @@ export const FollowUpReminders = memo(function FollowUpReminders({
             setReminders([]);
             // TODO: Use tenantSlug when implementing actual API call
         } catch (error) {
-            console.error("Failed to fetch follow-up reminders:", error);
         } finally {
             setLoading(false);
         }
@@ -141,11 +140,10 @@ export const FollowUpReminders = memo(function FollowUpReminders({
         try {
             // This would be replaced with actual API call
             // await completeFollowUpReminder(tenantSlug, reminderId);
-            console.log("Completing reminder:", reminderId);
+            ("Completing reminder:", reminderId);
             // Refresh the list
             fetchReminders();
         } catch (error) {
-            console.error("Failed to complete reminder:", error);
         }
     };
 
@@ -153,11 +151,10 @@ export const FollowUpReminders = memo(function FollowUpReminders({
         try {
             // This would be replaced with actual API call
             // await cancelFollowUpReminder(tenantSlug, reminderId);
-            console.log("Cancelling reminder:", reminderId);
+            ("Cancelling reminder:", reminderId);
             // Refresh the list
             fetchReminders();
         } catch (error) {
-            console.error("Failed to cancel reminder:", error);
         }
     };
 
@@ -302,7 +299,7 @@ export const FollowUpReminders = memo(function FollowUpReminders({
                                             <>
                                                 <Button
                                                     size="sm"
-                                                    onClick={() => console.log('Follow up for lead:', reminder.lead.id)}
+                                                    onClick={() => ('Follow up for lead:', reminder.lead.id)}
                                                     className="flex items-center gap-2"
                                                 >
                                                     {getTypeIcon(reminder.type)}

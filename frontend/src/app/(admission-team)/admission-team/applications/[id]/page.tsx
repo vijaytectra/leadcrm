@@ -35,7 +35,7 @@ export default async function ApplicationDetailPage({ params, searchParams }: Ap
         decisionReason?: string;
     }) => {
         // TODO: Implement review submission
-        console.log('Review data:', data);
+  
     };
 
     return (

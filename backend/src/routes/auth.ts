@@ -66,7 +66,7 @@ router.post("/auth/login", async (req, res) => {
 
     const { tenant, email, password } = validation.data;
 
-    console.log(tenant, email, password);
+  
 
     // Find user with tenant
     const user = await prisma.user.findFirst({
@@ -77,7 +77,7 @@ router.post("/auth/login", async (req, res) => {
       },
       include: { tenant: true },
     });
-    console.log(user);
+ 
 
     if (!user) {
       return res.status(401).json({

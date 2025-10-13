@@ -655,7 +655,7 @@ router.put(
         where: {
           id,
           tenantId: tenant.id,
-          assigneeId: req.user!.id, // Only the assignee can update
+          assigneeId: req.auth!.sub, // Only the assignee can update
         },
       });
 

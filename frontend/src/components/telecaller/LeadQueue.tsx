@@ -81,7 +81,7 @@ export const LeadQueue = memo(function LeadQueue({
     const fetchLeads = useCallback(async () => {
         try {
             setLoading(true);
-            console.log("Tenant Slug", tenantSlug);
+            ("Tenant Slug", tenantSlug);
             const response = await getTelecallerLeads(tenantSlug);
 
             if (response.success) {
@@ -110,7 +110,6 @@ export const LeadQueue = memo(function LeadQueue({
                 setTotalPages(response.data.pagination.pages);
             }
         } catch (error) {
-            console.error("Failed to fetch leads:", error);
         } finally {
             setLoading(false);
         }

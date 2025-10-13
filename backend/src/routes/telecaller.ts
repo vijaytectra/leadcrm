@@ -126,8 +126,7 @@ router.get(
     try {
       const tenantSlug = req.params.tenant;
       const userId = req.auth!.sub;
-      console.log("Tenant Slug", tenantSlug);
-      console.log("User ID", userId);
+   
 
       if (!tenantSlug) {
         return res.status(400).json({
@@ -141,7 +140,7 @@ router.get(
         where: { slug: tenantSlug },
         select: { id: true },
       });
-      console.log("Tenant", tenant);
+
 
       if (!tenant) {
         return res.status(404).json({
@@ -275,7 +274,6 @@ router.get(
         },
       });
     } catch (error) {
-      console.error("Telecaller dashboard error:", error);
       res.status(500).json({
         error: "Failed to fetch dashboard data",
         code: "DASHBOARD_ERROR",
@@ -407,7 +405,6 @@ router.get(
         },
       });
     } catch (error) {
-      console.error("Telecaller leads error:", error);
       res.status(500).json({
         error: "Failed to fetch leads",
         code: "LEADS_ERROR",
@@ -540,7 +537,6 @@ router.get(
         },
       });
     } catch (error) {
-      console.error("Get call logs error:", error);
       res.status(500).json({
         error: "Failed to fetch call logs",
         code: "CALL_LOGS_ERROR",
@@ -645,7 +641,6 @@ router.post(
         data: callLog,
       });
     } catch (error) {
-      console.error("Create call log error:", error);
       res.status(500).json({
         error: "Failed to create call log",
         code: "CALL_LOG_ERROR",
@@ -752,7 +747,6 @@ router.put(
         data: callLog,
       });
     } catch (error) {
-      console.error("Update call log error:", error);
       res.status(500).json({
         error: "Failed to update call log",
         code: "CALL_LOG_UPDATE_ERROR",

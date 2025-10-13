@@ -13,18 +13,6 @@ import { Readable } from "stream";
 
 const router = Router();
 
-router.get(
-  "/check",
-  requireAuth,
-  requireActiveUser,
-  requireRole(["INSTITUTION_ADMIN"]),
-  (req, res) => {
-    res.json({
-      message: "Thank u ",
-    });
-  }
-);
-
 // Configure multer for file uploads
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -390,9 +378,7 @@ router.get(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res) => {
     try {
-      console.log("📈 ASSIGNMENT STATS - Route handler executed");
       const tenantSlug = req.params.tenant;
-      console.log("tenantSlug", tenantSlug);
 
       if (!tenantSlug) {
         return res.status(400).json({
@@ -406,7 +392,6 @@ router.get(
         where: { slug: tenantSlug },
         select: { id: true },
       });
-      console.log("tenant", tenant);
 
       if (!tenant) {
         return res.status(404).json({
@@ -441,8 +426,6 @@ router.get(
         },
       });
 
-      console.log("telecallers", telecallers);
-
       // Get unassigned leads count
       const unassignedCount = await prisma.lead.count({
         where: {
@@ -451,8 +434,6 @@ router.get(
           status: "NEW",
         },
       });
-
-      console.log("unassignedCount", unassignedCount);
 
       // Get assignment history (last 7 days)
       const assignmentHistory = await prisma.auditLog.findMany({
@@ -488,7 +469,6 @@ router.get(
         },
       });
     } catch (error) {
-      console.error("Error fetching assignment stats:", error);
       res.status(500).json({
         error: "Failed to fetch assignment statistics",
         code: "FETCH_ASSIGNMENT_STATS_ERROR",
@@ -509,9 +489,8 @@ router.post(
   upload.single("file"),
   async (req: AuthedRequest, res) => {
     try {
-      console.log("📥 BULK IMPORT - Route handler executed");
       const tenantSlug = req.params.tenant;
-      console.log("Bulk importing leads");
+
       if (!tenantSlug) {
         return res.status(400).json({
           error: "Tenant slug is required",
@@ -624,7 +603,6 @@ router.post(
         },
       });
     } catch (error) {
-      console.error("Error importing leads:", error);
       res.status(500).json({
         error: "Failed to import leads",
         code: "IMPORT_LEADS_ERROR",
@@ -644,9 +622,9 @@ router.post(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res) => {
     try {
-      console.log("🎯 ASSIGN LEADS - Route handler executed");
+   
       const tenantSlug = req.params.tenant;
-      console.log("Assigning leads");
+  
 
       if (!tenantSlug) {
         return res.status(400).json({
@@ -754,7 +732,6 @@ router.post(
         },
       });
     } catch (error) {
-      console.error("Error assigning leads:", error);
       res.status(500).json({
         error: "Failed to assign leads",
         code: "ASSIGN_LEADS_ERROR",
@@ -774,9 +751,9 @@ router.get(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res) => {
     try {
-      console.log("📊 GET LEADS - Route handler executed");
+    
       const tenantSlug = req.params.tenant;
-      console.log("Tenant Slug", tenantSlug);
+
       if (!tenantSlug) {
         return res.status(400).json({
           error: "Tenant slug is required",
@@ -789,8 +766,6 @@ router.get(
         where: { slug: tenantSlug },
         select: { id: true },
       });
-
-      console.log("Tenant", tenant);
 
       if (!tenant) {
         return res.status(404).json({
@@ -870,6 +845,7 @@ router.get(
         where: { tenantId: tenant.id },
         _count: { id: true },
       });
+ 
 
       res.json({
         success: true,
@@ -888,7 +864,6 @@ router.get(
         },
       });
     } catch (error) {
-      console.error("Error fetching leads:", error);
       res.status(500).json({
         error: "Failed to fetch leads",
         code: "FETCH_LEADS_ERROR",
@@ -908,10 +883,10 @@ router.get(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res) => {
     try {
-      console.log("🔍 GET SINGLE LEAD - Route handler executed");
+      ("🔍 GET SINGLE LEAD - Route handler executed");
       const { id, tenant } = req.params;
       const tenantSlug = tenant;
-      console.log("Fetching lead");
+      ("Fetching lead");
       if (!tenantSlug) {
         return res.status(400).json({
           error: "Tenant slug is required",
@@ -980,7 +955,6 @@ router.get(
         data: lead,
       });
     } catch (error) {
-      console.error("Error fetching lead:", error);
       res.status(500).json({
         error: "Failed to fetch lead",
         code: "FETCH_LEAD_ERROR",
@@ -1000,7 +974,7 @@ router.post(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res) => {
     try {
-      console.log("➕ CREATE LEAD - Route handler executed");
+      ("➕ CREATE LEAD - Route handler executed");
       const tenantSlug = req.params.tenant;
 
       if (!tenantSlug) {
@@ -1105,7 +1079,6 @@ router.post(
         data: lead,
       });
     } catch (error) {
-      console.error("Error creating lead:", error);
       res.status(500).json({
         error: "Failed to create lead",
         code: "CREATE_LEAD_ERROR",
@@ -1125,10 +1098,10 @@ router.put(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res) => {
     try {
-      console.log("✏️ UPDATE LEAD - Route handler executed");
+      ("✏️ UPDATE LEAD - Route handler executed");
       const { id, tenant } = req.params;
       const tenantSlug = tenant;
-      console.log("Updating lead");
+      ("Updating lead");
       if (!tenantSlug) {
         return res.status(400).json({
           error: "Tenant slug is required",
@@ -1229,7 +1202,6 @@ router.put(
         data: updatedLead,
       });
     } catch (error) {
-      console.error("Error updating lead:", error);
       res.status(500).json({
         error: "Failed to update lead",
         code: "UPDATE_LEAD_ERROR",
@@ -1249,10 +1221,10 @@ router.delete(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res) => {
     try {
-      console.log("🗑️ DELETE LEAD - Route handler executed");
+      ("🗑️ DELETE LEAD - Route handler executed");
       const { id, tenant } = req.params;
       const tenantSlug = tenant;
-      console.log("Deleting lead");
+      ("Deleting lead");
       if (!tenantSlug) {
         return res.status(400).json({
           error: "Tenant slug is required",
@@ -1310,7 +1282,6 @@ router.delete(
         message: "Lead deleted successfully",
       });
     } catch (error) {
-      console.error("Error deleting lead:", error);
       res.status(500).json({
         error: "Failed to delete lead",
         code: "DELETE_LEAD_ERROR",
@@ -1332,7 +1303,7 @@ router.post(
     try {
       const { id, tenant } = req.params;
       const tenantSlug = tenant;
-      console.log("Deleting lead");
+      ("Deleting lead");
       if (!tenantSlug) {
         return res.status(400).json({
           error: "Tenant slug is required",
@@ -1404,7 +1375,6 @@ router.post(
         data: leadNote,
       });
     } catch (error) {
-      console.error("Error adding note:", error);
       res.status(500).json({
         error: "Failed to add note",
         code: "ADD_NOTE_ERROR",
@@ -1426,7 +1396,7 @@ router.get(
     try {
       const { id, tenant } = req.params;
       const tenantSlug = tenant;
-      console.log("Adding note");
+      ("Adding note");
       if (!tenantSlug) {
         return res.status(400).json({
           error: "Tenant slug is required",
@@ -1482,7 +1452,6 @@ router.get(
         data: notes,
       });
     } catch (error) {
-      console.error("Error fetching lead notes:", error);
       res.status(500).json({
         error: "Failed to fetch lead notes",
         code: "FETCH_LEAD_NOTES_ERROR",
@@ -1503,9 +1472,9 @@ router.post(
   upload.single("file"),
   async (req: AuthedRequest, res) => {
     try {
-      console.log("📥 BULK IMPORT - Route handler executed");
+      ("📥 BULK IMPORT - Route handler executed");
       const tenantSlug = req.params.tenant;
-      console.log("Bulk importing leads");
+      ("Bulk importing leads");
       if (!tenantSlug) {
         return res.status(400).json({
           error: "Tenant slug is required",
@@ -1618,7 +1587,6 @@ router.post(
         },
       });
     } catch (error) {
-      console.error("Error importing leads:", error);
       res.status(500).json({
         error: "Failed to import leads",
         code: "IMPORT_LEADS_ERROR",
@@ -1638,9 +1606,9 @@ router.post(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res) => {
     try {
-      console.log("🎯 ASSIGN LEADS - Route handler executed");
+      ("🎯 ASSIGN LEADS - Route handler executed");
       const tenantSlug = req.params.tenant;
-      console.log("Assigning leads");
+      ("Assigning leads");
 
       if (!tenantSlug) {
         return res.status(400).json({
@@ -1748,7 +1716,6 @@ router.post(
         },
       });
     } catch (error) {
-      console.error("Error assigning leads:", error);
       res.status(500).json({
         error: "Failed to assign leads",
         code: "ASSIGN_LEADS_ERROR",
@@ -1768,7 +1735,7 @@ router.post(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res) => {
     try {
-      console.log("Reassigning lead");
+      ("Reassigning lead");
       const { id, tenant } = req.params;
       const tenantSlug = tenant;
 
@@ -1882,7 +1849,6 @@ router.post(
         data: updatedLead,
       });
     } catch (error) {
-      console.error("Error reassigning lead:", error);
       res.status(500).json({
         error: "Failed to reassign lead",
         code: "REASSIGN_LEAD_ERROR",

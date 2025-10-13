@@ -104,7 +104,10 @@ router.post(
         });
       }
 
-      const widgetData = validation.data;
+      const widgetData = {
+        ...validation.data,
+        formId,
+      };
       const widget = await widgetService.generateWidget(
         formId,
         tenant.id,
@@ -141,14 +144,15 @@ router.get(
     try {
       const tenantSlug = req.params.tenant;
       const formId = req.params.formId;
-
+      tenantSlug;
+      formId;
       if (!tenantSlug) {
         return res.status(400).json({
           error: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
-
+    
       // Get tenant
       const tenant = await prisma.tenant.findUnique({
         where: { slug: tenantSlug },
@@ -175,6 +179,145 @@ router.get(
       };
 
       res.json(response);
+    } catch (error) {
+      console.error("Error fetching widgets:", error);
+      const formError = error as FormBuilderError;
+      res.status(400).json({
+        success: false,
+        error: formError.message,
+        code: formError.code,
+      });
+    }
+  }
+);
+
+/**
+ * GET /:tenant/widgets
+ * Get all widgets for a tenant
+ */
+router.get(
+  "/:tenant/widgets",
+  requireAuth,
+  requireActiveUser,
+  requireRole(["INSTITUTION_ADMIN"]),
+  async (req: AuthedRequest, res: Response) => {
+    try {
+      const tenantSlug = req.params.tenant;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 12;
+      const search = (req.query.search as string) || "";
+      const status = (req.query.status as string) || "all";
+      const form = (req.query.form as string) || "all";
+
+      if (!tenantSlug) {
+        return res.status(400).json({
+          error: "Tenant slug is required",
+          code: "TENANT_REQUIRED",
+        });
+      }
+
+      // Get tenant
+      const tenant = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true },
+      });
+
+      if (!tenant) {
+        return res.status(404).json({
+          error: "Tenant not found",
+          code: "TENANT_NOT_FOUND",
+        });
+      }
+
+      // Build where clause
+      const where: any = {
+        form: {
+          tenantId: tenant.id,
+        },
+      };
+
+      // Add search filter
+      if (search) {
+        where.name = {
+          contains: search,
+          mode: "insensitive",
+        };
+      }
+
+      // Add status filter
+      if (status === "active") {
+        where.isActive = true;
+      } else if (status === "inactive") {
+        where.isActive = false;
+      }
+
+      // Add form filter
+      if (form !== "all") {
+        where.formId = form;
+      }
+
+      // Get widgets with pagination
+      const [widgets, total] = await Promise.all([
+        prisma.formWidget.findMany({
+          where,
+          include: {
+            form: {
+              select: {
+                id: true,
+                title: true,
+                isPublished: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+        prisma.formWidget.count({ where }),
+      ]);
+
+      // Get available forms for filtering
+      const forms = await prisma.form.findMany({
+        where: {
+          tenantId: tenant.id,
+        },
+        select: {
+          id: true,
+          title: true,
+        },
+        orderBy: {
+          title: "asc",
+        },
+      });
+
+      // Transform widgets
+      const transformedWidgets = widgets.map((widget) => ({
+        id: widget.id,
+        name: widget.name,
+        type: widget.type,
+        formId: widget.formId,
+        formTitle: widget.form.title,
+        settings: widget.settings,
+        embedCode: widget.embedCode,
+        previewUrl: `${process.env.FRONTEND_URL}/widgets/${widget.id}`,
+        publicUrl: `${process.env.API_BASE_URL}/api/public/widgets/${widget.id}`,
+        isActive: widget.isActive,
+        createdAt: widget.createdAt,
+        updatedAt: widget.updatedAt,
+      }));
+
+      res.json({
+        success: true,
+        data: {
+          widgets: transformedWidgets,
+          total,
+          page,
+          limit,
+          forms,
+        },
+      });
     } catch (error) {
       console.error("Error fetching widgets:", error);
       const formError = error as FormBuilderError;
@@ -322,10 +465,20 @@ router.put(
       }
 
       const widgetData = validation.data;
+
+      // Filter out undefined values to match Partial<WidgetGenerationRequest>
+      const updateData: Partial<WidgetGenerationRequest> = {};
+      if (widgetData.name !== undefined) {
+        updateData.name = widgetData.name;
+      }
+      if (widgetData.styling !== undefined) {
+        updateData.styling = widgetData.styling as any;
+      }
+
       const widget = await widgetService.updateWidget(
         widgetId,
         tenant.id,
-        widgetData
+        updateData
       );
 
       res.json({
@@ -570,7 +723,7 @@ router.post(
             ipAddress: req.ip,
             userAgent: req.get("User-Agent"),
             referrer: req.get("Referer"),
-            sessionId: req.sessionID || "anonymous",
+            sessionId: (req as any).sessionID || "anonymous",
             deviceType: "unknown",
             browser: "unknown",
             os: "unknown",

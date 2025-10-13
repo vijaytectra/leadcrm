@@ -19,11 +19,7 @@ export function FormBuilderCanvas() {
     const canvasRef = useRef<HTMLDivElement>(null);
 
     // Debug logging
-    console.log("FormBuilderCanvas render:", {
-        fields: state.fields,
-        fieldsLength: state.fields.length,
-        currentForm: state.currentForm
-    });
+  
 
 
     const handleFieldMove = useCallback((dragIndex: number, hoverIndex: number) => {
@@ -116,9 +112,9 @@ export function FormBuilderCanvas() {
             createdAt: new Date(),
             updatedAt: new Date()
         };
-        console.log("Adding field:", newField);
+      
         actions.addField(newField);
-        console.log("Field added, current fields count:", state.fields.length + 1);
+       
         toast.success(`${formBuilderUtils.getFieldTypeLabel(fieldType)} added`);
     }, [actions, state.fields.length, state.currentForm?.id]);
 

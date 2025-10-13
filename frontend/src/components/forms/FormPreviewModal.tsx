@@ -28,8 +28,9 @@ import {
 import { useFormBuilder } from "./FormBuilderProvider";
 import { FormFieldRenderer } from "./FormFieldRenderer";
 import { StepBasedFormPreview } from "./StepBasedFormPreview";
+import { getVisibleFields } from "@/lib/conditional-logic";
 import { toast } from "sonner";
-import type { FormField, Action } from "@/types/form-builder";
+import type { FormField } from "@/types/form-builder";
 
 interface FormPreviewModalProps {
     onClose: () => void;
@@ -47,78 +48,9 @@ export function FormPreviewModal({ onClose }: FormPreviewModalProps) {
     const hasSteps = state.steps && state.steps.length > 0;
     const fields = state.fields || [];
 
-    // Evaluate conditional logic for a field
-    const evaluateConditionalLogic = (field: FormField): boolean => {
-        // Check field-level conditional logic first
-        if (field.conditionalLogic?.enabled && field.conditionalLogic?.conditions?.length) {
-            return field.conditionalLogic.conditions.every(condition => {
-                const triggerField = state.fields.find(f => f.id === condition.fieldId);
-                if (!triggerField) return false;
-
-                const triggerValue = formData[triggerField.id];
-                const conditionValue = condition.value;
-
-                switch (condition.operator) {
-                    case 'equals':
-                        return triggerValue === conditionValue;
-                    case 'not_equals':
-                        return triggerValue !== conditionValue;
-                    case 'contains':
-                        return String(triggerValue).includes(String(conditionValue));
-                    case 'not_contains':
-                        return !String(triggerValue).includes(String(conditionValue));
-                    default:
-                        return true;
-                }
-            });
-        }
-
-        // Check step-level conditional logic
-        const currentStep = state.steps?.find(step => step.fields.includes(field.id));
-        if (currentStep?.conditions?.enabled && currentStep.conditions?.conditions?.length) {
-            const targetRules = currentStep.conditions.actions?.filter((action: Action) =>
-                action.targetFieldId === field.id
-            ) || [];
-
-            if (targetRules.length > 0) {
-                return targetRules.some((_action: Action) => {
-                    // Find the condition that matches this action
-                    const condition = currentStep.conditions?.conditions.find((_c: { fieldId: string }) => {
-                        // This is a simplified approach - in a real implementation, you'd need to track
-                        // which condition created which action
-                        return true; // For now, check all conditions
-                    });
-
-                    if (!condition) return false;
-
-                    const triggerField = state.fields.find(f => f.id === condition.fieldId);
-                    if (!triggerField) return false;
-
-                    const triggerValue = formData[triggerField.id];
-                    const conditionValue = condition.value;
-
-                    switch (condition.operator) {
-                        case 'equals':
-                            return triggerValue === conditionValue;
-                        case 'not_equals':
-                            return triggerValue !== conditionValue;
-                        case 'contains':
-                            return String(triggerValue).includes(String(conditionValue));
-                        case 'not_contains':
-                            return !String(triggerValue).includes(String(conditionValue));
-                        default:
-                            return true;
-                    }
-                });
-            }
-        }
-
-        return true; // Show field if no conditional logic
-    };
-
     // Get visible fields based on conditional logic
-    const getVisibleFields = (): FormField[] => {
-        return fields.filter(field => evaluateConditionalLogic(field));
+    const getVisibleFieldsList = (): FormField[] => {
+        return getVisibleFields(fields, formData, state.fields);
     };
 
     const handleFieldChange = (fieldId: string, value: unknown) => {
@@ -269,7 +201,7 @@ export function FormPreviewModal({ onClose }: FormPreviewModalProps) {
                                 {/* Form Fields */}
                                 {fields.length > 0 ? (
                                     <div className="space-y-4">
-                                        {getVisibleFields()
+                                        {getVisibleFieldsList()
                                             .sort((a, b) => a.order - b.order)
                                             .map(field => (
                                                 <FormFieldRenderer

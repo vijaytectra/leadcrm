@@ -484,6 +484,104 @@ async function main() {
     },
   ];
 
+  // Create 10 additional telecallers
+  console.log("📞 Creating 10 telecallers...");
+  const telecallers = [
+    {
+      email: "telecaller1@demoschool.com",
+      password: "Vijay@123",
+      firstName: "Rajesh",
+      lastName: "Kumar",
+      phone: "+91-9876543220",
+      role: "TELECALLER" as const,
+      tenantId: "cmgos35zh0002vzh024sxpl3v",
+    },
+    {
+      email: "telecaller2@demoschool.com",
+      password: "Vijay@123",
+      firstName: "Priya",
+      lastName: "Sharma",
+      phone: "+91-9876543221",
+      role: "TELECALLER" as const,
+      tenantId: "cmgos35zh0002vzh024sxpl3v",
+    },
+    {
+      email: "telecaller3@demoschool.com",
+      password: "Vijay@123",
+      firstName: "Amit",
+      lastName: "Singh",
+      phone: "+91-9876543222",
+      role: "TELECALLER" as const,
+      tenantId: "cmgos35zh0002vzh024sxpl3v",
+    },
+    {
+      email: "telecaller4@demoschool.com",
+      password: "Vijay@123",
+      firstName: "Sneha",
+      lastName: "Patel",
+      phone: "+91-9876543223",
+      role: "TELECALLER" as const,
+      tenantId: "cmgos35zh0002vzh024sxpl3v",
+    },
+    {
+      email: "telecaller5@demoschool.com",
+      password: "Vijay@123",
+      firstName: "Vikram",
+      lastName: "Gupta",
+      phone: "+91-9876543224",
+      role: "TELECALLER" as const,
+      tenantId: "cmgos35zh0002vzh024sxpl3v",
+    },
+    {
+      email: "telecaller6@demoschool.com",
+      password: "Vijay@123",
+      firstName: "Kavya",
+      lastName: "Reddy",
+      phone: "+91-9876543225",
+      role: "TELECALLER" as const,
+      tenantId: "cmgos35zh0002vzh024sxpl3v",
+    },
+    {
+      email: "telecaller7@demoschool.com",
+      password: "Vijay@123",
+      firstName: "Arjun",
+      lastName: "Mehta",
+      phone: "+91-9876543226",
+      role: "TELECALLER" as const,
+      tenantId: "cmgos35zh0002vzh024sxpl3v",
+    },
+    {
+      email: "telecaller8@demoschool.com",
+      password: "Vijay@123",
+      firstName: "Anita",
+      lastName: "Joshi",
+      phone: "+91-9876543227",
+      role: "TELECALLER" as const,
+      tenantId: "cmgos35zh0002vzh024sxpl3v",
+    },
+    {
+      email: "telecaller9@demoschool.com",
+      password: "Vijay@123",
+      firstName: "Suresh",
+      lastName: "Kumar",
+      phone: "+91-9876543228",
+      role: "TELECALLER" as const,
+      tenantId: "cmgos35zh0002vzh024sxpl3v",
+    },
+    {
+      email: "telecaller10@demoschool.com",
+      password: "Vijay@123",
+      firstName: "Meera",
+      lastName: "Desai",
+      phone: "+91-9876543229",
+      role: "TELECALLER" as const,
+      tenantId: "cmgos35zh0002vzh024sxpl3v",
+    },
+  ];
+
+  // Add telecallers to users array
+  users.push(...telecallers);
+
   for (const userData of users) {
     const hashedPassword = await hashPassword(userData.password);
     const { password, ...userCreateData } = userData;
@@ -500,8 +598,9 @@ async function main() {
     });
   }
 
-  // Create sample leads for demo school
-  const sampleLeads = [
+  // Create 50 leads for demo school
+  console.log("👥 Creating 50 leads...");
+  const leads = [
     {
       name: "Rahul Sharma",
       email: "rahul.sharma@email.com",
@@ -547,17 +646,6 @@ async function main() {
       score: 95,
       tenantId: demoSchoolTenant.id,
     },
-  ];
-
-  for (const leadData of sampleLeads) {
-    await prisma.lead.create({
-      data: leadData,
-    });
-  }
-
-  // Create additional dummy leads (10 more)
-  console.log("👥 Creating additional dummy leads...");
-  const additionalLeads = [
     {
       name: "Arjun Mehta",
       email: "arjun.mehta@email.com",
@@ -648,9 +736,324 @@ async function main() {
       score: 45,
       tenantId: demoSchoolTenant.id,
     },
+    {
+      name: "Ravi Kumar",
+      email: "ravi.kumar@email.com",
+      phone: "+91-9876543316",
+      source: "Google Ads",
+      status: "NEW" as const,
+      score: 68,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Sunita Devi",
+      email: "sunita.devi@email.com",
+      phone: "+91-9876543317",
+      source: "Facebook Ads",
+      status: "CONTACTED" as const,
+      score: 74,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Manoj Tiwari",
+      email: "manoj.tiwari@email.com",
+      phone: "+91-9876543318",
+      source: "Website Form",
+      status: "QUALIFIED" as const,
+      score: 87,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Geeta Sharma",
+      email: "geeta.sharma@email.com",
+      phone: "+91-9876543319",
+      source: "LinkedIn Ads",
+      status: "INTERESTED" as const,
+      score: 79,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Suresh Yadav",
+      email: "suresh.yadav@email.com",
+      phone: "+91-9876543320",
+      source: "Referral",
+      status: "APPLICATION_STARTED" as const,
+      score: 93,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Kiran Patel",
+      email: "kiran.patel@email.com",
+      phone: "+91-9876543321",
+      source: "Instagram Ads",
+      status: "DOCUMENTS_SUBMITTED" as const,
+      score: 86,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Vijay Singh",
+      email: "vijay.singh@email.com",
+      phone: "+91-9876543322",
+      source: "YouTube Ads",
+      status: "UNDER_REVIEW" as const,
+      score: 91,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Neha Gupta",
+      email: "neha.gupta@email.com",
+      phone: "+91-9876543323",
+      source: "Google Search",
+      status: "ADMITTED" as const,
+      score: 96,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Rajesh Pandey",
+      email: "rajesh.pandey@email.com",
+      phone: "+91-9876543324",
+      source: "Facebook Organic",
+      status: "ENROLLED" as const,
+      score: 88,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Anjali Verma",
+      email: "anjali.verma@email.com",
+      phone: "+91-9876543325",
+      source: "WhatsApp Business",
+      status: "LOST" as const,
+      score: 42,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Sandeep Kumar",
+      email: "sandeep.kumar@email.com",
+      phone: "+91-9876543326",
+      source: "Email Campaign",
+      status: "NEW" as const,
+      score: 71,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Poonam Singh",
+      email: "poonam.singh@email.com",
+      phone: "+91-9876543327",
+      source: "LinkedIn Organic",
+      status: "CONTACTED" as const,
+      score: 82,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Ramesh Kumar",
+      email: "ramesh.kumar@email.com",
+      phone: "+91-9876543328",
+      source: "Twitter Ads",
+      status: "QUALIFIED" as const,
+      score: 89,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Shilpa Agarwal",
+      email: "shilpa.agarwal@email.com",
+      phone: "+91-9876543329",
+      source: "TikTok Ads",
+      status: "INTERESTED" as const,
+      score: 77,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Akhil Sharma",
+      email: "akhil.sharma@email.com",
+      phone: "+91-9876543330",
+      source: "Snapchat Ads",
+      status: "APPLICATION_STARTED" as const,
+      score: 84,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Ritu Nair",
+      email: "ritu.nair@email.com",
+      phone: "+91-9876543331",
+      source: "Google Ads",
+      status: "DOCUMENTS_SUBMITTED" as const,
+      score: 92,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Naveen Kumar",
+      email: "naveen.kumar@email.com",
+      phone: "+91-9876543332",
+      source: "Facebook Ads",
+      status: "UNDER_REVIEW" as const,
+      score: 85,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Sushma Reddy",
+      email: "sushma.reddy@email.com",
+      phone: "+91-9876543333",
+      source: "Website Form",
+      status: "ADMITTED" as const,
+      score: 94,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Dinesh Patel",
+      email: "dinesh.patel@email.com",
+      phone: "+91-9876543334",
+      source: "LinkedIn Ads",
+      status: "ENROLLED" as const,
+      score: 90,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Kavita Joshi",
+      email: "kavita.joshi@email.com",
+      phone: "+91-9876543335",
+      source: "Referral",
+      status: "REJECTED" as const,
+      score: 38,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Prakash Verma",
+      email: "prakash.verma@email.com",
+      phone: "+91-9876543336",
+      source: "Instagram Ads",
+      status: "NEW" as const,
+      score: 66,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Sarita Mehta",
+      email: "sarita.mehta@email.com",
+      phone: "+91-9876543337",
+      source: "YouTube Ads",
+      status: "CONTACTED" as const,
+      score: 73,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Vinod Kumar",
+      email: "vinod.kumar@email.com",
+      phone: "+91-9876543338",
+      source: "Google Search",
+      status: "QUALIFIED" as const,
+      score: 81,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Preeti Singh",
+      email: "preeti.singh@email.com",
+      phone: "+91-9876543339",
+      source: "Facebook Organic",
+      status: "INTERESTED" as const,
+      score: 75,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Ashok Gupta",
+      email: "ashok.gupta@email.com",
+      phone: "+91-9876543340",
+      source: "WhatsApp Business",
+      status: "APPLICATION_STARTED" as const,
+      score: 87,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Manju Sharma",
+      email: "manju.sharma@email.com",
+      phone: "+91-9876543341",
+      source: "Email Campaign",
+      status: "DOCUMENTS_SUBMITTED" as const,
+      score: 91,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Rakesh Kumar",
+      email: "rakesh.kumar@email.com",
+      phone: "+91-9876543342",
+      source: "LinkedIn Organic",
+      status: "UNDER_REVIEW" as const,
+      score: 88,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Suman Agarwal",
+      email: "suman.agarwal@email.com",
+      phone: "+91-9876543343",
+      source: "Twitter Ads",
+      status: "ADMITTED" as const,
+      score: 95,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Mukesh Yadav",
+      email: "mukesh.yadav@email.com",
+      phone: "+91-9876543344",
+      source: "TikTok Ads",
+      status: "ENROLLED" as const,
+      score: 89,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Kamla Devi",
+      email: "kamla.devi@email.com",
+      phone: "+91-9876543345",
+      source: "Snapchat Ads",
+      status: "LOST" as const,
+      score: 41,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Bharat Singh",
+      email: "bharat.singh@email.com",
+      phone: "+91-9876543346",
+      source: "Google Ads",
+      status: "NEW" as const,
+      score: 69,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Usha Patel",
+      email: "usha.patel@email.com",
+      phone: "+91-9876543347",
+      source: "Facebook Ads",
+      status: "CONTACTED" as const,
+      score: 76,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Gopal Verma",
+      email: "gopal.verma@email.com",
+      phone: "+91-9876543348",
+      source: "Website Form",
+      status: "QUALIFIED" as const,
+      score: 83,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Laxmi Nair",
+      email: "laxmi.nair@email.com",
+      phone: "+91-9876543349",
+      source: "LinkedIn Ads",
+      status: "INTERESTED" as const,
+      score: 78,
+      tenantId: demoSchoolTenant.id,
+    },
+    {
+      name: "Hari Kumar",
+      email: "hari.kumar@email.com",
+      phone: "+91-9876543350",
+      source: "Referral",
+      status: "APPLICATION_STARTED" as const,
+      score: 86,
+      tenantId: demoSchoolTenant.id,
+    },
   ];
 
-  for (const leadData of additionalLeads) {
+  for (const leadData of leads) {
     await prisma.lead.create({
       data: leadData,
     });
@@ -710,6 +1113,18 @@ async function main() {
   console.log("   Admission Head: head@demoschool.com / Head123!");
   console.log("   Student: student@demoschool.com / Student123!");
   console.log("   Parent: parent@demoschool.com / Parent123!");
+
+  console.log("\n📞 Additional Telecallers (Password: Vijay@123):");
+  console.log("   telecaller1@demoschool.com - Rajesh Kumar");
+  console.log("   telecaller2@demoschool.com - Priya Sharma");
+  console.log("   telecaller3@demoschool.com - Amit Singh");
+  console.log("   telecaller4@demoschool.com - Sneha Patel");
+  console.log("   telecaller5@demoschool.com - Vikram Gupta");
+  console.log("   telecaller6@demoschool.com - Kavya Reddy");
+  console.log("   telecaller7@demoschool.com - Arjun Mehta");
+  console.log("   telecaller8@demoschool.com - Anita Joshi");
+  console.log("   telecaller9@demoschool.com - Suresh Kumar");
+  console.log("   telecaller10@demoschool.com - Meera Desai");
 
   console.log("\n🎯 All users are active and ready for testing!");
 }

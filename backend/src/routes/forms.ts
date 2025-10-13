@@ -156,7 +156,7 @@ router.post(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-      console.log("📝 CREATE FORM - Route handler executed");
+    
       const tenantSlug = req.params.tenant;
 
       if (!tenantSlug) {
@@ -230,7 +230,7 @@ router.get(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-      console.log("📋 GET FORMS - Route handler executed");
+  
       const tenantSlug = req.params.tenant;
 
       if (!tenantSlug) {
@@ -307,7 +307,7 @@ router.get(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-      console.log("🔍 GET FORM - Route handler executed");
+     
       const { formId, tenant } = req.params;
       const tenantSlug = tenant;
 
@@ -358,7 +358,7 @@ router.put(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-      console.log("✏️ UPDATE FORM - Route handler executed");
+     
       const { formId, tenant } = req.params;
       const tenantSlug = tenant;
 
@@ -437,7 +437,6 @@ router.delete(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-      console.log("🗑️ DELETE FORM - Route handler executed");
       const { formId, tenant } = req.params;
       const tenantSlug = tenant;
 
@@ -498,7 +497,7 @@ router.post(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-      console.log("➕ CREATE FIELD - Route handler executed");
+   
       const { formId, tenant } = req.params;
       const tenantSlug = tenant;
 
@@ -580,7 +579,7 @@ router.get(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-      console.log("📋 GET FIELDS - Route handler executed");
+     
       const { formId, tenant } = req.params;
       const tenantSlug = tenant;
 
@@ -637,7 +636,7 @@ router.put(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-      console.log("✏️ UPDATE FIELD - Route handler executed");
+
       const { formId, fieldId, tenant } = req.params;
       const tenantSlug = tenant;
 
@@ -721,7 +720,7 @@ router.delete(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-      console.log("🗑️ DELETE FIELD - Route handler executed");
+    
       const { formId, fieldId, tenant } = req.params;
       const tenantSlug = tenant;
 
@@ -932,7 +931,7 @@ router.post(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-      console.log("➕ CREATE STEP - Route handler executed");
+     
       const { formId, tenant } = req.params;
       const tenantSlug = tenant;
 
@@ -1001,7 +1000,7 @@ router.get(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-      console.log("📋 GET STEPS - Route handler executed");
+ 
       const { formId, tenant } = req.params;
       const tenantSlug = tenant;
 
@@ -1058,7 +1057,7 @@ router.put(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-      console.log("✏️ UPDATE STEP - Route handler executed");
+     
       const { formId, stepId, tenant } = req.params;
       const tenantSlug = tenant;
 
@@ -1128,7 +1127,7 @@ router.delete(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-      console.log("🗑️ DELETE STEP - Route handler executed");
+  
       const { formId, stepId, tenant } = req.params;
       const tenantSlug = tenant;
 
@@ -1189,7 +1188,7 @@ router.post(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-      console.log("💰 VALIDATE PAYMENT - Route handler executed");
+    
       const { formId, tenant } = req.params;
       const tenantSlug = tenant;
 

@@ -13,13 +13,13 @@ export function BatchVerificationPanel() {
     const handleBatchVerify = () => {
         setBatchAction("verify");
         // Implement batch verification logic
-        console.log("Batch verify documents:", selectedDocuments);
+        
     };
 
     const handleBatchReject = () => {
         setBatchAction("reject");
         // Implement batch rejection logic
-        console.log("Batch reject documents:", selectedDocuments);
+  
     };
 
     const clearSelection = () => {

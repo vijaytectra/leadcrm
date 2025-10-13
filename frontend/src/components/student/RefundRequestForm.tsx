@@ -26,7 +26,7 @@ export function RefundRequestForm() {
 
         try {
             // API call to create refund request
-            console.log("Creating refund request:", formData);
+            ("Creating refund request:", formData);
             // await financeApi.createRefundRequest(tenant, formData);
 
             // Reset form
@@ -41,7 +41,6 @@ export function RefundRequestForm() {
 
             alert("Refund request submitted successfully!");
         } catch (error) {
-            console.error("Error creating refund request:", error);
             alert("Failed to submit refund request. Please try again.");
         } finally {
             setIsSubmitting(false);

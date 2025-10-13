@@ -24,15 +24,15 @@ const router = Router();
 const createIntegrationSchema = z.object({
   platform: z.enum(["GOOGLE_ADS", "META", "LINKEDIN", "WHATSAPP"]),
   name: z.string().min(1).max(100),
-  credentials: z.record(z.string()),
-  metadata: z.record(z.unknown()).optional(),
+  credentials: z.record(z.string(), z.string()),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 const updateIntegrationSchema = z.object({
   name: z.string().min(1).max(100).optional(),
-  credentials: z.record(z.string()).optional(),
+  credentials: z.record(z.string(), z.string()).optional(),
   isActive: z.boolean().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 /**
@@ -40,14 +40,14 @@ const updateIntegrationSchema = z.object({
  * List all integrations for a tenant
  */
 router.get(
-  "/:tenant/integrations",
+  "/:tenantSlug/integrations",
   requireAuth,
   requireActiveUser,
   requireRole(["INSTITUTION_ADMIN"]),
   requireTenantAccess,
   async (req: AuthedRequest, res) => {
     try {
-      const { tenantSlug } = req;
+      const { tenantSlug } = req.params;
 
       const tenant = await prisma.tenant.findUnique({
         where: { slug: tenantSlug },
@@ -105,7 +105,6 @@ router.get(
         },
       });
     } catch (error) {
-      console.error("List integrations error:", error);
       res.status(500).json({ error: "Failed to fetch integrations" });
     }
   }
@@ -116,14 +115,14 @@ router.get(
  * Create a new integration
  */
 router.post(
-  "/:tenant/integrations",
+  "/:tenantSlug/integrations",
   requireAuth,
   requireActiveUser,
   requireRole(["INSTITUTION_ADMIN"]),
   requireTenantAccess,
   async (req: AuthedRequest, res) => {
     try {
-      const { tenantSlug } = req;
+      const { tenantSlug } = req.params;
 
       const tenant = await prisma.tenant.findUnique({
         where: { slug: tenantSlug },
@@ -164,7 +163,6 @@ router.post(
         },
       });
     } catch (error) {
-      console.error("Create integration error:", error);
       if (error instanceof Error && error.message.includes("Maximum")) {
         return res.status(400).json({ error: error.message });
       }
@@ -178,14 +176,14 @@ router.post(
  * Update an integration
  */
 router.put(
-  "/:tenant/integrations/:id",
+  "/:tenantSlug/integrations/:id",
   requireAuth,
   requireActiveUser,
   requireRole(["INSTITUTION_ADMIN"]),
   requireTenantAccess,
   async (req: AuthedRequest, res) => {
     try {
-      const { tenantSlug } = req;
+      const { tenantSlug } = req.params;
       const { id } = req.params;
 
       const tenant = await prisma.tenant.findUnique({
@@ -220,7 +218,6 @@ router.put(
         data: integration,
       });
     } catch (error) {
-      console.error("Update integration error:", error);
       res.status(500).json({ error: "Failed to update integration" });
     }
   }
@@ -231,7 +228,7 @@ router.put(
  * Delete an integration
  */
 router.delete(
-  "/:tenant/integrations/:id",
+  "/:tenantSlug/integrations/:id",
   requireAuth,
   requireActiveUser,
   requireRole(["INSTITUTION_ADMIN"]),
@@ -262,7 +259,6 @@ router.delete(
         message: "Integration deleted successfully",
       });
     } catch (error) {
-      console.error("Delete integration error:", error);
       res.status(500).json({ error: "Failed to delete integration" });
     }
   }
@@ -272,9 +268,9 @@ router.delete(
  * POST /webhooks/leads/:tenant/:platform
  * Webhook receiver for lead data from ad platforms (PUBLIC - no auth)
  */
-router.post("/webhooks/leads/:tenant/:platform", async (req, res) => {
+router.post("/webhooks/leads/:tenantSlug/:platform", async (req, res) => {
   try {
-    const { tenant: tenantSlug, platform } = req.params;
+    const { tenantSlug, platform } = req.params;
     const platformUpper = platform.toUpperCase() as IntegrationPlatform;
 
     const tenant = await prisma.tenant.findUnique({
@@ -339,7 +335,6 @@ router.post("/webhooks/leads/:tenant/:platform", async (req, res) => {
       message: `Processed ${created} lead(s), ${failed} failed`,
     });
   } catch (error) {
-    console.error("Webhook processing error:", error);
     res.status(500).json({ error: "Failed to process webhook" });
   }
 });
@@ -347,7 +342,7 @@ router.post("/webhooks/leads/:tenant/:platform", async (req, res) => {
 /**
  * GET /webhooks/leads/:tenant/meta (for Meta verification)
  */
-router.get("/webhooks/leads/:tenant/meta", async (req, res) => {
+router.get("/webhooks/leads/:tenantSlug/meta", async (req, res) => {
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];

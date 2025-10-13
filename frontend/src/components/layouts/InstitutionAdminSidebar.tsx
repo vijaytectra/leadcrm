@@ -9,6 +9,7 @@ import {
   Bell,
   HelpCircle,
   UserPlus,
+  Box,
 } from "lucide-react";
 import { BaseSidebar, NavigationItem } from "./BaseSidebar";
 
@@ -53,6 +54,19 @@ const navigation: NavigationItem[] = [
     icon: FileText,
     description: "Form builder",
   },
+  {
+    name: "Widgets",
+    href: "/institution-admin/widgets",
+    icon: BarChart3,
+    description: "Widget builder",
+  },
+  {
+    name: "Integrations",
+    href: "/institution-admin/integrations",
+    icon: Box,
+    description: "Integrations",
+  }
+
 ];
 
 const secondaryNavigation: NavigationItem[] = [

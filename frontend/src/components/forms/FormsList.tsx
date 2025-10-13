@@ -23,10 +23,12 @@ import {
     Download,
     Share2,
     Calendar,
-    FileText
+    FileText,
+    BarChart3,
+    ExternalLink
 } from "lucide-react";
 import { DeleteDialog } from "@/components/ui/confirmation-dialog";
-import { formsApi } from "@/lib/api/forms";
+import { formsApi, widgetAPI } from "@/lib/api/forms";
 import { useAuthStore } from "@/stores/auth";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -48,6 +50,7 @@ export function FormsList({
     const [forms, setForms] = useState<FormBuilderConfig[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
+    const [widgetCounts, setWidgetCounts] = useState<Record<string, number>>({});
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [formToDelete, setFormToDelete] = useState<FormBuilderConfig | null>(null);
 
@@ -59,6 +62,21 @@ export function FormsList({
             const response = await formsApi.getForms(currentTenantSlug);
             if (response.success && response.data) {
                 setForms(response.data.forms);
+
+                // Load widget counts for each form
+                const widgetCounts: Record<string, number> = {};
+                for (const form of response.data.forms) {
+                    try {
+                        const widgetResponse = await widgetAPI.getFormWidgets(currentTenantSlug, form.id);
+                        if (widgetResponse.success) {
+                            widgetCounts[form.id] = widgetResponse.data.total;
+                        }
+                    } catch (error) {
+                        console.error(`Failed to load widget count for form ${form.id}:`, error);
+                        widgetCounts[form.id] = 0;
+                    }
+                }
+                setWidgetCounts(widgetCounts);
             }
         } catch (error) {
             console.error("Error loading forms:", error);
@@ -309,6 +327,10 @@ export function FormsList({
                                                 <Calendar className="h-4 w-4" />
                                                 Updated {formatDate(form.updatedAt)}
                                             </div>
+                                            <div className="flex items-center gap-1">
+                                                <BarChart3 className="h-4 w-4" />
+                                                {widgetCounts[form.id] || 0} widget(s)
+                                            </div>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <Button
@@ -328,6 +350,15 @@ export function FormsList({
                                             >
                                                 <Eye className="h-3 w-3" />
                                                 Preview
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => router.push(`/institution-admin/forms/${form.id}/widgets?tenant=${currentTenantSlug}`)}
+                                                className="flex items-center gap-1"
+                                            >
+                                                <BarChart3 className="h-3 w-3" />
+                                                Widgets
                                             </Button>
                                         </div>
                                     </div>

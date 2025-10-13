@@ -63,12 +63,7 @@ export function StepFieldAssignment({ isOpen, onClose, step }: StepFieldAssignme
 
     useEffect(() => {
         if (step) {
-            console.log("StepFieldAssignment: Loading step", {
-                stepId: step.id,
-                stepTitle: step.title,
-                hasConditions: !!step.conditions,
-                conditions: step.conditions
-            });
+       
 
             setStepFields(step.fields || []);
             setIsPayment(step.isPayment || false);
@@ -76,7 +71,7 @@ export function StepFieldAssignment({ isOpen, onClose, step }: StepFieldAssignme
 
             // Initialize conditional rules from step conditions
             if (step.conditions?.enabled && step.conditions.conditions?.length) {
-                console.log("Loading existing conditions for step:", step.title);
+               
                 const rules: ConditionalRule[] = step.conditions.conditions.map((condition, index) => ({
                     id: `rule_${Date.now()}_${index}`,
                     fieldId: condition.fieldId,
@@ -87,7 +82,7 @@ export function StepFieldAssignment({ isOpen, onClose, step }: StepFieldAssignme
                 }));
                 setConditionalRules(rules);
             } else {
-                console.log("No existing conditions for step:", step.title);
+
                 setConditionalRules([]);
             }
         }
@@ -104,25 +99,7 @@ export function StepFieldAssignment({ isOpen, onClose, step }: StepFieldAssignme
     const handleSaveStep = () => {
         if (!step) return;
 
-        console.log("Saving step with fields:", {
-            stepId: step.id,
-            stepTitle: step.title,
-            assignedFields: stepFields,
-            fieldCount: stepFields.length,
-            conditionalRules: conditionalRules,
-            conditionsToSave: conditionalRules.length > 0 ? {
-                enabled: true,
-                conditions: conditionalRules.map(rule => ({
-                    fieldId: rule.fieldId,
-                    operator: rule.operator,
-                    value: rule.value
-                })),
-                actions: conditionalRules.map(rule => ({
-                    type: rule.action,
-                    targetFieldId: rule.targetFieldId
-                }))
-            } : undefined
-        });
+     
 
         const updatedStep: FormStep = {
             ...step,
@@ -208,7 +185,7 @@ export function StepFieldAssignment({ isOpen, onClose, step }: StepFieldAssignme
 
                     <div className="space-y-6">
                         {/* Payment Configuration */}
-                      
+
 
                         {/* Field Assignment */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -390,8 +367,7 @@ interface ConditionalRuleDialogProps {
 }
 
 function ConditionalRuleDialog({ isOpen, onClose, onSave, rule, fields }: ConditionalRuleDialogProps) {
-    console.log("ConditionalRuleDialog: Available fields", fields.map(f => ({ id: f.id, label: f.label, type: f.type })));
-
+    
     const [formData, setFormData] = useState<ConditionalRule>({
         id: rule?.id || `rule_${Date.now()}`,
         fieldId: rule?.fieldId || "",
@@ -412,13 +388,13 @@ function ConditionalRuleDialog({ isOpen, onClose, onSave, rule, fields }: Condit
     const getFieldOptions = () => {
         // Show ALL fields from the form, not just specific types
         const filteredFields = fields.filter(field => field.label && field.label.trim() !== "");
-        console.log("getFieldOptions: Available source fields", filteredFields.map(f => ({ id: f.id, label: f.label, type: f.type })));
+     
         return filteredFields;
     };
 
     const getTargetFieldOptions = () => {
         const targetFields = fields.filter(field => field.id !== formData.fieldId);
-        console.log("getTargetFieldOptions: Available target fields", targetFields.map(f => ({ id: f.id, label: f.label, type: f.type })));
+       
         return targetFields;
     };
 

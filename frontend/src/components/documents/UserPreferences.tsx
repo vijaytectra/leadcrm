@@ -45,9 +45,8 @@ export function UserPreferences({ preferences }: UserPreferencesProps) {
         try {
             // Simulate API call
             await new Promise(resolve => setTimeout(resolve, 1000));
-            console.log("Preferences saved:", formData);
+      
         } catch (error) {
-            console.error("Error saving preferences:", error);
         } finally {
             setIsSaving(false);
         }

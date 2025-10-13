@@ -118,12 +118,12 @@ export function OfferLetterTemplateBuilder({
     const insertVariable = (variable: string) => {
         // This would integrate with a rich text editor
         // For now, we'll just show how it would work
-        console.log('Inserting variable:', variable);
+    
     };
 
     const formatText = (format: string) => {
         // This would integrate with a rich text editor
-        console.log('Formatting text:', format);
+        
     };
 
     return (

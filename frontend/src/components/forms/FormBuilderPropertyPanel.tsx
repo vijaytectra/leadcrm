@@ -24,10 +24,12 @@ import {
 import { useFormBuilder } from "./FormBuilderProvider";
 import { formBuilderUtils } from "@/lib/api/forms";
 import type { ChoiceOption, FormField } from "@/types/form-builder";
+import { ConditionalLogicBuilder } from "./ConditionalLogicBuilder";
 
 export function FormBuilderPropertyPanel() {
     const { state, actions } = useFormBuilder();
     const [activeTab, setActiveTab] = useState("general");
+    const [showConditionalLogic, setShowConditionalLogic] = useState(false);
 
     const selectedField = state.selectedField;
 
@@ -262,6 +264,37 @@ export function FormBuilderPropertyPanel() {
                             className="mt-1 text-black"
                             placeholder="Enter custom error message"
                         />
+                    </div>
+                </div>
+            </div>
+
+            {/* Conditional Logic Section */}
+            <div>
+                <Label className="text-sm font-medium text-slate-700">Conditional Logic</Label>
+                <div className="mt-2 space-y-3">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                            <span className="text-sm text-slate-600">
+                                {selectedField.conditionalLogic?.enabled
+                                    ? `${selectedField.conditionalLogic.ruleGroups.length} rule group(s) configured`
+                                    : 'No conditional logic configured'
+                                }
+                            </span>
+                            {selectedField.conditionalLogic?.enabled && (
+                                <Badge variant="secondary" className="text-xs">
+                                    {selectedField.conditionalLogic.logicOperator}
+                                </Badge>
+                            )}
+                        </div>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setShowConditionalLogic(true)}
+                            className="h-8"
+                        >
+                            <Zap className="h-4 w-4 mr-2" />
+                            Configure
+                        </Button>
                     </div>
                 </div>
             </div>
@@ -543,6 +576,19 @@ export function FormBuilderPropertyPanel() {
                     </div>
                 </Tabs>
             </div>
+
+            {/* Conditional Logic Builder Modal */}
+            {showConditionalLogic && (
+                <ConditionalLogicBuilder
+                    field={selectedField}
+                    allFields={state.fields}
+                    onUpdate={(fieldId, conditionalLogic) => {
+                        actions.updateField(fieldId, { conditionalLogic });
+                        setShowConditionalLogic(false);
+                    }}
+                    onClose={() => setShowConditionalLogic(false)}
+                />
+            )}
         </div>
     );
 }
