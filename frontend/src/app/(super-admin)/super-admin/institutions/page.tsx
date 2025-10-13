@@ -10,8 +10,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AddInstitutionModal } from "@/components/modals/AddInstitutionModal";
+import { ViewInstitutionModal } from "@/components/modals/ViewInstitutionModal";
+import { EditInstitutionModal } from "@/components/modals/EditInstitutionModal";
+import { DeleteInstitutionDialog } from "@/components/modals/DeleteInstitutionDialog";
 import { apiGetClient, apiPostClient } from "@/lib/utils";
+import { Institution as InstitutionType, getInstitutionById } from "@/lib/api/institutions";
 import { toast } from "sonner";
 import {
     Building2,
@@ -33,10 +38,17 @@ import {
     AlertCircle,
     CheckCircle,
     Clock,
-    TrendingUp
+    TrendingUp,
+    Settings,
+    UserPlus,
+    FileText,
+    BarChart3,
+    Copy,
+    ExternalLink
 } from "lucide-react";
 import { getClientToken } from "@/lib/client-token";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { useAuthStore } from "@/stores/auth";
 
 interface Institution {
     id: string;
@@ -214,10 +226,14 @@ export default function InstitutionsPage() {
     const [institutions, setInstitutions] = React.useState<Institution[]>([]);
     const [selectedInstitutions, setSelectedInstitutions] = React.useState<string[]>([]);
     const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
+    const [isViewModalOpen, setIsViewModalOpen] = React.useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+    const [selectedInstitution, setSelectedInstitution] = React.useState<InstitutionType | null>(null);
     const [isLoading, setIsLoading] = React.useState(true);
     const [error, setError] = React.useState<string | null>(null);
-
-    const [pagination, setPagination] = React.useState<PaginationState>({
+  
+        const [pagination, setPagination] = React.useState<PaginationState>({
         page: 1,
         pageSize: 10,
         total: 0,
@@ -394,6 +410,100 @@ export default function InstitutionsPage() {
                 ? prev.filter(instId => instId !== id)
                 : [...prev, id]
         );
+    };
+
+    // Handle view institution
+    const handleViewInstitution = async (institutionId: string) => {
+        try {
+            
+            const institution = await getInstitutionById(institutionId);
+            setSelectedInstitution(institution);
+            setIsViewModalOpen(true);
+        } catch (error) {
+            console.error("Error fetching institution:", error);
+            toast.error("Failed to load institution details", {
+                description: "Please try again later"
+            });
+        }
+    };
+
+    // Handle edit institution
+    const handleEditInstitution = async (institutionId: string) => {
+        try {
+            const institution = await getInstitutionById(institutionId);
+            setSelectedInstitution(institution);
+            setIsEditModalOpen(true);
+        } catch (error) {
+            console.error("Error fetching institution:", error);
+            toast.error("Failed to load institution details", {
+                description: "Please try again later"
+            });
+        }
+    };
+
+    // Handle delete institution
+    const handleDeleteInstitution = async (institutionId: string) => {
+        try {
+            const institution = await getInstitutionById(institutionId);
+            setSelectedInstitution(institution);
+            setIsDeleteDialogOpen(true);
+        } catch (error) {
+            console.error("Error fetching institution:", error);
+            toast.error("Failed to load institution details", {
+                description: "Please try again later"
+            });
+        }
+    };
+
+    // Handle modal close
+    const handleCloseModals = () => {
+        setIsViewModalOpen(false);
+        setIsEditModalOpen(false);
+        setIsDeleteDialogOpen(false);
+        setSelectedInstitution(null);
+    };
+
+    // Handle successful operations
+    const handleOperationSuccess = async () => {
+        await fetchInstitutions();
+        handleCloseModals();
+    };
+
+    // Handle additional actions
+    const handleSendEmail = (institutionId: string) => {
+        toast.info("Email feature coming soon", {
+            description: "This feature will be available in the next update"
+        });
+    };
+
+    const handleViewAnalytics = (institutionId: string) => {
+        toast.info("Analytics feature coming soon", {
+            description: "This feature will be available in the next update"
+        });
+    };
+
+    const handleManageUsers = (institutionId: string) => {
+        toast.info("User management feature coming soon", {
+            description: "This feature will be available in the next update"
+        });
+    };
+
+    const handleGenerateReport = (institutionId: string) => {
+        toast.info("Report generation feature coming soon", {
+            description: "This feature will be available in the next update"
+        });
+    };
+
+    const handleCopyInstitutionId = (institutionId: string) => {
+        navigator.clipboard.writeText(institutionId);
+        toast.success("Institution ID copied to clipboard");
+    };
+
+    const handleOpenInNewTab = (institutionId: string) => {
+        // This would open the institution's admin panel in a new tab
+        toast.info("External link feature coming soon", {
+            description: "This feature will be available in the next update"
+        });
     };
 
     if (isLoading) {
@@ -746,18 +856,69 @@ export default function InstitutionsPage() {
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center space-x-1">
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-blue-100 hover:text-blue-700 transition-all duration-200">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 hover:bg-blue-100 hover:text-blue-700 transition-all duration-200"
+                                                            onClick={() => handleViewInstitution(institution.id)}
+                                                            title="View institution details"
+                                                        >
                                                             <Eye className="h-4 w-4" />
                                                         </Button>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-emerald-100 hover:text-emerald-700 transition-all duration-200">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 hover:bg-emerald-100 hover:text-emerald-700 transition-all duration-200"
+                                                            onClick={() => handleEditInstitution(institution.id)}
+                                                            title="Edit institution"
+                                                        >
                                                             <Edit className="h-4 w-4" />
                                                         </Button>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-purple-100 hover:text-purple-700 transition-all duration-200">
-                                                            <Mail className="h-4 w-4" />
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 hover:bg-red-100 hover:text-red-700 transition-all duration-200"
+                                                            onClick={() => handleDeleteInstitution(institution.id)}
+                                                            title="Delete institution"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
                                                         </Button>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-slate-100 hover:text-slate-700 transition-all duration-200">
-                                                            <MoreHorizontal className="h-4 w-4" />
-                                                        </Button>
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-slate-100 hover:text-slate-700 transition-all duration-200">
+                                                                    <MoreHorizontal className="h-4 w-4" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end" className="w-56">
+                                                                <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
+                                                                <DropdownMenuSeparator />
+                                                                <DropdownMenuItem onClick={() => handleSendEmail(institution.id)}>
+                                                                    <Mail className="h-4 w-4 mr-2" />
+                                                                    Send Email
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => handleViewAnalytics(institution.id)}>
+                                                                    <BarChart3 className="h-4 w-4 mr-2" />
+                                                                    View Analytics
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => handleManageUsers(institution.id)}>
+                                                                    <UserPlus className="h-4 w-4 mr-2" />
+                                                                    Manage Users
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => handleGenerateReport(institution.id)}>
+                                                                    <FileText className="h-4 w-4 mr-2" />
+                                                                    Generate Report
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuSeparator />
+                                                                <DropdownMenuItem onClick={() => handleCopyInstitutionId(institution.id)}>
+                                                                    <Copy className="h-4 w-4 mr-2" />
+                                                                    Copy Institution ID
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => handleOpenInNewTab(institution.id)}>
+                                                                    <ExternalLink className="h-4 w-4 mr-2" />
+                                                                    Open in New Tab
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
                                                     </div>
                                                 </TableCell>
                                             </TableRow>
@@ -828,6 +989,39 @@ export default function InstitutionsPage() {
                     isOpen={isAddModalOpen}
                     onClose={() => setIsAddModalOpen(false)}
                     onSubmit={handleAddInstitution}
+                />
+
+                {/* View Institution Modal */}
+                <ViewInstitutionModal
+                    isOpen={isViewModalOpen}
+                    onClose={handleCloseModals}
+                    institution={selectedInstitution}
+                    onEdit={(institution) => {
+                        setIsViewModalOpen(false);
+                        setSelectedInstitution(institution);
+                        setIsEditModalOpen(true);
+                    }}
+                    onDelete={(institution) => {
+                        setIsViewModalOpen(false);
+                        setSelectedInstitution(institution);
+                        setIsDeleteDialogOpen(true);
+                    }}
+                />
+
+                {/* Edit Institution Modal */}
+                <EditInstitutionModal
+                    isOpen={isEditModalOpen}
+                    onClose={handleCloseModals}
+                    institution={selectedInstitution}
+                    onSuccess={handleOperationSuccess}
+                />
+
+                {/* Delete Institution Dialog */}
+                <DeleteInstitutionDialog
+                    isOpen={isDeleteDialogOpen}
+                    onClose={handleCloseModals}
+                    institution={selectedInstitution}
+                    onSuccess={handleOperationSuccess}
                 />
             </div>
         </ProtectedRoute>

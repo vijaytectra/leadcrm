@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { prisma } from "./prisma";
+import type { BulkMessageJob, BulkMessageRecipient } from "../types/whatsapp";
 
 // WhatsApp Business API configuration
 const whatsappConfig = {
@@ -490,6 +491,292 @@ export class WhatsAppService {
       configured: this.isConfigured,
       ready: this.isConfigured,
     };
+  }
+
+  /**
+   * Send bulk messages to multiple recipients
+   */
+  async sendBulkMessages(
+    jobId: string,
+    recipients: BulkMessageRecipient[],
+    message: string,
+    templateId?: string
+  ): Promise<{
+    success: boolean;
+    sent: number;
+    failed: number;
+    errors: string[];
+  }> {
+    if (!this.isConfigured) {
+      throw new Error("WhatsApp service not configured");
+    }
+
+    const results = {
+      success: true,
+      sent: 0,
+      failed: 0,
+      errors: [] as string[],
+    };
+
+    // Process in batches to avoid rate limits
+    const batchSize = 10;
+    const batches = this.chunkArray(recipients, batchSize);
+
+    for (const batch of batches) {
+      const batchPromises = batch.map(async (recipient) => {
+        try {
+          const messageData = templateId
+            ? await this.buildTemplateMessage(
+                recipient.phoneNumber,
+                message,
+                templateId
+              )
+            : this.buildTextMessage(recipient.phoneNumber, message);
+
+          const response = await this.makeAPIRequest("/messages", {
+            method: "POST",
+            body: JSON.stringify(messageData),
+          });
+
+          if (response.messages && response.messages[0]) {
+            await this.updateBulkMessageStatus(
+              jobId,
+              recipient.leadId,
+              "SENT",
+              response.messages[0].id
+            );
+            results.sent++;
+          } else {
+            throw new Error("No message ID returned");
+          }
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : "Unknown error";
+          results.errors.push(`Lead ${recipient.leadId}: ${errorMessage}`);
+          results.failed++;
+
+          await this.updateBulkMessageStatus(
+            jobId,
+            recipient.leadId,
+            "FAILED",
+            undefined,
+            errorMessage
+          );
+        }
+      });
+
+      await Promise.allSettled(batchPromises);
+
+      // Add delay between batches to respect rate limits
+      await this.delay(1000);
+    }
+
+    return results;
+  }
+
+  /**
+   * Create a bulk message job
+   */
+  async createBulkMessageJob(
+    tenantId: string,
+    userId: string,
+    message: string,
+    recipients: BulkMessageRecipient[],
+    templateId?: string
+  ): Promise<string> {
+    const job = await prisma.bulkMessageJob.create({
+      data: {
+        tenantId,
+        userId,
+        message,
+        templateId,
+        recipientCount: recipients.length,
+        recipients,
+        status: "PENDING",
+      },
+    });
+
+    return job.id;
+  }
+
+  /**
+   * Process a bulk message job
+   */
+  async processBulkMessageJob(jobId: string): Promise<void> {
+    const job = await prisma.bulkMessageJob.findUnique({
+      where: { id: jobId },
+    });
+
+    if (!job) {
+      throw new Error("Bulk message job not found");
+    }
+
+    if (job.status !== "PENDING") {
+      throw new Error("Job is not in pending status");
+    }
+
+    // Update job status to processing
+    await prisma.bulkMessageJob.update({
+      where: { id: jobId },
+      data: {
+        status: "PROCESSING",
+        startedAt: new Date(),
+      },
+    });
+
+    try {
+      const recipients = job.recipients as BulkMessageRecipient[];
+      const results = await this.sendBulkMessages(
+        jobId,
+        recipients,
+        job.message,
+        job.templateId
+      );
+
+      // Update job completion
+      await prisma.bulkMessageJob.update({
+        where: { id: jobId },
+        data: {
+          status: results.failed === 0 ? "COMPLETED" : "FAILED",
+          sentCount: results.sent,
+          failedCount: results.failed,
+          completedAt: new Date(),
+          errorMessage:
+            results.errors.length > 0 ? results.errors.join("; ") : null,
+        },
+      });
+    } catch (error) {
+      await prisma.bulkMessageJob.update({
+        where: { id: jobId },
+        data: {
+          status: "FAILED",
+          completedAt: new Date(),
+          errorMessage:
+            error instanceof Error ? error.message : "Unknown error",
+        },
+      });
+    }
+  }
+
+  /**
+   * Get bulk message job status
+   */
+  async getBulkMessageJobStatus(jobId: string): Promise<BulkMessageJob | null> {
+    return prisma.bulkMessageJob.findUnique({
+      where: { id: jobId },
+    });
+  }
+
+  /**
+   * Get bulk message job history for a user
+   */
+  async getBulkMessageHistory(
+    tenantId: string,
+    userId: string,
+    limit: number = 50,
+    offset: number = 0
+  ): Promise<BulkMessageJob[]> {
+    return prisma.bulkMessageJob.findMany({
+      where: { tenantId, userId },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      skip: offset,
+    });
+  }
+
+  /**
+   * Update bulk message recipient status
+   */
+  private async updateBulkMessageStatus(
+    jobId: string,
+    leadId: string,
+    status: "PENDING" | "SENT" | "DELIVERED" | "READ" | "FAILED",
+    messageId?: string,
+    errorReason?: string
+  ): Promise<void> {
+    const job = await prisma.bulkMessageJob.findUnique({
+      where: { id: jobId },
+    });
+
+    if (!job) return;
+
+    const recipients = job.recipients as BulkMessageRecipient[];
+    const updatedRecipients = recipients.map((recipient) =>
+      recipient.leadId === leadId
+        ? { ...recipient, status, messageId, errorReason }
+        : recipient
+    );
+
+    await prisma.bulkMessageJob.update({
+      where: { id: jobId },
+      data: { recipients: updatedRecipients },
+    });
+  }
+
+  /**
+   * Build template message
+   */
+  async buildTemplateMessage(
+    phoneNumber: string,
+    message: string,
+    templateId: string
+  ): Promise<any> {
+    const template = await prisma.whatsappTemplate.findUnique({
+      where: { id: templateId },
+    });
+
+    if (!template) {
+      throw new Error("Template not found");
+    }
+
+    return {
+      messaging_product: "whatsapp",
+      to: phoneNumber,
+      type: "template",
+      template: {
+        name: template.name,
+        language: { code: template.language },
+        components: [
+          {
+            type: "body",
+            parameters: template.variables.map((variable: string) => ({
+              type: "text",
+              text: message,
+            })),
+          },
+        ],
+      },
+    };
+  }
+
+  /**
+   * Build text message
+   */
+  buildTextMessage(phoneNumber: string, message: string): any {
+    return {
+      messaging_product: "whatsapp",
+      to: phoneNumber,
+      type: "text",
+      text: { body: message },
+    };
+  }
+
+  /**
+   * Chunk array into smaller arrays
+   */
+  private chunkArray<T>(array: T[], size: number): T[][] {
+    const chunks: T[][] = [];
+    for (let i = 0; i < array.length; i += size) {
+      chunks.push(array.slice(i, i + size));
+    }
+    return chunks;
+  }
+
+  /**
+   * Delay execution
+   */
+  private delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 

@@ -29,7 +29,7 @@ const createRefundRequestSchema = z.object({
 
 // GET /api/:tenantSlug/student/application/:id
 router.get(
-  "/application/:id",
+  "/:tenantSlug/student/application/:id",
   requireAuth,
   requireActiveUser,
   requireRole(["STUDENT", "PARENT"]),
@@ -179,7 +179,7 @@ router.get(
 
 // GET /api/:tenantSlug/student/documents/:applicationId
 router.get(
-  "/documents/:applicationId",
+  "/:tenantSlug/student/documents/:applicationId",
   requireAuth,
   requireActiveUser,
   requireRole(["STUDENT", "PARENT"]),
@@ -243,7 +243,7 @@ router.get(
 
 // POST /api/:tenantSlug/student/documents
 router.post(
-  "/documents",
+  "/:tenantSlug/student/documents",
   requireAuth,
   requireActiveUser,
   requireRole(["STUDENT", "PARENT"]),
@@ -299,7 +299,7 @@ router.post(
 
 // GET /api/:tenantSlug/student/payments/:applicationId
 router.get(
-  "/payments/:applicationId",
+  "/:tenantSlug/student/payments/:applicationId",
   requireAuth,
   requireActiveUser,
   requireRole(["STUDENT", "PARENT"]),
@@ -371,7 +371,7 @@ router.get(
 
 // GET /api/:tenantSlug/student/communications/:applicationId
 router.get(
-  "/communications/:applicationId",
+  "/:tenantSlug/student/communications/:applicationId",
   requireAuth,
   requireActiveUser,
   requireRole(["STUDENT", "PARENT"]),
@@ -446,7 +446,7 @@ router.get(
 
 // POST /api/:tenantSlug/student/refund-request
 router.post(
-  "/refund-request",
+  "/:tenantSlug/student/refund-request",
   requireAuth,
   requireActiveUser,
   requireRole(["STUDENT", "PARENT"]),
@@ -520,7 +520,7 @@ router.post(
 
 // GET /api/:tenantSlug/student/offer-letter/:applicationId
 router.get(
-  "/offer-letter/:applicationId",
+  "/:tenantSlug/student/offer-letter/:applicationId",
   requireAuth,
   requireActiveUser,
   requireRole(["STUDENT", "PARENT"]),
@@ -581,7 +581,7 @@ router.get(
 
 // POST /api/:tenantSlug/student/offer-letter/:applicationId/accept
 router.post(
-  "/offer-letter/:applicationId/accept",
+  "/:tenantSlug/student/offer-letter/:applicationId/accept",
   requireAuth,
   requireActiveUser,
   requireRole(["STUDENT", "PARENT"]),
@@ -653,7 +653,7 @@ router.post(
 
 // POST /api/:tenantSlug/student/offer-letter/:applicationId/decline
 router.post(
-  "/offer-letter/:applicationId/decline",
+  "/:tenantSlug/student/offer-letter/:applicationId/decline",
   requireAuth,
   requireActiveUser,
   requireRole(["STUDENT", "PARENT"]),

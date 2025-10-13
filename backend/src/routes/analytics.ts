@@ -1,5 +1,8 @@
 import { Router } from "express";
+import { z } from "zod";
 import { prisma } from "../lib/prisma";
+import { analyticsAggregator } from "../lib/analytics-aggregation";
+import { reportGenerator } from "../lib/report-generator";
 import {
   requireAuth,
   requireRole,
@@ -23,7 +26,6 @@ router.get(
   async (req: AuthedRequest, res) => {
     try {
       const tenantSlug = req.params.tenant;
-
 
       if (!tenantSlug) {
         return res.status(400).json({
@@ -246,5 +248,420 @@ router.get(
     }
   }
 );
+
+/**
+ * GET /api/:tenant/analytics/funnel
+ * Get lead funnel analytics
+ */
+router.get(
+  "/:tenant/analytics/funnel",
+  requireAuth,
+  requireActiveUser,
+  requireRole(["INSTITUTION_ADMIN", "ADMISSION_HEAD"]),
+  requireTenantAccess,
+  async (req: AuthedRequest, res) => {
+    try {
+      const { tenantSlug } = req;
+      const { period = "30d" } = req.query;
+
+      const tenant = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true },
+      });
+
+      if (!tenant) {
+        return res.status(404).json({ error: "Tenant not found" });
+      }
+
+      const dateRange = getDateRange(period as string);
+
+      const leads = await prisma.lead.findMany({
+        where: {
+          tenantId: tenant.id,
+          createdAt: { gte: dateRange.start, lte: dateRange.end },
+        },
+        select: { status: true, createdAt: true },
+      });
+
+      const funnel = calculateFunnel(leads);
+
+      res.json({ success: true, data: funnel });
+    } catch (error) {
+      console.error("Get funnel analytics error:", error);
+      res.status(500).json({ error: "Failed to fetch funnel data" });
+    }
+  }
+);
+
+/**
+ * GET /api/:tenant/analytics/conversions
+ * Get conversion rate analytics
+ */
+router.get(
+  "/:tenant/analytics/conversions",
+  requireAuth,
+  requireActiveUser,
+  requireRole(["INSTITUTION_ADMIN", "ADMISSION_HEAD"]),
+  requireTenantAccess,
+  async (req: AuthedRequest, res) => {
+    try {
+      const { tenantSlug } = req;
+      const { period = "30d" } = req.query;
+
+      const tenant = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true },
+      });
+
+      if (!tenant) {
+        return res.status(404).json({ error: "Tenant not found" });
+      }
+
+      const dateRange = getDateRange(period as string);
+
+      const leads = await prisma.lead.findMany({
+        where: {
+          tenantId: tenant.id,
+          createdAt: { gte: dateRange.start, lte: dateRange.end },
+        },
+        select: { status: true, createdAt: true, sourceTracking: true },
+      });
+
+      const conversions = calculateConversions(leads);
+
+      res.json({ success: true, data: conversions });
+    } catch (error) {
+      console.error("Get conversion analytics error:", error);
+      res.status(500).json({ error: "Failed to fetch conversion data" });
+    }
+  }
+);
+
+/**
+ * GET /api/:tenant/analytics/sources
+ * Get source performance analytics
+ */
+router.get(
+  "/:tenant/analytics/sources",
+  requireAuth,
+  requireActiveUser,
+  requireRole(["INSTITUTION_ADMIN", "ADMISSION_HEAD"]),
+  requireTenantAccess,
+  async (req: AuthedRequest, res) => {
+    try {
+      const { tenantSlug } = req;
+      const { period = "30d" } = req.query;
+
+      const tenant = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true },
+      });
+
+      if (!tenant) {
+        return res.status(404).json({ error: "Tenant not found" });
+      }
+
+      const dateRange = getDateRange(period as string);
+
+      const leads = await prisma.lead.findMany({
+        where: {
+          tenantId: tenant.id,
+          createdAt: { gte: dateRange.start, lte: dateRange.end },
+        },
+        include: { sourceTracking: true },
+      });
+
+      const sources = calculateSourcePerformance(leads);
+
+      res.json({ success: true, data: sources });
+    } catch (error) {
+      console.error("Get source analytics error:", error);
+      res.status(500).json({ error: "Failed to fetch source data" });
+    }
+  }
+);
+
+/**
+ * GET /api/:tenant/analytics/roi
+ * Get campaign ROI analytics
+ */
+router.get(
+  "/:tenant/analytics/roi",
+  requireAuth,
+  requireActiveUser,
+  requireRole(["INSTITUTION_ADMIN", "ADMISSION_HEAD"]),
+  requireTenantAccess,
+  async (req: AuthedRequest, res) => {
+    try {
+      const { tenantSlug } = req;
+      const { period = "30d" } = req.query;
+
+      const tenant = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true },
+      });
+
+      if (!tenant) {
+        return res.status(404).json({ error: "Tenant not found" });
+      }
+
+      const dateRange = getDateRange(period as string);
+
+      const sourceTrackings = await prisma.leadSourceTracking.findMany({
+        where: {
+          lead: {
+            tenantId: tenant.id,
+            createdAt: { gte: dateRange.start, lte: dateRange.end },
+          },
+        },
+        include: { lead: true },
+      });
+
+      const roi = calculateROI(sourceTrackings);
+
+      res.json({ success: true, data: roi });
+    } catch (error) {
+      console.error("Get ROI analytics error:", error);
+      res.status(500).json({ error: "Failed to fetch ROI data" });
+    }
+  }
+);
+
+/**
+ * POST /api/:tenant/analytics/reports/custom
+ * Create custom report
+ */
+router.post(
+  "/:tenant/analytics/reports/custom",
+  requireAuth,
+  requireActiveUser,
+  requireRole(["INSTITUTION_ADMIN"]),
+  requireTenantAccess,
+  async (req: AuthedRequest, res) => {
+    try {
+      const { tenantSlug } = req;
+      const { name, description, type, config, schedule } = req.body;
+
+      const tenant = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true },
+      });
+
+      if (!tenant) {
+        return res.status(404).json({ error: "Tenant not found" });
+      }
+
+      const template = await prisma.reportTemplate.create({
+        data: {
+          tenantId: tenant.id,
+          name,
+          description,
+          type,
+          config,
+          schedule,
+        },
+      });
+
+      res.status(201).json({ success: true, data: template });
+    } catch (error) {
+      console.error("Create custom report error:", error);
+      res.status(500).json({ error: "Failed to create report template" });
+    }
+  }
+);
+
+/**
+ * GET /api/:tenant/analytics/reports
+ * List saved reports
+ */
+router.get(
+  "/:tenant/analytics/reports",
+  requireAuth,
+  requireActiveUser,
+  requireRole(["INSTITUTION_ADMIN"]),
+  requireTenantAccess,
+  async (req: AuthedRequest, res) => {
+    try {
+      const { tenantSlug } = req;
+
+      const tenant = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true },
+      });
+
+      if (!tenant) {
+        return res.status(404).json({ error: "Tenant not found" });
+      }
+
+      const templates = await prisma.reportTemplate.findMany({
+        where: { tenantId: tenant.id },
+        orderBy: { createdAt: "desc" },
+      });
+
+      res.json({ success: true, data: templates });
+    } catch (error) {
+      console.error("List reports error:", error);
+      res.status(500).json({ error: "Failed to fetch reports" });
+    }
+  }
+);
+
+/**
+ * POST /api/:tenant/analytics/reports/:id/export
+ * Export report (PDF/Excel)
+ */
+router.post(
+  "/:tenant/analytics/reports/:id/export",
+  requireAuth,
+  requireActiveUser,
+  requireRole(["INSTITUTION_ADMIN"]),
+  requireTenantAccess,
+  async (req: AuthedRequest, res) => {
+    try {
+      const { tenantSlug } = req;
+      const { id } = req.params;
+      const { format = "PDF", periodStart, periodEnd } = req.body;
+
+      const tenant = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true },
+      });
+
+      if (!tenant) {
+        return res.status(404).json({ error: "Tenant not found" });
+      }
+
+      const startDate = new Date(periodStart);
+      const endDate = new Date(periodEnd);
+
+      let result;
+      if (format === "EXCEL") {
+        result = await reportGenerator.generateExcelReport(
+          id,
+          req.user!.id,
+          startDate,
+          endDate
+        );
+      } else {
+        result = await reportGenerator.generateReport(
+          id,
+          req.user!.id,
+          startDate,
+          endDate
+        );
+      }
+
+      res.json({ success: true, data: result });
+    } catch (error) {
+      console.error("Export report error:", error);
+      res.status(500).json({ error: "Failed to export report" });
+    }
+  }
+);
+
+// Helper methods
+function getDateRange(period: string): { start: Date; end: Date } {
+  const end = new Date();
+  const start = new Date();
+
+  switch (period) {
+    case "7d":
+      start.setDate(end.getDate() - 7);
+      break;
+    case "30d":
+      start.setDate(end.getDate() - 30);
+      break;
+    case "90d":
+      start.setDate(end.getDate() - 90);
+      break;
+    default:
+      start.setDate(end.getDate() - 30);
+  }
+
+  return { start, end };
+}
+
+function calculateFunnel(leads: any[]): any[] {
+  const stages = ["NEW", "CONTACTED", "QUALIFIED", "CONVERTED"];
+  const funnel = stages.map((stage, index) => {
+    const count = leads.filter((lead) => lead.status === stage).length;
+    const previousCount =
+      index > 0
+        ? leads.filter((lead) => stages.indexOf(lead.status) >= index - 1)
+            .length
+        : leads.length;
+
+    return {
+      stage,
+      count,
+      percentage: leads.length > 0 ? (count / leads.length) * 100 : 0,
+      dropOffRate:
+        previousCount > 0 ? ((previousCount - count) / previousCount) * 100 : 0,
+    };
+  });
+
+  return funnel;
+}
+
+function calculateConversions(leads: any[]): any {
+  const totalLeads = leads.length;
+  const convertedLeads = leads.filter(
+    (lead) => lead.status === "CONVERTED"
+  ).length;
+  const conversionRate =
+    totalLeads > 0 ? (convertedLeads / totalLeads) * 100 : 0;
+
+  return {
+    totalLeads,
+    convertedLeads,
+    conversionRate,
+    trends: {
+      daily: [], // Would calculate daily trends
+      weekly: [], // Would calculate weekly trends
+    },
+  };
+}
+
+function calculateSourcePerformance(leads: any[]): any[] {
+  const sourceMap = new Map();
+
+  leads.forEach((lead) => {
+    const source = lead.sourceTracking?.platform || lead.source || "UNKNOWN";
+    if (!sourceMap.has(source)) {
+      sourceMap.set(source, { source, total: 0, converted: 0 });
+    }
+
+    const data = sourceMap.get(source);
+    data.total++;
+    if (lead.status === "CONVERTED") {
+      data.converted++;
+    }
+  });
+
+  return Array.from(sourceMap.values()).map((data) => ({
+    ...data,
+    conversionRate: data.total > 0 ? (data.converted / data.total) * 100 : 0,
+  }));
+}
+
+function calculateROI(sourceTrackings: any[]): any {
+  const totalCost = sourceTrackings.reduce(
+    (sum, tracking) => sum + (tracking.cost || 0),
+    0
+  );
+  const totalLeads = sourceTrackings.length;
+  const convertedLeads = sourceTrackings.filter(
+    (t) => t.lead.status === "CONVERTED"
+  ).length;
+
+  return {
+    totalCost,
+    totalLeads,
+    convertedLeads,
+    costPerLead: totalLeads > 0 ? totalCost / totalLeads : 0,
+    costPerConversion: convertedLeads > 0 ? totalCost / convertedLeads : 0,
+    roi: totalCost > 0 ? ((convertedLeads * 1000) / totalCost) * 100 : 0, // Assuming 1000 value per conversion
+  };
+}
 
 export default router;

@@ -47,7 +47,7 @@ const distributeOffersSchema = z.object({
 
 // GET /api/:tenantSlug/admission-head/dashboard
 router.get(
-  "/dashboard",
+  "/:tenantSlug/admission-head/dashboard",
   requireAuth,
   requireActiveUser,
   requireRole(["ADMISSION_HEAD"]),
@@ -161,7 +161,7 @@ router.get(
 
 // GET /api/:tenantSlug/admission-head/reports
 router.get(
-  "/reports",
+  "/:tenantSlug/admission-head/reports",
   requireAuth,
   requireActiveUser,
   requireRole(["ADMISSION_HEAD"]),
@@ -313,7 +313,7 @@ router.get(
 
 // GET /api/:tenantSlug/admission-head/templates
 router.get(
-  "/templates",
+  "/:tenantSlug/admission-head/templates",
   requireAuth,
   requireActiveUser,
   requireRole(["ADMISSION_HEAD"]),
@@ -355,7 +355,7 @@ router.get(
 
 // POST /api/:tenantSlug/admission-head/templates
 router.post(
-  "/templates",
+  "/:tenantSlug/admission-head/templates",
   requireAuth,
   requireActiveUser,
   requireRole(["ADMISSION_HEAD"]),
@@ -395,7 +395,7 @@ router.post(
 
 // PUT /api/:tenantSlug/admission-head/templates/:id
 router.put(
-  "/templates/:id",
+  "/:tenantSlug/admission-head/templates/:id",
   requireAuth,
   requireActiveUser,
   requireRole(["ADMISSION_HEAD"]),
@@ -443,7 +443,7 @@ router.put(
 
 // DELETE /api/:tenantSlug/admission-head/templates/:id
 router.delete(
-  "/templates/:id",
+  "/:tenantSlug/admission-head/templates/:id",
   requireAuth,
   requireActiveUser,
   requireRole(["ADMISSION_HEAD"]),
@@ -484,7 +484,7 @@ router.delete(
 
 // POST /api/:tenantSlug/admission-head/offers/generate
 router.post(
-  "/offers/generate",
+  "/:tenantSlug/admission-head/offers/generate",
   requireAuth,
   requireActiveUser,
   requireRole(["ADMISSION_HEAD"]),
@@ -599,7 +599,7 @@ router.post(
 
 // POST /api/:tenantSlug/admission-head/offers/bulk-generate
 router.post(
-  "/offers/bulk-generate",
+  "/:tenantSlug/admission-head/offers/bulk-generate",
   requireAuth,
   requireActiveUser,
   requireRole(["ADMISSION_HEAD"]),
@@ -706,7 +706,7 @@ router.post(
 
 // POST /api/:tenantSlug/admission-head/offers/distribute
 router.post(
-  "/offers/distribute",
+  "/:tenantSlug/admission-head/offers/distribute",
   requireAuth,
   requireActiveUser,
   requireRole(["ADMISSION_HEAD"]),
@@ -800,7 +800,7 @@ router.post(
 
 // GET /api/:tenantSlug/admission-head/approvals
 router.get(
-  "/approvals",
+  "/:tenantSlug/admission-head/approvals",
   requireAuth,
   requireActiveUser,
   requireRole(["ADMISSION_HEAD"]),

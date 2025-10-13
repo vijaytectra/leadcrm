@@ -25,8 +25,8 @@ import { Appointment, Application } from "@/lib/api/admissions";
 
 interface CounselingSchedulerProps {
     appointments: Appointment[];
-    applications: Application[];
-    onSchedule: (data: {
+    applications?: Application[];
+    onSchedule?: (data: {
         applicationId: string;
         studentName: string;
         studentEmail?: string;
@@ -35,13 +35,13 @@ interface CounselingSchedulerProps {
         duration?: number;
         notes?: string;
     }) => Promise<void>;
-    onUpdate: (appointmentId: string, data: {
+    onUpdate?: (appointmentId: string, data: {
         scheduledAt?: string;
         duration?: number;
         status?: 'SCHEDULED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
         notes?: string;
     }) => Promise<void>;
-    onDelete: (appointmentId: string) => Promise<void>;
+    onDelete?: (appointmentId: string) => Promise<void>;
     isLoading?: boolean;
 }
 
@@ -68,14 +68,14 @@ export function CounselingScheduler({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (editingAppointment) {
-            await onUpdate(editingAppointment.id, {
+            await onUpdate?.(editingAppointment.id, {
                 scheduledAt: formData.scheduledAt,
                 duration: formData.duration,
                 notes: formData.notes,
             });
             setEditingAppointment(null);
         } else {
-            await onSchedule(formData);
+            await onSchedule?.(formData);
         }
         setShowForm(false);
         setFormData({
@@ -166,7 +166,7 @@ export function CounselingScheduler({
                                     <Select
                                         value={formData.applicationId}
                                         onValueChange={(value) => {
-                                            const application = applications.find(app => app.id === value);
+                                            const application = applications?.find(app => app.id === value);
                                             setFormData(prev => ({
                                                 ...prev,
                                                 applicationId: value,
@@ -180,7 +180,7 @@ export function CounselingScheduler({
                                             <SelectValue placeholder="Select application" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {applications.map((app) => (
+                                            {applications?.map((app) => (
                                                 <SelectItem key={app.id} value={app.id}>
                                                     {app.studentName} - {app.course}
                                                 </SelectItem>
@@ -334,7 +334,7 @@ export function CounselingScheduler({
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            onClick={() => onDelete(appointment.id)}
+                                            onClick={() => onDelete?.(appointment.id)}
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </Button>

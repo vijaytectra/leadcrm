@@ -19,36 +19,45 @@ import {
     Users,
     Mail,
     Phone,
-    Send,
-    Plus,
-    X
+    Send
 } from "lucide-react";
 import { Application } from "@/lib/api/admissions";
 
+
 interface BulkCommunicationFormProps {
     applications: Application[];
-    onSend: (data: {
-        applicationIds: string[];
-        type: 'EMAIL' | 'SMS' | 'WHATSAPP';
-        subject?: string;
-        message: string;
-        templateId?: string;
-    }) => Promise<void>;
-    isLoading?: boolean;
 }
 
 export function BulkCommunicationForm({
-    applications,
-    onSend,
-    isLoading = false
+    applications
 }: BulkCommunicationFormProps) {
     const [selectedApplications, setSelectedApplications] = useState<string[]>([]);
     const [formData, setFormData] = useState({
         type: 'EMAIL' as 'EMAIL' | 'SMS' | 'WHATSAPP',
         subject: '',
         message: '',
-        templateId: '',
+        templateId: 'none',
     });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleSend = async (data: {
+        applicationIds: string[];
+        type: 'EMAIL' | 'SMS' | 'WHATSAPP';
+        subject?: string;
+        message: string;
+        templateId?: string;
+    }) => {
+        setIsSubmitting(true);
+        try {
+            // TODO: Implement bulk communication API call
+            console.log('Bulk communication data:', data);
+            // await sendBulkCommunication(data);
+        } catch (error) {
+            console.error('Error sending bulk communication:', error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     const handleApplicationToggle = (applicationId: string) => {
         setSelectedApplications(prev =>
@@ -76,12 +85,12 @@ export function BulkCommunicationForm({
             alert('Please enter a message');
             return;
         }
-        await onSend({
+        await handleSend({
             applicationIds: selectedApplications,
             type: formData.type,
             subject: formData.subject || undefined,
             message: formData.message,
-            templateId: formData.templateId || undefined,
+            templateId: formData.templateId === 'none' ? undefined : formData.templateId,
         });
     };
 
@@ -154,7 +163,7 @@ export function BulkCommunicationForm({
                                         <SelectValue placeholder="Select template" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="">No template</SelectItem>
+                                        <SelectItem value="none">No template</SelectItem>
                                         <SelectItem value="welcome">Welcome Message</SelectItem>
                                         <SelectItem value="reminder">Reminder</SelectItem>
                                         <SelectItem value="update">Status Update</SelectItem>
@@ -185,13 +194,13 @@ export function BulkCommunicationForm({
                                 rows={6}
                             />
                             <div className="text-sm text-muted-foreground">
-                                Available variables: {`{studentName}`, `{course}`, `{applicationId}`}
+                                Available variables: {"{studentName}, {course}, {applicationId}"}
                             </div>
                         </div>
 
                         <div className="flex gap-4">
-                            <Button type="submit" disabled={isLoading || selectedApplications.length === 0}>
-                                {isLoading ? 'Sending...' : `Send to ${selectedApplications.length} applications`}
+                            <Button type="submit" disabled={isSubmitting || selectedApplications.length === 0}>
+                                {isSubmitting ? 'Sending...' : `Send to ${selectedApplications.length} applications`}
                             </Button>
                             <Button type="button" variant="outline">
                                 Save as Draft

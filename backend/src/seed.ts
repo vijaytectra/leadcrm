@@ -565,7 +565,7 @@ async function main() {
       source: "Instagram Ads",
       status: "NEW" as const,
       score: 65,
-      tenantId: "cmgi1wh590002vz0cfwo2edb4",
+      tenantId: demoSchoolTenant.id,
     },
     {
       name: "Kavya Reddy",
@@ -574,7 +574,7 @@ async function main() {
       source: "YouTube Ads",
       status: "CONTACTED" as const,
       score: 88,
-      tenantId: "cmgi1wh590002vz0cfwo2edb4",
+      tenantId: demoSchoolTenant.id,
     },
     {
       name: "Rajesh Verma",
@@ -583,7 +583,7 @@ async function main() {
       source: "Google Search",
       status: "QUALIFIED" as const,
       score: 92,
-      tenantId: "cmgi1wh590002vz0cfwo2edb4",
+      tenantId: demoSchoolTenant.id,
     },
     {
       name: "Anita Joshi",
@@ -592,7 +592,7 @@ async function main() {
       source: "Facebook Organic",
       status: "INTERESTED" as const,
       score: 76,
-      tenantId: "cmgi1wh590002vz0cfwo2edb4",
+      tenantId: demoSchoolTenant.id,
     },
     {
       name: "Suresh Kumar",
@@ -601,7 +601,7 @@ async function main() {
       source: "WhatsApp Business",
       status: "APPLICATION_STARTED" as const,
       score: 83,
-      tenantId: "cmgi1wh590002vz0cfwo2edb4",
+      tenantId: demoSchoolTenant.id,
     },
     {
       name: "Meera Desai",
@@ -610,7 +610,7 @@ async function main() {
       source: "Email Campaign",
       status: "DOCUMENTS_SUBMITTED" as const,
       score: 89,
-      tenantId: "cmgi1wh590002vz0cfwo2edb4",
+      tenantId: demoSchoolTenant.id,
     },
     {
       name: "Vikash Singh",
@@ -619,7 +619,7 @@ async function main() {
       source: "LinkedIn Organic",
       status: "UNDER_REVIEW" as const,
       score: 94,
-      tenantId: "cmgi1wh590002vz0cfwo2edb4",
+      tenantId: demoSchoolTenant.id,
     },
     {
       name: "Pooja Agarwal",
@@ -628,7 +628,7 @@ async function main() {
       source: "Twitter Ads",
       status: "ADMITTED" as const,
       score: 97,
-      tenantId: "cmgi1wh590002vz0cfwo2edb4",
+      tenantId: demoSchoolTenant.id,
     },
     {
       name: "Rohit Sharma",
@@ -637,7 +637,7 @@ async function main() {
       source: "TikTok Ads",
       status: "ENROLLED" as const,
       score: 91,
-      tenantId: "cmgi1wh590002vz0cfwo2edb4",
+      tenantId: demoSchoolTenant.id,
     },
     {
       name: "Deepika Nair",
@@ -646,7 +646,7 @@ async function main() {
       source: "Snapchat Ads",
       status: "REJECTED" as const,
       score: 45,
-      tenantId: "cmgi1wh590002vz0cfwo2edb4",
+      tenantId: demoSchoolTenant.id,
     },
   ];
 

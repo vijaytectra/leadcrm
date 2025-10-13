@@ -380,6 +380,390 @@ async function skillBasedAssignment(
 }
 
 /**
+ * GET /api/:tenant/leads/assignment-stats
+ * Get assignment statistics and telecaller workload
+ */
+router.get(
+  "/:tenant/leads/assignment-stats",
+  requireAuth,
+  requireActiveUser,
+  requireRole(["INSTITUTION_ADMIN"]),
+  async (req: AuthedRequest, res) => {
+    try {
+      console.log("📈 ASSIGNMENT STATS - Route handler executed");
+      const tenantSlug = req.params.tenant;
+      console.log("tenantSlug", tenantSlug);
+
+      if (!tenantSlug) {
+        return res.status(400).json({
+          error: "Tenant slug is required",
+          code: "TENANT_REQUIRED",
+        });
+      }
+
+      // Get tenant
+      const tenant = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true },
+      });
+      console.log("tenant", tenant);
+
+      if (!tenant) {
+        return res.status(404).json({
+          error: "Tenant not found",
+          code: "TENANT_NOT_FOUND",
+        });
+      }
+
+      // Get telecaller workload
+      const telecallers = await prisma.user.findMany({
+        where: {
+          tenantId: tenant.id,
+          role: "TELECALLER",
+          isActive: true,
+        },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          _count: {
+            select: {
+              assignedLeads: {
+                where: {
+                  status: {
+                    in: ["NEW", "CONTACTED", "QUALIFIED", "INTERESTED"],
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      console.log("telecallers", telecallers);
+
+      // Get unassigned leads count
+      const unassignedCount = await prisma.lead.count({
+        where: {
+          tenantId: tenant.id,
+          assigneeId: null,
+          status: "NEW",
+        },
+      });
+
+      console.log("unassignedCount", unassignedCount);
+
+      // Get assignment history (last 7 days)
+      const assignmentHistory = await prisma.auditLog.findMany({
+        where: {
+          tenantId: tenant.id,
+          action: "LEAD_AUTO_ASSIGNMENT",
+          createdAt: {
+            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+          },
+        },
+        select: {
+          createdAt: true,
+          newValues: true,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      res.json({
+        success: true,
+        data: {
+          telecallers: telecallers.map((t) => ({
+            id: t.id,
+            name: `${t.firstName} ${t.lastName}`,
+            email: t.email,
+            currentLoad: t._count.assignedLeads,
+          })),
+          unassignedLeads: unassignedCount,
+          assignmentHistory: assignmentHistory.map((h) => ({
+            date: h.createdAt,
+            algorithm: (h.newValues as any)?.algorithm,
+            assigned: (h.newValues as any)?.assigned,
+          })),
+        },
+      });
+    } catch (error) {
+      console.error("Error fetching assignment stats:", error);
+      res.status(500).json({
+        error: "Failed to fetch assignment statistics",
+        code: "FETCH_ASSIGNMENT_STATS_ERROR",
+      });
+    }
+  }
+);
+
+/**
+ * POST /api/:tenant/leads/bulk-import
+ * Import leads from CSV/Excel file
+ */
+router.post(
+  "/:tenant/leads/bulk-import",
+  requireAuth,
+  requireActiveUser,
+  requireRole(["INSTITUTION_ADMIN"]),
+  upload.single("file"),
+  async (req: AuthedRequest, res) => {
+    try {
+      console.log("📥 BULK IMPORT - Route handler executed");
+      const tenantSlug = req.params.tenant;
+      console.log("Bulk importing leads");
+      if (!tenantSlug) {
+        return res.status(400).json({
+          error: "Tenant slug is required",
+          code: "TENANT_REQUIRED",
+        });
+      }
+
+      // Get tenant
+      const tenant = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true },
+      });
+
+      if (!tenant) {
+        return res.status(404).json({
+          error: "Tenant not found",
+          code: "TENANT_NOT_FOUND",
+        });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({
+          error: "No file uploaded",
+          code: "NO_FILE_UPLOADED",
+        });
+      }
+
+      const file = req.file;
+      let leads: any[] = [];
+
+      // Parse file based on type
+      if (file.mimetype === "text/csv") {
+        const csvData = file.buffer.toString("utf-8");
+        const lines = csvData.split("\n");
+        const headers = lines[0].split(",").map((h) => h.trim());
+
+        leads = lines
+          .slice(1)
+          .map((line) => {
+            const values = line.split(",").map((v) => v.trim());
+            const lead: any = {};
+            headers.forEach((header, index) => {
+              lead[header.toLowerCase()] = values[index] || "";
+            });
+            return lead;
+          })
+          .filter((lead) => lead.name && (lead.email || lead.phone));
+      } else {
+        // Excel file
+        const workbook = XLSX.read(file.buffer, { type: "buffer" });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+        leads = jsonData
+          .map((row: any) => ({
+            name: row.name || row.Name || row.NAME || "",
+            email: row.email || row.Email || row.EMAIL || "",
+            phone: row.phone || row.Phone || row.PHONE || "",
+            source: row.source || row.Source || row.SOURCE || "Bulk Import",
+            score: row.score || row.Score || row.SCORE || 0,
+          }))
+          .filter((lead: any) => lead.name && (lead.email || lead.phone));
+      }
+
+      if (leads.length === 0) {
+        return res.status(400).json({
+          error: "No valid leads found in file",
+          code: "NO_VALID_LEADS",
+        });
+      }
+
+      // Validate leads
+      const validation = bulkImportSchema.safeParse({ leads });
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Validation failed",
+          details: validation.error.issues,
+          code: "VALIDATION_ERROR",
+        });
+      }
+
+      // Create leads in database
+      const createdLeads = await prisma.lead.createMany({
+        data: leads.map((lead) => ({
+          ...lead,
+          tenantId: tenant.id,
+          status: "NEW",
+        })),
+      });
+
+      // Log bulk import
+      await prisma.auditLog.create({
+        data: {
+          tenantId: tenant.id,
+          userId: req.auth!.sub,
+          action: "BULK_LEAD_IMPORT",
+          entity: "Lead",
+          entityId: "bulk",
+          newValues: { count: leads.length, source: "file_upload" },
+        },
+      });
+
+      res.status(201).json({
+        success: true,
+        message: `${leads.length} leads imported successfully`,
+        data: {
+          imported: leads.length,
+          leads: leads.slice(0, 5), // Return first 5 for preview
+        },
+      });
+    } catch (error) {
+      console.error("Error importing leads:", error);
+      res.status(500).json({
+        error: "Failed to import leads",
+        code: "IMPORT_LEADS_ERROR",
+      });
+    }
+  }
+);
+
+/**
+ * POST /api/:tenant/leads/assign
+ * Auto-assign leads using configured algorithm
+ */
+router.post(
+  "/:tenant/leads/assign",
+  requireAuth,
+  requireActiveUser,
+  requireRole(["INSTITUTION_ADMIN"]),
+  async (req: AuthedRequest, res) => {
+    try {
+      console.log("🎯 ASSIGN LEADS - Route handler executed");
+      const tenantSlug = req.params.tenant;
+      console.log("Assigning leads");
+
+      if (!tenantSlug) {
+        return res.status(400).json({
+          error: "Tenant slug is required",
+          code: "TENANT_REQUIRED",
+        });
+      }
+
+      // Get tenant
+      const tenant = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true },
+      });
+
+      if (!tenant) {
+        return res.status(404).json({
+          error: "Tenant not found",
+          code: "TENANT_NOT_FOUND",
+        });
+      }
+
+      const validation = assignmentConfigSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          error: "Validation failed",
+          details: validation.error.issues,
+          code: "VALIDATION_ERROR",
+        });
+      }
+
+      const config = validation.data;
+
+      // Get unassigned leads
+      const unassignedLeads = await prisma.lead.findMany({
+        where: {
+          tenantId: tenant.id,
+          assigneeId: null,
+          status: "NEW",
+        },
+        select: { id: true },
+      });
+
+      if (unassignedLeads.length === 0) {
+        return res.json({
+          success: true,
+          message: "No unassigned leads found",
+          data: { assigned: 0 },
+        });
+      }
+
+      const leadIds = unassignedLeads.map((lead) => lead.id);
+      let assignments: LeadAssignment[] = [];
+
+      // Execute assignment algorithm
+      switch (config.algorithm) {
+        case "ROUND_ROBIN":
+          assignments = await roundRobinAssignment(tenant.id, leadIds);
+          break;
+        case "LOAD_BASED":
+          assignments = await loadBasedAssignment(tenant.id, leadIds);
+          break;
+        case "SKILL_BASED":
+          assignments = await skillBasedAssignment(
+            tenant.id,
+            leadIds,
+            config.skillRequirements
+          );
+          break;
+        default:
+          throw new Error("Invalid assignment algorithm");
+      }
+
+      // Update leads with assignments
+      const updatePromises = assignments.map((assignment) =>
+        prisma.lead.update({
+          where: { id: assignment.leadId },
+          data: { assigneeId: assignment.assigneeId },
+        })
+      );
+
+      await Promise.all(updatePromises);
+
+      // Log assignment
+      await prisma.auditLog.create({
+        data: {
+          tenantId: tenant.id,
+          userId: req.auth!.sub,
+          action: "LEAD_AUTO_ASSIGNMENT",
+          entity: "Lead",
+          entityId: "bulk",
+          newValues: {
+            algorithm: config.algorithm,
+            assigned: assignments.length,
+          },
+        },
+      });
+
+      res.json({
+        success: true,
+        message: `${assignments.length} leads assigned successfully`,
+        data: {
+          assigned: assignments.length,
+          algorithm: config.algorithm,
+          assignments: assignments.slice(0, 10), // Return first 10 for preview
+        },
+      });
+    } catch (error) {
+      console.error("Error assigning leads:", error);
+      res.status(500).json({
+        error: "Failed to assign leads",
+        code: "ASSIGN_LEADS_ERROR",
+      });
+    }
+  }
+);
+
+/**
  * GET /api/:tenant/leads
  * Get all leads with filtering and pagination
  */
@@ -1502,124 +1886,6 @@ router.post(
       res.status(500).json({
         error: "Failed to reassign lead",
         code: "REASSIGN_LEAD_ERROR",
-      });
-    }
-  }
-);
-
-/**
- * GET /api/:tenant/leads/assignment-stats
- * Get assignment statistics and telecaller workload
- */
-router.get(
-  "/:tenant/leads/assignment-stats",
-  requireAuth,
-  requireActiveUser,
-  requireRole(["INSTITUTION_ADMIN"]),
-  async (req: AuthedRequest, res) => {
-    try {
-      console.log("📈 ASSIGNMENT STATS - Route handler executed");
-      const tenantSlug = req.params.tenant;
-      console.log("tenantSlug", tenantSlug);
-
-      if (!tenantSlug) {
-        return res.status(400).json({
-          error: "Tenant slug is required",
-          code: "TENANT_REQUIRED",
-        });
-      }
-
-      // Get tenant
-      const tenant = await prisma.tenant.findUnique({
-        where: { slug: tenantSlug },
-        select: { id: true },
-      });
-      console.log("tenant", tenant);
-
-      if (!tenant) {
-        return res.status(404).json({
-          error: "Tenant not found",
-          code: "TENANT_NOT_FOUND",
-        });
-      }
-
-      // Get telecaller workload
-      const telecallers = await prisma.user.findMany({
-        where: {
-          tenantId: tenant.id,
-          role: "TELECALLER",
-          isActive: true,
-        },
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          _count: {
-            select: {
-              assignedLeads: {
-                where: {
-                  status: {
-                    in: ["NEW", "CONTACTED", "QUALIFIED", "INTERESTED"],
-                  },
-                },
-              },
-            },
-          },
-        },
-      });
-
-      console.log("telecallers", telecallers);
-
-      // Get unassigned leads count
-      const unassignedCount = await prisma.lead.count({
-        where: {
-          tenantId: tenant.id,
-          assigneeId: null,
-          status: "NEW",
-        },
-      });
-
-      console.log("unassignedCount", unassignedCount);
-
-      // Get assignment history (last 7 days)
-      const assignmentHistory = await prisma.auditLog.findMany({
-        where: {
-          tenantId: tenant.id,
-          action: "LEAD_AUTO_ASSIGNMENT",
-          createdAt: {
-            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-          },
-        },
-        select: {
-          createdAt: true,
-          newValues: true,
-        },
-        orderBy: { createdAt: "desc" },
-      });
-
-      res.json({
-        success: true,
-        data: {
-          telecallers: telecallers.map((t) => ({
-            id: t.id,
-            name: `${t.firstName} ${t.lastName}`,
-            email: t.email,
-            currentLoad: t._count.assignedLeads,
-          })),
-          unassignedLeads: unassignedCount,
-          assignmentHistory: assignmentHistory.map((h) => ({
-            date: h.createdAt,
-            algorithm: (h.newValues as any)?.algorithm,
-            assigned: (h.newValues as any)?.assigned,
-          })),
-        },
-      });
-    } catch (error) {
-      console.error("Error fetching assignment stats:", error);
-      res.status(500).json({
-        error: "Failed to fetch assignment statistics",
-        code: "FETCH_ASSIGNMENT_STATS_ERROR",
       });
     }
   }

@@ -3,6 +3,7 @@ import {
   apiPostClientNew,
   apiPutClient,
   apiDeleteClient,
+  apiGet,
 } from "@/lib/utils";
 
 // TypeScript interfaces for admission management
@@ -221,15 +222,19 @@ export interface ApplicationProgressStep {
 
 // API Functions for Admission Team
 
-export async function getAdmissionTeamDashboard(tenantSlug: string) {
-  return apiGetClientNew<{
+export async function getAdmissionTeamDashboard(
+  tenantSlug: string,
+  token: string | undefined
+) {
+  return apiGet<{
     stats: AdmissionDashboardStats;
     recentReviews: AdmissionReview[];
-  }>(`/${tenantSlug}/admission-team/dashboard`, { token: true });
+  }>(`/${tenantSlug}/admission-team/dashboard`, { token: token });
 }
 
 export async function getApplicationsForReview(
   tenantSlug: string,
+  token: string | undefined,
   filters: {
     status?: string;
     course?: string;
@@ -248,7 +253,7 @@ export async function getApplicationsForReview(
     queryString ? `?${queryString}` : ""
   }`;
 
-  return apiGetClientNew<{
+  return apiGet<{
     applications: Application[];
     pagination: {
       page: number;
@@ -256,44 +261,46 @@ export async function getApplicationsForReview(
       total: number;
       pages: number;
     };
-  }>(url, { token: true });
+  }>(url, { token: token });
 }
 
 export async function getApplicationDetails(
   tenantSlug: string,
-  applicationId: string
+  applicationId: string,
+  token: string | undefined
 ) {
-  return apiGetClientNew<Application>(
+  return apiGet<Application>(
     `/${tenantSlug}/admission-team/applications/${applicationId}`,
-    { token: true }
+    { token: token }
   );
 }
 
-export async function submitAdmissionReview(
-  tenantSlug: string,
-  applicationId: string,
-  data: {
-    interviewNotes?: string;
-    academicScore?: number;
-    recommendations?: string;
-    decision?: "APPROVED" | "REJECTED" | "WAITLISTED";
-    decisionReason?: string;
-  }
-) {
-  return apiPostClientNew<AdmissionReview>(
-    `/${tenantSlug}/admission-team/applications/${applicationId}/review`,
-    data,
-    { token: true }
-  );
-}
+// export async function submitAdmissionReview(
+//   tenantSlug: string,
+//   applicationId: string,
+//   data: {
+//     interviewNotes?: string;
+//     academicScore?: number;
+//     recommendations?: string;
+//     decision?: "APPROVED" | "REJECTED" | "WAITLISTED";
+//     decisionReason?: string;
+//   }
+// ) {
+//   return apiPostClientNew<AdmissionReview>(
+//     `/${tenantSlug}/admission-team/applications/${applicationId}/review`,
+//     data,
+//     { token: true }
+//   );
+// }
 
 export async function getApplicationCommunications(
   tenantSlug: string,
-  applicationId: string
+  applicationId: string,
+  token: string | undefined
 ) {
-  return apiGetClientNew<Communication[]>(
+  return apiGet<Communication[]>(
     `/${tenantSlug}/admission-team/communications/${applicationId}`,
-    { token: true }
+    { token: token }
   );
 }
 
@@ -317,6 +324,7 @@ export async function sendBulkCommunications(
 
 export async function getCounselingAppointments(
   tenantSlug: string,
+  token: string | undefined,
   filters: {
     date?: string;
     status?: string;
@@ -331,7 +339,7 @@ export async function getCounselingAppointments(
     queryString ? `?${queryString}` : ""
   }`;
 
-  return apiGetClientNew<Appointment[]>(url, { token: true });
+  return apiGet<Appointment[]>(url, { token: token });
 }
 
 export async function scheduleAppointment(

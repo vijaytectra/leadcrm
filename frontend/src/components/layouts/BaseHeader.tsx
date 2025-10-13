@@ -69,13 +69,7 @@ export function BaseHeader({
             <div className="flex items-center justify-between px-6 py-4">
                 {/* Left Section - Tenant Info and Search */}
                 <div className="flex items-center space-x-6 flex-1 max-w-3xl">
-                    {/* Tenant Badge */}
-                    {currentTenantSlug && (
-                        <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2 rounded-lg shadow-sm">
-                            <Building2 className="h-4 w-4" />
-                            <span className="text-sm font-semibold">{currentTenantSlug}</span>
-                        </div>
-                    )}
+                  
 
                     {/* Enhanced Search */}
                     {showSearch && (

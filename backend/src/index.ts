@@ -22,6 +22,9 @@ import documentRoutes from "./routes/documents";
 import admissionTeamRoutes from "./routes/admission-team";
 import admissionHeadRoutes from "./routes/admission-head";
 import studentRoutes from "./routes/student";
+import integrationRoutes from "./routes/integrations";
+import whatsappRoutes from "./routes/whatsapp";
+import widgetRoutes from "./routes/widgets";
 
 const app = express();
 app.use(helmet());
@@ -63,9 +66,12 @@ app.use("/api", telecallerRoutes);
 app.use("/api", communicationRoutes);
 app.use("/api", notificationRoutes);
 app.use("/api", documentRoutes);
-app.use("/api/:tenantSlug/admission-team", admissionTeamRoutes);
-app.use("/api/:tenantSlug/admission-head", admissionHeadRoutes);
-app.use("/api/:tenantSlug/student", studentRoutes);
+app.use("/api", admissionTeamRoutes);
+app.use("/api", admissionHeadRoutes);
+app.use("/api", studentRoutes);
+app.use("/api", integrationRoutes);
+app.use("/api", whatsappRoutes);
+app.use("/api", widgetRoutes);
 
 // Debug middleware to log all requests
 app.use((req, res, next) => {

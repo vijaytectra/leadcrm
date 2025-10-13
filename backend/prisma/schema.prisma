@@ -51,6 +51,12 @@ model Tenant {
     admissionReviews        AdmissionReview[]
     offerLetterTemplates    OfferLetterTemplate[]
     offerLetters            OfferLetter[]
+    integrations            IntegrationConfig[]
+    analyticsSnapshots      AnalyticsSnapshot[]
+    reportTemplates         ReportTemplate[]
+    generatedReports        GeneratedReport[]
+    whatsappTemplates       WhatsAppTemplate[]
+    bulkMessageJobs         BulkMessageJob[]
 }
 
 enum SubscriptionTier {
@@ -153,12 +159,13 @@ model Lead {
     createdAt  DateTime   @default(now())
     updatedAt  DateTime   @updatedAt
 
-    tenant            Tenant             @relation(fields: [tenantId], references: [id])
-    assignee          User?              @relation("LeadAssignee", fields: [assigneeId], references: [id])
+    tenant            Tenant              @relation(fields: [tenantId], references: [id])
+    assignee          User?               @relation("LeadAssignee", fields: [assigneeId], references: [id])
     notes             LeadNote[]
     application       Application?
     callLogs          CallLog[]
     followUpReminders FollowUpReminder[]
+    sourceTracking    LeadSourceTracking?
 }
 
 enum LeadStatus {
@@ -271,7 +278,24 @@ model FormWidget {
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
-    form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+    form      Form                  @relation(fields: [formId], references: [id], onDelete: Cascade)
+    analytics FormWidgetAnalytics[]
+}
+
+model FormWidgetAnalytics {
+    id          String   @id @default(cuid())
+    widgetId    String
+    date        DateTime
+    views       Int      @default(0)
+    submissions Int      @default(0)
+    conversions Int      @default(0)
+    createdAt   DateTime @default(now())
+
+    widget FormWidget @relation(fields: [widgetId], references: [id], onDelete: Cascade)
+
+    @@unique([widgetId, date])
+    @@index([widgetId])
+    @@index([date])
 }
 
 model FormTemplate {
@@ -372,6 +396,7 @@ model Application {
     refundRequests  RefundRequest[]
     admissionReview AdmissionReview?
     offerLetter     OfferLetter?
+    communications  Communication[]
 }
 
 enum ApplicationStatus {
@@ -420,20 +445,24 @@ enum DocumentStatus {
 
 // Communication Models
 model Communication {
-    id          String              @id @default(cuid())
-    tenantId    String
-    senderId    String
-    recipient   String
-    type        CommunicationType
-    subject     String?
-    content     String
-    status      CommunicationStatus @default(SENT)
-    sentAt      DateTime            @default(now())
-    deliveredAt DateTime?
-    readAt      DateTime?
+    id            String              @id @default(cuid())
+    tenantId      String
+    applicationId String?
+    senderId      String
+    recipient     String
+    type          CommunicationType
+    subject       String?
+    content       String
+    status        CommunicationStatus @default(SENT)
+    sentAt        DateTime            @default(now())
+    deliveredAt   DateTime?
+    readAt        DateTime?
+    createdAt     DateTime            @default(now())
+    updatedAt     DateTime            @updatedAt
 
-    tenant Tenant @relation(fields: [tenantId], references: [id])
-    sender User   @relation("CommunicationSender", fields: [senderId], references: [id])
+    tenant      Tenant       @relation(fields: [tenantId], references: [id])
+    application Application? @relation(fields: [applicationId], references: [id])
+    sender      User         @relation("CommunicationSender", fields: [senderId], references: [id])
 }
 
 enum CommunicationType {
@@ -1054,4 +1083,203 @@ enum OfferLetterStatus {
     ACCEPTED
     DECLINED
     EXPIRED
+}
+
+// Integration Management Models
+model IntegrationConfig {
+    id             String              @id @default(cuid())
+    tenantId       String
+    platform       IntegrationPlatform
+    name           String
+    credentials    String // Encrypted JSON
+    isActive       Boolean             @default(true)
+    webhookUrl     String
+    webhookSecret  String // For signature verification
+    lastSyncAt     DateTime?
+    lastSyncStatus String?
+    metadata       Json
+    createdAt      DateTime            @default(now())
+    updatedAt      DateTime            @updatedAt
+
+    tenant              Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    leadSourceTrackings LeadSourceTracking[]
+
+    @@index([tenantId])
+    @@index([platform])
+    @@index([isActive])
+}
+
+model LeadSourceTracking {
+    id            String              @id @default(cuid())
+    leadId        String
+    integrationId String
+    platform      IntegrationPlatform
+    externalId    String? // Platform's lead ID
+    campaignId    String?
+    campaignName  String?
+    adGroupId     String?
+    adGroupName   String?
+    adId          String?
+    adName        String?
+    cost          Float? // Cost per lead in paise
+    metadata      Json
+    createdAt     DateTime            @default(now())
+
+    lead        Lead              @relation(fields: [leadId], references: [id], onDelete: Cascade)
+    integration IntegrationConfig @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+    @@unique([leadId])
+    @@index([integrationId])
+    @@index([platform])
+    @@index([campaignId])
+}
+
+model AnalyticsSnapshot {
+    id        String          @id @default(cuid())
+    tenantId  String
+    date      DateTime
+    period    AnalyticsPeriod
+    metrics   Json // Stores AnalyticsMetrics
+    createdAt DateTime        @default(now())
+
+    tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+    @@unique([tenantId, date, period])
+    @@index([tenantId])
+    @@index([date])
+    @@index([period])
+}
+
+model ReportTemplate {
+    id          String     @id @default(cuid())
+    tenantId    String
+    name        String
+    description String?
+    type        ReportType
+    config      Json // ReportConfig
+    schedule    Json? // ReportSchedule
+    isActive    Boolean    @default(true)
+    createdAt   DateTime   @default(now())
+    updatedAt   DateTime   @updatedAt
+
+    tenant           Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    generatedReports GeneratedReport[]
+
+    @@index([tenantId])
+    @@index([type])
+    @@index([isActive])
+}
+
+model GeneratedReport {
+    id          String   @id @default(cuid())
+    templateId  String
+    tenantId    String
+    fileName    String
+    fileUrl     String
+    fileType    String // 'PDF' | 'EXCEL'
+    generatedBy String
+    periodStart DateTime
+    periodEnd   DateTime
+    createdAt   DateTime @default(now())
+
+    template ReportTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+    tenant   Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+    @@index([templateId])
+    @@index([tenantId])
+    @@index([createdAt])
+}
+
+model WhatsAppTemplate {
+    id            String                 @id @default(cuid())
+    tenantId      String
+    name          String
+    category      WhatsAppCategory
+    language      String                 @default("en")
+    status        WhatsAppTemplateStatus @default(PENDING)
+    content       String
+    variables     Json // Array of variable names
+    headerType    String?
+    headerContent String?
+    buttons       Json? // WhatsAppButton[]
+    externalId    String? // Meta template ID
+    createdAt     DateTime               @default(now())
+    updatedAt     DateTime               @updatedAt
+
+    tenant Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    jobs   BulkMessageJob[]
+
+    @@index([tenantId])
+    @@index([status])
+}
+
+model BulkMessageJob {
+    id             String            @id @default(cuid())
+    tenantId       String
+    userId         String
+    templateId     String?
+    message        String
+    recipientCount Int               @default(0)
+    sentCount      Int               @default(0)
+    failedCount    Int               @default(0)
+    deliveredCount Int               @default(0)
+    status         BulkMessageStatus @default(PENDING)
+    startedAt      DateTime?
+    completedAt    DateTime?
+    errorMessage   String?
+    recipients     Json // BulkMessageRecipient[]
+    createdAt      DateTime          @default(now())
+    updatedAt      DateTime          @updatedAt
+
+    tenant   Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    template WhatsAppTemplate? @relation(fields: [templateId], references: [id])
+
+    @@index([tenantId])
+    @@index([userId])
+    @@index([status])
+    @@index([createdAt])
+}
+
+// Enums for new models
+enum IntegrationPlatform {
+    GOOGLE_ADS
+    META
+    LINKEDIN
+    WHATSAPP
+}
+
+enum AnalyticsPeriod {
+    HOURLY
+    DAILY
+    WEEKLY
+    MONTHLY
+}
+
+enum ReportType {
+    FUNNEL
+    CONVERSION
+    SOURCE
+    TEAM
+    ROI
+    CUSTOM
+}
+
+enum WhatsAppCategory {
+    MARKETING
+    UTILITY
+    AUTHENTICATION
+}
+
+enum WhatsAppTemplateStatus {
+    PENDING
+    APPROVED
+    REJECTED
+}
+
+enum BulkMessageStatus {
+    PENDING
+    PROCESSING
+    COMPLETED
+    FAILED
+    CANCELLED
 }

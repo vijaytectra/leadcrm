@@ -63,7 +63,7 @@ const roleCredentials = [
     {
         role: "Admission Team",
         tenant: "arunai-engineering-college",
-        email: "admission@demoschool.com",
+        email: "yixas41914@gta5hx.com",
         password: "Vijay@123",
         description: "Admission counseling"
     },

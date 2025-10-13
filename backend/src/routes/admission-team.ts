@@ -60,7 +60,7 @@ const bulkCommunicationSchema = z.object({
 
 // GET /api/:tenantSlug/admission-team/dashboard
 router.get(
-  "/dashboard",
+  "/:tenantSlug/admission-team/dashboard",
   requireAuth,
   requireActiveUser,
   requireRole(["ADMISSION_TEAM"]),
@@ -151,7 +151,7 @@ router.get(
 
 // GET /api/:tenantSlug/admission-team/applications
 router.get(
-  "/applications",
+  "/:tenantSlug/admission-team/applications",
   requireAuth,
   requireActiveUser,
   requireRole(["ADMISSION_TEAM"]),
@@ -234,7 +234,7 @@ router.get(
 
 // GET /api/:tenantSlug/admission-team/applications/:id
 router.get(
-  "/applications/:id",
+  "/:tenantSlug/admission-team/applications/:id",
   requireAuth,
   requireActiveUser,
   requireRole(["ADMISSION_TEAM"]),
@@ -321,7 +321,7 @@ router.get(
 
 // POST /api/:tenantSlug/admission-team/applications/:id/review
 router.post(
-  "/applications/:id/review",
+  "/:tenantSlug/admission-team/applications/:id/review",
   requireAuth,
   requireActiveUser,
   requireRole(["ADMISSION_TEAM"]),
@@ -393,7 +393,7 @@ router.post(
 
 // GET /api/:tenantSlug/admission-team/communications/:applicationId
 router.get(
-  "/communications/:applicationId",
+  "/:tenantSlug/admission-team/communications/:applicationId",
   requireAuth,
   requireActiveUser,
   requireRole(["ADMISSION_TEAM"]),
@@ -436,7 +436,7 @@ router.get(
 
 // POST /api/:tenantSlug/admission-team/communications/bulk
 router.post(
-  "/communications/bulk",
+  "/:tenantSlug/admission-team/communications/bulk",
   requireAuth,
   requireActiveUser,
   requireRole(["ADMISSION_TEAM"]),
@@ -506,7 +506,7 @@ router.post(
 
 // GET /api/:tenantSlug/admission-team/appointments
 router.get(
-  "/appointments",
+  "/:tenantSlug/admission-team/appointments",
   requireAuth,
   requireActiveUser,
   requireRole(["ADMISSION_TEAM"]),
@@ -572,7 +572,7 @@ router.get(
 
 // POST /api/:tenantSlug/admission-team/appointments
 router.post(
-  "/appointments",
+  "/:tenantSlug/admission-team/appointments",
   requireAuth,
   requireActiveUser,
   requireRole(["ADMISSION_TEAM"]),
@@ -634,7 +634,7 @@ router.post(
 
 // PUT /api/:tenantSlug/admission-team/appointments/:id
 router.put(
-  "/appointments/:id",
+  "/:tenantSlug/admission-team/appointments/:id",
   requireAuth,
   requireActiveUser,
   requireRole(["ADMISSION_TEAM"]),
