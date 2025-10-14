@@ -552,3 +552,46 @@ export async function cancelFollowUpReminder(
     }
   );
 }
+
+export interface LeadActivity {
+  id: string;
+  type: "AUDIT" | "CALL" | "FOLLOW_UP";
+  action: string;
+  description: string;
+  createdAt: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+  };
+  oldValues?: Record<string, unknown>;
+  newValues?: Record<string, unknown>;
+  callData?: {
+    callType: string;
+    status: string;
+    outcome?: string;
+    duration?: number;
+    notes?: string;
+  };
+  followUpData?: {
+    type: string;
+    priority: string;
+    status: string;
+    scheduledAt: string;
+    notes?: string;
+  };
+}
+
+export async function getLeadActivities(
+  tenantSlug: string,
+  leadId: string
+): Promise<{
+  success: boolean;
+  data: LeadActivity[];
+  error?: string;
+}> {
+  return makeRequest<LeadActivity[]>(
+    `/api/${tenantSlug}/telecaller/leads/${leadId}/activities`
+  );
+}

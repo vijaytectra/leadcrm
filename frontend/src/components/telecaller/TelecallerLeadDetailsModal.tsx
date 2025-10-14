@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { Lead } from "@/lib/api/leads";
 import { getLead, updateLead, addLeadNote, getLeadNotes } from "@/lib/api/leads";
+import { getLeadActivities, LeadActivity } from "@/lib/api/telecaller";
 import { toast } from "sonner";
 
 interface TelecallerLeadDetailsModalProps {
@@ -47,19 +48,7 @@ interface LeadNote {
     };
 }
 
-interface ActivityItem {
-    id: string;
-    action: string;
-    description: string;
-    createdAt: string;
-    user: {
-        firstName: string;
-        lastName: string;
-        role: string;
-    };
-    oldValues?: Record<string, unknown>;
-    newValues?: Record<string, unknown>;
-}
+// Remove the old ActivityItem interface since we're using LeadActivity from the API
 
 export const TelecallerLeadDetailsModal = memo(function TelecallerLeadDetailsModal({
     leadId,
@@ -69,7 +58,7 @@ export const TelecallerLeadDetailsModal = memo(function TelecallerLeadDetailsMod
 }: TelecallerLeadDetailsModalProps) {
     const [lead, setLead] = useState<Lead | null>(null);
     const [notes, setNotes] = useState<LeadNote[]>([]);
-    const [activities, setActivities] = useState<ActivityItem[]>([]);
+    const [activities, setActivities] = useState<LeadActivity[]>([]);
     const [loading, setLoading] = useState(false);
     const [activeTab, setActiveTab] = useState("details");
 
@@ -94,9 +83,10 @@ export const TelecallerLeadDetailsModal = memo(function TelecallerLeadDetailsMod
 
         setLoading(true);
         try {
-            const [leadData, notesData] = await Promise.all([
+            const [leadData, notesData, activitiesData] = await Promise.all([
                 getLead(tenantSlug, leadId),
-                getLeadNotes(tenantSlug, leadId)
+                getLeadNotes(tenantSlug, leadId),
+                getLeadActivities(tenantSlug, leadId)
             ]);
 
             setLead(leadData);
@@ -110,23 +100,13 @@ export const TelecallerLeadDetailsModal = memo(function TelecallerLeadDetailsMod
                 score: leadData.score
             });
 
-            // Mock activities for now - in real implementation, this would come from audit logs
-            setActivities([
-                {
-                    id: "1",
-                    action: "LEAD_CREATED",
-                    description: "Lead was created",
-                    createdAt: leadData.createdAt,
-                    user: { firstName: "System", lastName: "", role: "SYSTEM" }
-                },
-                {
-                    id: "2",
-                    action: "LEAD_ASSIGNED",
-                    description: "Lead was assigned to telecaller",
-                    createdAt: leadData.updatedAt,
-                    user: { firstName: "Admin", lastName: "User", role: "INSTITUTION_ADMIN" }
-                }
-            ]);
+            // Use real activities from backend
+            if (activitiesData.success) {
+                setActivities(activitiesData.data);
+            } else {
+                console.error("Failed to fetch activities:", activitiesData.error);
+                setActivities([]);
+            }
         } catch (error) {
             console.error("Error fetching lead details:", error);
             toast.error("Failed to load lead details");
@@ -620,8 +600,17 @@ export const TelecallerLeadDetailsModal = memo(function TelecallerLeadDetailsMod
                                                 {activities.map((activity, index) => (
                                                     <div key={activity.id} className="flex items-start space-x-4">
                                                         <div className="flex-shrink-0">
-                                                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                                                <Activity className="w-4 h-4 text-blue-600" />
+                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${activity.type === 'AUDIT' ? 'bg-blue-100' :
+                                                                activity.type === 'CALL' ? 'bg-green-100' :
+                                                                    'bg-purple-100'
+                                                                }`}>
+                                                                {activity.type === 'AUDIT' ? (
+                                                                    <Activity className="w-4 h-4 text-blue-600" />
+                                                                ) : activity.type === 'CALL' ? (
+                                                                    <Phone className="w-4 h-4 text-green-600" />
+                                                                ) : (
+                                                                    <Clock className="w-4 h-4 text-purple-600" />
+                                                                )}
                                                             </div>
                                                             {index < activities.length - 1 && (
                                                                 <div className="w-px h-8 bg-gray-200 ml-4 mt-2"></div>
@@ -632,6 +621,19 @@ export const TelecallerLeadDetailsModal = memo(function TelecallerLeadDetailsMod
                                                                 <p className="text-sm font-medium text-gray-900">
                                                                     {activity.description}
                                                                 </p>
+                                                                {activity.callData && (
+                                                                    <div className="mt-2 text-xs text-gray-600">
+                                                                        <p>Type: {activity.callData.callType} | Status: {activity.callData.status}</p>
+                                                                        {activity.callData.outcome && <p>Outcome: {activity.callData.outcome}</p>}
+                                                                        {activity.callData.duration && <p>Duration: {activity.callData.duration}s</p>}
+                                                                    </div>
+                                                                )}
+                                                                {activity.followUpData && (
+                                                                    <div className="mt-2 text-xs text-gray-600">
+                                                                        <p>Type: {activity.followUpData.type} | Priority: {activity.followUpData.priority}</p>
+                                                                        <p>Scheduled: {new Date(activity.followUpData.scheduledAt).toLocaleString()}</p>
+                                                                    </div>
+                                                                )}
                                                                 <div className="flex items-center mt-2 text-sm text-gray-500">
                                                                     <span>{activity.user.firstName} {activity.user.lastName}</span>
                                                                     <span className="mx-2">•</span>

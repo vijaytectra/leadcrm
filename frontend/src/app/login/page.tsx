@@ -36,7 +36,7 @@ const roleCredentials = [
         role: "Institution Admin",
         tenant: "demo-school",
         email: "vijay.r20799@gmail.com",
-        password: "Vijay@123",
+        password: "Vijay@123!",
         description: "School administrator"
     },
     {
