@@ -479,3 +479,57 @@ export async function getAssignmentStats(
     return MOCK_ASSIGNMENT_STATS;
   }
 }
+
+export interface LeadActivity {
+  id: string;
+  type: "AUDIT" | "CALL" | "FOLLOW_UP";
+  action: string;
+  description: string;
+  createdAt: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+  };
+  oldValues?: Record<string, unknown>;
+  newValues?: Record<string, unknown>;
+  callData?: {
+    callType: string;
+    status: string;
+    outcome?: string;
+    duration?: number;
+    notes?: string;
+  };
+  followUpData?: {
+    type: string;
+    priority: string;
+    status: string;
+    scheduledAt: string;
+    notes?: string;
+  };
+}
+
+/**
+ * Get lead activities for institution admin (any lead)
+ */
+export async function getAdminLeadActivities(
+  tenantSlug: string,
+  leadId: string
+): Promise<LeadActivity[]> {
+  try {
+    const token = getClientToken();
+    if (!token) {
+      throw new Error("No token found");
+    }
+
+    const response = await apiGetClientNew<{ data: LeadActivity[] }>(
+      `/${tenantSlug}/admin/leads/${leadId}/activities`,
+      { token: token }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching lead activities:", error);
+    throw error;
+  }
+}

@@ -81,7 +81,15 @@ export const LeadQueue = memo(function LeadQueue({
         try {
             setLoading(true);
 
-            const response = await getTelecallerLeads(tenantSlug);
+            const params = {
+                page,
+                status: statusFilter !== "all" ? statusFilter : undefined,
+                search: searchTerm || undefined,
+                sortBy,
+                sortOrder
+            };
+
+            const response = await getTelecallerLeads(tenantSlug, params);
 
             if (response.success) {
                 setLeads(response.data.leads.map(lead => ({

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,10 +15,9 @@ import {
     Calendar,
     MessageSquare,
     Plus,
-    Edit,
-    Trash2
+    Edit
 } from "lucide-react";
-import { Lead, getLeadNotes, addLeadNote } from "@/lib/api/leads";
+import { Lead, getLeadNotes, addLeadNote, getAdminLeadActivities, LeadActivity } from "@/lib/api/leads";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/stores/auth";
 
@@ -29,7 +28,8 @@ interface LeadDetailsModalProps {
 }
 
 export function LeadDetailsModal({ lead, onClose }: LeadDetailsModalProps) {
-    const [notes, setNotes] = useState<any[]>([]);
+    const [notes, setNotes] = useState<Array<{ id: string; note: string; createdAt: string; user: { firstName: string; lastName: string; role: string } }>>([]);
+    const [activities, setActivities] = useState<LeadActivity[]>([]);
     const [newNote, setNewNote] = useState("");
     const [loading, setLoading] = useState(false);
     const [editing, setEditing] = useState(false);
@@ -46,11 +46,7 @@ export function LeadDetailsModal({ lead, onClose }: LeadDetailsModalProps) {
 
     const { toast } = useToast();
 
-    useEffect(() => {
-        loadNotes();
-    }, [lead.id]);
-
-    const loadNotes = async () => {
+    const loadNotes = useCallback(async () => {
         if (!currentTenantSlug) return;
 
         try {
@@ -59,7 +55,23 @@ export function LeadDetailsModal({ lead, onClose }: LeadDetailsModalProps) {
         } catch (error) {
             console.error("Error loading notes:", error);
         }
-    };
+    }, [currentTenantSlug, lead.id]);
+
+    const loadActivities = useCallback(async () => {
+        if (!currentTenantSlug) return;
+
+        try {
+            const activitiesData = await getAdminLeadActivities(currentTenantSlug, lead.id);
+            setActivities(activitiesData);
+        } catch (error) {
+            console.error("Error loading activities:", error);
+        }
+    }, [currentTenantSlug, lead.id]);
+
+    useEffect(() => {
+        loadNotes();
+        loadActivities();
+    }, [loadNotes, loadActivities]);
 
     const handleAddNote = async () => {
         if (!newNote.trim()) return;
@@ -128,9 +140,15 @@ export function LeadDetailsModal({ lead, onClose }: LeadDetailsModalProps) {
                 <CardContent>
                     <Tabs defaultValue="details" className="w-full">
                         <TabsList className="grid w-full grid-cols-3">
-                            <TabsTrigger value="details">Details</TabsTrigger>
-                            <TabsTrigger value="notes">Notes</TabsTrigger>
-                            <TabsTrigger value="activity">Activity</TabsTrigger>
+                            <TabsTrigger value="details">
+                                <User className="w-4 h-4 mr-2" />
+                                Details
+                            </TabsTrigger>
+                            <TabsTrigger value="notes">
+                                <MessageSquare className="w-4 h-4 mr-2" />
+                                Notes ({notes.length})
+                            </TabsTrigger>
+                            <TabsTrigger value="activity">Activity ({activities.length})</TabsTrigger>
                         </TabsList>
 
                         <TabsContent value="details" className="space-y-4">
@@ -355,11 +373,61 @@ export function LeadDetailsModal({ lead, onClose }: LeadDetailsModalProps) {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="space-y-4">
-                                        <div className="text-center py-8 text-gray-500">
-                                            <MessageSquare className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                                            <p>Activity history will be displayed here</p>
-                                            <p className="text-sm">This feature is coming soon</p>
-                                        </div>
+                                        {activities.length === 0 ? (
+                                            <div className="text-center py-8 text-gray-500">
+                                                <MessageSquare className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                                                <p>No activity yet</p>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-4">
+                                                {activities.map((activity, index) => (
+                                                    <div key={activity.id} className="flex items-start space-x-4">
+                                                        <div className="flex-shrink-0">
+                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${activity.type === 'AUDIT' ? 'bg-blue-100' :
+                                                                activity.type === 'CALL' ? 'bg-green-100' :
+                                                                    'bg-purple-100'
+                                                                }`}>
+                                                                {activity.type === 'AUDIT' ? (
+                                                                    <MessageSquare className="w-4 h-4 text-blue-600" />
+                                                                ) : activity.type === 'CALL' ? (
+                                                                    <Phone className="w-4 h-4 text-green-600" />
+                                                                ) : (
+                                                                    <Calendar className="w-4 h-4 text-purple-600" />
+                                                                )}
+                                                            </div>
+                                                            {index < activities.length - 1 && (
+                                                                <div className="w-px h-8 bg-gray-200 ml-4 mt-2"></div>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="bg-gray-50 rounded-lg p-4">
+                                                                <p className="text-sm font-medium text-gray-900">
+                                                                    {activity.description}
+                                                                </p>
+                                                                {activity.callData && (
+                                                                    <div className="mt-2 text-xs text-gray-600">
+                                                                        <p>Type: {activity.callData.callType} | Status: {activity.callData.status}</p>
+                                                                        {activity.callData.outcome && <p>Outcome: {activity.callData.outcome}</p>}
+                                                                        {activity.callData.duration && <p>Duration: {activity.callData.duration}s</p>}
+                                                                    </div>
+                                                                )}
+                                                                {activity.followUpData && (
+                                                                    <div className="mt-2 text-xs text-gray-600">
+                                                                        <p>Type: {activity.followUpData.type} | Priority: {activity.followUpData.priority}</p>
+                                                                        <p>Scheduled: {new Date(activity.followUpData.scheduledAt).toLocaleString()}</p>
+                                                                    </div>
+                                                                )}
+                                                                <div className="flex items-center mt-2 text-sm text-gray-500">
+                                                                    <span>{activity.user.firstName} {activity.user.lastName}</span>
+                                                                    <span className="mx-2">•</span>
+                                                                    <span>{new Date(activity.createdAt).toLocaleString()}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 </CardContent>
                             </Card>

@@ -114,7 +114,7 @@ const updateLeadStatusSchema = z.object({
 });
 
 // Helper function to generate activity descriptions
-function getActivityDescription(
+export function getActivityDescription(
   action: string,
   oldValues: any,
   newValues: any
@@ -1208,6 +1208,16 @@ router.put(
           },
         });
       }
+      await prisma.auditLog.create({
+        data: {
+          tenantId: tenant.id,
+          userId: userId,
+          action: "LEAD_STATUS_UPDATED",
+          entity: "Lead",
+          entityId: leadId,
+          newValues: updatedLead,
+        },
+      });
 
       res.json({
         success: true,
@@ -1225,7 +1235,7 @@ router.put(
 
 /**
  * GET /api/:tenant/telecaller/leads/:id/activities
- * Get lead activities for telecaller
+ * Get lead activities for telecaller (only assigned leads)
  */
 router.get(
   "/:tenant/telecaller/leads/:id/activities",
@@ -1355,6 +1365,181 @@ router.get(
           description: `Follow-up scheduled - ${followUp.type} (${followUp.priority} priority)`,
           createdAt: followUp.createdAt,
           user: { firstName: "You", lastName: "", role: "TELECALLER" },
+          followUpData: {
+            type: followUp.type,
+            priority: followUp.priority,
+            status: followUp.status,
+            scheduledAt: followUp.scheduledAt,
+            notes: followUp.notes,
+          },
+        })),
+      ].sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+
+      res.json({
+        success: true,
+        data: activities,
+      });
+    } catch (error) {
+      console.error("Get lead activities error:", error);
+      res.status(500).json({
+        error: "Failed to fetch lead activities",
+        code: "LEAD_ACTIVITIES_ERROR",
+      });
+    }
+  }
+);
+
+/**
+ * GET /api/:tenant/admin/leads/:id/activities
+ * Get lead activities for institution admin (any lead)
+ */
+router.get(
+  "/:tenant/admin/leads/:id/activities",
+  requireAuth,
+  requireActiveUser,
+  requireRole(["INSTITUTION_ADMIN"]),
+  async (req: AuthedRequest, res) => {
+    try {
+      const tenantSlug = req.params.tenant;
+      const leadId = req.params.id;
+
+      if (!tenantSlug) {
+        return res.status(400).json({
+          error: "Tenant slug is required",
+          code: "TENANT_REQUIRED",
+        });
+      }
+
+      // Get tenant
+      const tenant = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true },
+      });
+
+      if (!tenant) {
+        return res.status(404).json({
+          error: "Tenant not found",
+          code: "TENANT_NOT_FOUND",
+        });
+      }
+
+      // Verify lead exists (no assignment restriction for admins)
+      const lead = await prisma.lead.findFirst({
+        where: {
+          id: leadId,
+          tenantId: tenant.id,
+        },
+      });
+
+      if (!lead) {
+        return res.status(404).json({
+          error: "Lead not found",
+          code: "LEAD_NOT_FOUND",
+        });
+      }
+
+      // Get audit logs for this lead
+      const auditLogs = await prisma.auditLog.findMany({
+        where: {
+          tenantId: tenant.id,
+          entity: "Lead",
+          entityId: leadId,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              role: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 50, // Limit to last 50 activities
+      });
+
+      // Get call logs for this lead (all telecallers)
+      const callLogs = await prisma.callLog.findMany({
+        where: {
+          tenantId: tenant.id,
+          leadId: leadId,
+        },
+        include: {
+          telecaller: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              role: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 20, // Limit to last 20 calls
+      });
+
+      // Get follow-up reminders for this lead (all telecallers)
+      const followUps = await prisma.followUpReminder.findMany({
+        where: {
+          tenantId: tenant.id,
+          leadId: leadId,
+        },
+        include: {
+          telecaller: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              role: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 10, // Limit to last 10 follow-ups
+      });
+
+      // Combine and format activities
+      const activities = [
+        ...auditLogs.map((log) => ({
+          id: log.id,
+          type: "AUDIT",
+          action: log.action,
+          description: getActivityDescription(
+            log.action,
+            log.oldValues,
+            log.newValues
+          ),
+          createdAt: log.createdAt,
+          user: log.user,
+          oldValues: log.oldValues,
+          newValues: log.newValues,
+        })),
+        ...callLogs.map((call) => ({
+          id: call.id,
+          type: "CALL",
+          action: "CALL_MADE",
+          description: `Call made by ${call.telecaller.firstName} ${call.telecaller.lastName} - ${call.callType} (${call.status})`,
+          createdAt: call.createdAt,
+          user: call.telecaller,
+          callData: {
+            callType: call.callType,
+            status: call.status,
+            outcome: call.outcome,
+            duration: call.duration,
+            notes: call.notes,
+          },
+        })),
+        ...followUps.map((followUp) => ({
+          id: followUp.id,
+          type: "FOLLOW_UP",
+          action: "FOLLOW_UP_CREATED",
+          description: `Follow-up scheduled by ${followUp.telecaller.firstName} ${followUp.telecaller.lastName} - ${followUp.type} (${followUp.priority} priority)`,
+          createdAt: followUp.createdAt,
+          user: followUp.telecaller,
           followUpData: {
             type: followUp.type,
             priority: followUp.priority,
