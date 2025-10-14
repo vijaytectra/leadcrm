@@ -141,6 +141,7 @@ export function StudentPortalDashboard({ application }: StudentPortalDashboardPr
                             </div>
                         ))}
                     </div>
+                </CardContent>
             </Card>
 
             {/* Quick Stats */}

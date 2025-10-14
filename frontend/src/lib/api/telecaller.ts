@@ -202,7 +202,7 @@ async function makeRequest<T>(
 ): Promise<{ success: boolean; data: T; error?: string }> {
   try {
     const token = await getToken();
-   
+
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       headers: {
@@ -211,7 +211,6 @@ async function makeRequest<T>(
         ...options.headers,
       },
     });
-
 
     // Check if response is HTML (error page) instead of JSON
     const contentType = response.headers.get("content-type");

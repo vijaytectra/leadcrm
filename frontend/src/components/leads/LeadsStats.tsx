@@ -10,27 +10,28 @@ interface LeadsStatsProps {
 }
 
 export const LeadsStats = memo(function LeadsStats({ stats, loading }: LeadsStatsProps) {
+  console.log("stats", stats);
   const statsConfig = [
     {
-      key: "total",
-      title: "Total Leads",
-      icon: User,
+      key: "NEW",
+      title: "New Leads",
+      icon: Target,
       color: "bg-blue-500",
       lightColor: "bg-blue-50",
       textColor: "text-blue-600",
       badgeClass: "bg-blue-100 text-blue-800",
     },
     {
-      key: "new",
-      title: "New Leads",
-      icon: Target,
+      key: "INTERESTED",
+      title: "Interested",
+      icon: User,
       color: "bg-green-500",
       lightColor: "bg-green-50",
       textColor: "text-green-600",
       badgeClass: "bg-green-100 text-green-800",
     },
     {
-      key: "contacted",
+      key: "CONTACTED",
       title: "Contacted",
       icon: Phone,
       color: "bg-yellow-500",
@@ -39,7 +40,7 @@ export const LeadsStats = memo(function LeadsStats({ stats, loading }: LeadsStat
       badgeClass: "bg-yellow-100 text-yellow-800",
     },
     {
-      key: "qualified",
+      key: "QUALIFIED",
       title: "Qualified",
       icon: CheckCircle,
       color: "bg-purple-500",
@@ -48,8 +49,8 @@ export const LeadsStats = memo(function LeadsStats({ stats, loading }: LeadsStat
       badgeClass: "bg-purple-100 text-purple-800",
     },
     {
-      key: "converted",
-      title: "Converted",
+      key: "ADMITTED",
+      title: "Admitted",
       icon: TrendingUp,
       color: "bg-emerald-500",
       lightColor: "bg-emerald-50",

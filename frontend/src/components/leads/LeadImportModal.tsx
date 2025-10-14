@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Upload, FileText, Download, AlertCircle, CheckCircle } from "lucide-react";
+import { Upload, FileText, Download, AlertCircle, CheckCircle, X } from "lucide-react";
 
 interface LeadImportModalProps {
     onImport: (file: File) => void;
@@ -15,6 +15,18 @@ export function LeadImportModal({ onImport, onClose }: LeadImportModalProps) {
     const [file, setFile] = useState<File | null>(null);
     const [dragActive, setDragActive] = useState(false);
     const [importing, setImporting] = useState(false);
+
+    // Handle escape key to close modal
+    useEffect(() => {
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+
+        document.addEventListener('keydown', handleEscape);
+        return () => document.removeEventListener('keydown', handleEscape);
+    }, [onClose]);
 
     const handleDrag = (e: React.DragEvent) => {
         e.preventDefault();
@@ -82,10 +94,24 @@ export function LeadImportModal({ onImport, onClose }: LeadImportModalProps) {
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <Card className="w-full max-w-2xl">
-                <CardHeader>
+        <div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto"
+            onClick={onClose}
+        >
+            <Card
+                className="w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle>Import Leads</CardTitle>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={onClose}
+                        className="h-8 w-8 p-0"
+                    >
+                        <X className="h-4 w-4" />
+                    </Button>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     {/* Instructions */}
@@ -114,10 +140,10 @@ export function LeadImportModal({ onImport, onClose }: LeadImportModalProps) {
                     {/* File Upload */}
                     <div
                         className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${dragActive
-                                ? "border-blue-500 bg-blue-50"
-                                : file
-                                    ? "border-green-500 bg-green-50"
-                                    : "border-gray-300"
+                            ? "border-blue-500 bg-blue-50"
+                            : file
+                                ? "border-green-500 bg-green-50"
+                                : "border-gray-300"
                             }`}
                         onDragEnter={handleDrag}
                         onDragLeave={handleDrag}

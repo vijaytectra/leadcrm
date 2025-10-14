@@ -40,7 +40,9 @@ const createLeadSchema = z.object({
   phone: z
     .string()
     .min(10, "Phone number must be at least 10 digits")
-    .optional(),
+    .optional()
+    .or(z.literal(""))
+    .transform((val) => (val === "" ? undefined : val)),
   source: z.string().optional(),
   status: z
     .enum([
@@ -69,7 +71,9 @@ const updateLeadSchema = z.object({
   phone: z
     .string()
     .min(10, "Phone number must be at least 10 digits")
-    .optional(),
+    .optional()
+    .or(z.literal(""))
+    .transform((val) => (val === "" ? undefined : val)),
   source: z.string().optional(),
   status: z
     .enum([
@@ -85,9 +89,15 @@ const updateLeadSchema = z.object({
       "REJECTED",
       "LOST",
     ])
-    .optional(),
+    .optional()
+    .or(z.literal(""))
+    .transform((val) => (val === "" ? undefined : val)),
   score: z.number().min(0).max(100).optional(),
-  assigneeId: z.string().optional(),
+  assigneeId: z
+    .string()
+    .optional()
+    .or(z.literal(""))
+    .transform((val) => (val === "" ? undefined : val)),
 });
 
 const leadQuerySchema = z.object({
@@ -622,9 +632,7 @@ router.post(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res) => {
     try {
-   
       const tenantSlug = req.params.tenant;
-  
 
       if (!tenantSlug) {
         return res.status(400).json({
@@ -751,7 +759,6 @@ router.get(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res) => {
     try {
-    
       const tenantSlug = req.params.tenant;
 
       if (!tenantSlug) {
@@ -845,7 +852,6 @@ router.get(
         where: { tenantId: tenant.id },
         _count: { id: true },
       });
- 
 
       res.json({
         success: true,
@@ -867,6 +873,85 @@ router.get(
       res.status(500).json({
         error: "Failed to fetch leads",
         code: "FETCH_LEADS_ERROR",
+      });
+    }
+  }
+);
+
+/**
+ * GET /api/:tenant/leads/:id/notes
+ * Get all notes for a lead
+ */
+router.get(
+  "/:tenant/leads/:id/notes",
+  requireAuth,
+  requireActiveUser,
+  requireRole(["INSTITUTION_ADMIN"]),
+  async (req: AuthedRequest, res) => {
+    try {
+      const { id, tenant } = req.params;
+      const tenantSlug = tenant;
+
+      if (!tenantSlug) {
+        return res.status(400).json({
+          error: "Tenant slug is required",
+          code: "TENANT_REQUIRED",
+        });
+      }
+
+      // Get tenant
+      const tenantRecord = await prisma.tenant.findUnique({
+        where: { slug: tenantSlug },
+        select: { id: true },
+      });
+
+      if (!tenantRecord) {
+        return res.status(404).json({
+          error: "Tenant not found",
+          code: "TENANT_NOT_FOUND",
+        });
+      }
+      console.log("tenantRecord", tenantRecord);
+
+      // Check if lead exists and belongs to the same tenant
+      const lead = await prisma.lead.findFirst({
+        where: {
+          id,
+          tenantId: tenantRecord.id,
+        },
+      });
+      console.log("lead", lead);
+      if (!lead) {
+        return res.status(404).json({
+          error: "Lead not found",
+          code: "LEAD_NOT_FOUND",
+        });
+      }
+
+      // Get notes
+      const notes = await prisma.leadNote.findMany({
+        where: { leadId: id },
+        include: {
+          user: {
+            select: {
+              firstName: true,
+              lastName: true,
+              role: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+      console.log("notes", notes);
+
+      res.json({
+        success: true,
+        data: notes,
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: "Failed to fetch lead notes",
+        code: "FETCH_LEAD_NOTES_ERROR",
       });
     }
   }
@@ -974,7 +1059,6 @@ router.post(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res) => {
     try {
-      ("➕ CREATE LEAD - Route handler executed");
       const tenantSlug = req.params.tenant;
 
       if (!tenantSlug) {
@@ -998,6 +1082,7 @@ router.post(
       }
 
       const validation = createLeadSchema.safeParse(req.body);
+      console.log("validation", validation);
       if (!validation.success) {
         return res.status(400).json({
           error: "Validation failed",
@@ -1007,6 +1092,8 @@ router.post(
       }
 
       const leadData = validation.data;
+
+      console.log("leadData", leadData);
 
       // Check if assignee exists and belongs to the same tenant
       if (leadData.assigneeId) {
@@ -1079,6 +1166,7 @@ router.post(
         data: lead,
       });
     } catch (error) {
+      console.error("Error creating lead:", error);
       res.status(500).json({
         error: "Failed to create lead",
         code: "CREATE_LEAD_ERROR",
@@ -1098,10 +1186,10 @@ router.put(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res) => {
     try {
-      ("✏️ UPDATE LEAD - Route handler executed");
       const { id, tenant } = req.params;
+
       const tenantSlug = tenant;
-      ("Updating lead");
+
       if (!tenantSlug) {
         return res.status(400).json({
           error: "Tenant slug is required",
@@ -1121,8 +1209,11 @@ router.put(
           code: "TENANT_NOT_FOUND",
         });
       }
+      console.log("req.body", req.body);
 
       const validation = updateLeadSchema.safeParse(req.body);
+
+      console.log("validation", validation);
 
       if (!validation.success) {
         return res.status(400).json({
@@ -1221,10 +1312,9 @@ router.delete(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res) => {
     try {
-      ("🗑️ DELETE LEAD - Route handler executed");
       const { id, tenant } = req.params;
       const tenantSlug = tenant;
-      ("Deleting lead");
+
       if (!tenantSlug) {
         return res.status(400).json({
           error: "Tenant slug is required",
@@ -1282,6 +1372,7 @@ router.delete(
         message: "Lead deleted successfully",
       });
     } catch (error) {
+      console.error("Error deleting lead:", error);
       res.status(500).json({
         error: "Failed to delete lead",
         code: "DELETE_LEAD_ERROR",
@@ -1303,7 +1394,7 @@ router.post(
     try {
       const { id, tenant } = req.params;
       const tenantSlug = tenant;
-      ("Deleting lead");
+
       if (!tenantSlug) {
         return res.status(400).json({
           error: "Tenant slug is required",
@@ -1316,7 +1407,7 @@ router.post(
         where: { slug: tenantSlug },
         select: { id: true },
       });
-
+      console.log("tenantRecord", tenantRecord);
       if (!tenantRecord) {
         return res.status(404).json({
           error: "Tenant not found",
@@ -1325,7 +1416,7 @@ router.post(
       }
 
       const validation = addNoteSchema.safeParse(req.body);
-
+      console.log("validation", validation);
       if (!validation.success) {
         return res.status(400).json({
           error: "Validation failed",
@@ -1333,7 +1424,7 @@ router.post(
           code: "VALIDATION_ERROR",
         });
       }
-
+      console.log("validation.data", validation.data);
       const { note } = validation.data;
 
       // Check if lead exists and belongs to the same tenant
@@ -1343,7 +1434,7 @@ router.post(
           tenantId: tenantRecord.id,
         },
       });
-
+      console.log("lead", lead);
       if (!lead) {
         return res.status(404).json({
           error: "Lead not found",
@@ -1384,83 +1475,6 @@ router.post(
 );
 
 /**
- * GET /api/:tenant/leads/:id/notes
- * Get all notes for a lead
- */
-router.get(
-  "/:tenant/leads/:id/notes",
-  requireAuth,
-  requireActiveUser,
-  requireRole(["INSTITUTION_ADMIN"]),
-  async (req: AuthedRequest, res) => {
-    try {
-      const { id, tenant } = req.params;
-      const tenantSlug = tenant;
-      ("Adding note");
-      if (!tenantSlug) {
-        return res.status(400).json({
-          error: "Tenant slug is required",
-          code: "TENANT_REQUIRED",
-        });
-      }
-
-      // Get tenant
-      const tenantRecord = await prisma.tenant.findUnique({
-        where: { slug: tenantSlug },
-        select: { id: true },
-      });
-
-      if (!tenantRecord) {
-        return res.status(404).json({
-          error: "Tenant not found",
-          code: "TENANT_NOT_FOUND",
-        });
-      }
-
-      // Check if lead exists and belongs to the same tenant
-      const lead = await prisma.lead.findFirst({
-        where: {
-          id,
-          tenantId: tenantRecord.id,
-        },
-      });
-
-      if (!lead) {
-        return res.status(404).json({
-          error: "Lead not found",
-          code: "LEAD_NOT_FOUND",
-        });
-      }
-
-      // Get notes
-      const notes = await prisma.leadNote.findMany({
-        where: { leadId: id },
-        include: {
-          user: {
-            select: {
-              firstName: true,
-              lastName: true,
-              role: true,
-            },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-      });
-
-      res.json({
-        success: true,
-        data: notes,
-      });
-    } catch (error) {
-      res.status(500).json({
-        error: "Failed to fetch lead notes",
-        code: "FETCH_LEAD_NOTES_ERROR",
-      });
-    }
-  }
-);
-
-/**
  * POST /api/:tenant/leads/bulk-import
  * Import leads from CSV/Excel file
  */
@@ -1472,7 +1486,6 @@ router.post(
   upload.single("file"),
   async (req: AuthedRequest, res) => {
     try {
-      ("📥 BULK IMPORT - Route handler executed");
       const tenantSlug = req.params.tenant;
       ("Bulk importing leads");
       if (!tenantSlug) {
@@ -1606,9 +1619,7 @@ router.post(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res) => {
     try {
-      ("🎯 ASSIGN LEADS - Route handler executed");
       const tenantSlug = req.params.tenant;
-      ("Assigning leads");
 
       if (!tenantSlug) {
         return res.status(400).json({
@@ -1735,7 +1746,6 @@ router.post(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res) => {
     try {
-      ("Reassigning lead");
       const { id, tenant } = req.params;
       const tenantSlug = tenant;
 

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Mail, Phone, Eye, Edit2, Trash2, MoreHorizontal, User } from "lucide-react";
+import { Mail, Phone, Eye, Edit2, Trash2, MoreHorizontal, User, Loader2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Lead } from "@/lib/api/leads";
+import { LeadsTableSkeleton } from "./LeadsTableSkeleton";
 
 interface LeadsTableProps {
   leads: Lead[];
@@ -153,20 +154,7 @@ export const LeadsTable = memo(function LeadsTable({
   onPageChange,
 }: LeadsTableProps) {
   if (loading) {
-    return (
-      <Card className="border-0 shadow-sm bg-white">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold">Loading leads...</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="animate-pulse space-y-3">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <div key={index} className="h-16 bg-gray-200 rounded"></div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <LeadsTableSkeleton />;
   }
 
   return (

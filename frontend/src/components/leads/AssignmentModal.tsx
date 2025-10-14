@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Users, BarChart3, AlertCircle, CheckCircle } from "lucide-react";
+import { Users, BarChart3, AlertCircle, CheckCircle, X } from "lucide-react";
 import { AssignmentConfig } from "@/lib/api/leads";
 
 interface AssignmentModalProps {
@@ -29,6 +29,18 @@ export function AssignmentModal({ users, assignmentStats, onAssign, onClose }: A
     const [assigning, setAssigning] = useState(false);
 
     const telecallers = users.filter(user => user.role === "TELECALLER");
+
+    // Handle escape key to close modal
+    useEffect(() => {
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+
+        document.addEventListener('keydown', handleEscape);
+        return () => document.removeEventListener('keydown', handleEscape);
+    }, [onClose]);
 
     const handleAssign = async () => {
         setAssigning(true);
@@ -55,10 +67,24 @@ export function AssignmentModal({ users, assignmentStats, onAssign, onClose }: A
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-                <CardHeader>
+        <div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            onClick={onClose}
+        >
+            <Card
+                className="w-full max-w-4xl max-h-[90vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle>Auto-Assign Leads</CardTitle>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={onClose}
+                        className="h-8 w-8 p-0"
+                    >
+                        <X className="h-4 w-4" />
+                    </Button>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     {/* Current Stats */}

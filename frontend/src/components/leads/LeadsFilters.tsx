@@ -1,10 +1,10 @@
 "use client";
 
-import { memo, useCallback } from "react";
+import { memo, useCallback, useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Filter, RotateCcw } from "lucide-react";
+import { Search, RotateCcw } from "lucide-react";
 
 interface LeadsFiltersProps {
   filters: {
@@ -14,27 +14,37 @@ interface LeadsFiltersProps {
     assigneeId: string;
   };
   onFiltersChange: (filters: any) => void;
-  onSearch: () => void;
   onReset: () => void;
   loading?: boolean;
 }
 
-export const LeadsFilters = memo(function LeadsFilters({ 
-  filters, 
-  onFiltersChange, 
-  onSearch, 
+export const LeadsFilters = memo(function LeadsFilters({
+  filters,
+  onFiltersChange,
   onReset,
-  loading 
+  loading
 }: LeadsFiltersProps) {
-  const handleSearchChange = useCallback((value: string) => {
-    onFiltersChange(prev => ({ ...prev, search: value }));
+
+  // Local state for immediate UI response
+  const [localSearch, setLocalSearch] = useState(filters.search);
+
+  // Sync local search with external filters only when reset
+  useEffect(() => {
+    if (filters.search === "" && localSearch !== "") {
+      setLocalSearch("");
+    }
+  }, [filters.search, localSearch]);
+
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setLocalSearch(value); // Immediate local update
+    onFiltersChange(prev => ({ ...prev, search: value })); // Propagate to parent
   }, [onFiltersChange]);
 
-  const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      onSearch();
-    }
-  }, [onSearch]);
+  const handleReset = useCallback(() => {
+    setLocalSearch(""); // Reset local state immediately
+    onReset();
+  }, [onReset]);
 
   return (
     <Card className="border-0 shadow-sm bg-white">
@@ -45,26 +55,17 @@ export const LeadsFilters = memo(function LeadsFilters({
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Search leads by name, email, or phone..."
-                value={filters.search}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                onKeyPress={handleKeyPress}
+                value={localSearch}
+                onChange={handleSearchChange}
                 className="pl-10 bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-300 focus:ring-blue-200 h-11"
-                disabled={loading}
+              // Remove disabled={loading} - this was causing focus loss!
               />
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <Button 
-              onClick={onSearch}
-              disabled={loading}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 h-11"
-            >
-              <Search className="w-4 h-4 mr-2" />
-              Search
-            </Button>
-            <Button 
-              onClick={onReset}
-              variant="outline" 
+            <Button
+              onClick={handleReset}
+              variant="outline"
               disabled={loading}
               className="h-11"
             >

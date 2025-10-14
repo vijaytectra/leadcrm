@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Lead, getLeadNotes, addLeadNote } from "@/lib/api/leads";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthStore } from "@/stores/auth";
 
 interface LeadDetailsModalProps {
     lead: Lead;
@@ -39,6 +40,7 @@ export function LeadDetailsModal({ lead, onClose }: LeadDetailsModalProps) {
         status: lead.status,
         score: lead.score,
     });
+    const { currentTenantSlug } = useAuthStore();
 
     const { toast } = useToast();
 
@@ -47,8 +49,10 @@ export function LeadDetailsModal({ lead, onClose }: LeadDetailsModalProps) {
     }, [lead.id]);
 
     const loadNotes = async () => {
+        if (!currentTenantSlug) return;
+
         try {
-            const notesData = await getLeadNotes("demo-institution", lead.id);
+            const notesData = await getLeadNotes(currentTenantSlug, lead.id);
             setNotes(notesData);
         } catch (error) {
             console.error("Error loading notes:", error);

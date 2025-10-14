@@ -77,7 +77,7 @@ export function InstitutionDashboard({ stats, tenantSlug, users = [] }: Institut
       trendLabel: "conversion rate",
       trendType: stats.conversionRate > 20 ? "positive" : "neutral" as const,
       color: "bg-green-500",
-      lightColor: "bg-green-50",
+      lightColor: "bg-green-500",
       textColor: "text-green-600",
     },
     {

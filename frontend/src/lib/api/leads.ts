@@ -307,6 +307,9 @@ export async function addLeadNote(
     if (!token) {
       throw new Error("No token found");
     }
+    console.log("tenantSlug", tenantSlug);
+    console.log("leadId", leadId);
+    console.log("noteData", noteData);
 
     // Fixed: Removed /api prefix
     const response = await apiPostClientNew<{ data: LeadNote }>(
@@ -333,6 +336,8 @@ export async function getLeadNotes(
     if (!token) {
       throw new Error("No token found");
     }
+    console.log("tenantSlug", tenantSlug);
+    console.log("leadId", leadId);
 
     // Fixed: Removed /api prefix
     const response = await apiGetClientNew<{ data: LeadNote[] }>(
@@ -359,6 +364,9 @@ export async function importLeads(
       throw new Error("No token found");
     }
 
+    console.log("tenantSlug", tenantSlug);
+
+    // Create FormData object
     const formData = new FormData();
     formData.append("file", file);
 
@@ -456,7 +464,6 @@ export async function getAssignmentStats(
     if (!token) {
       throw new Error("No token found");
     }
-
 
     // Fixed: Removed /api prefix since utils.ts already adds it
     const response = await apiGetClientNew<{ data: AssignmentStats }>(

@@ -391,7 +391,15 @@ async function main() {
   });
 
   // Create users for each role
-  const users = [
+  const users: Array<{
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    role: "SUPER_ADMIN" | "INSTITUTION_ADMIN" | "TELECALLER";
+    tenantId: string;
+  }> = [
     // Super Admin
     {
       email: "superadmin@lead101.com",
@@ -404,82 +412,12 @@ async function main() {
     },
     // Institution Admin
     {
-      email: "admin@demoschool.com",
-      password: "Admin123!",
+      email: "vijay.r20799@gmail.com",
+      password: "Vijay@123!",
       firstName: "School",
       lastName: "Admin",
       phone: "+91-9876543211",
       role: "INSTITUTION_ADMIN" as const,
-      tenantId: demoSchoolTenant.id,
-    },
-    // Telecaller
-    {
-      email: "telecaller@demoschool.com",
-      password: "Telecaller123!",
-      firstName: "John",
-      lastName: "Doe",
-      phone: "+91-9876543212",
-      role: "TELECALLER" as const,
-      tenantId: demoSchoolTenant.id,
-    },
-    // Document Verifier
-    {
-      email: "verifier@demoschool.com",
-      password: "Verifier123!",
-      firstName: "Jane",
-      lastName: "Smith",
-      phone: "+91-9876543213",
-      role: "DOCUMENT_VERIFIER" as const,
-      tenantId: demoSchoolTenant.id,
-    },
-    // Finance Team
-    {
-      email: "finance@demoschool.com",
-      password: "Finance123!",
-      firstName: "Mike",
-      lastName: "Johnson",
-      phone: "+91-9876543214",
-      role: "FINANCE_TEAM" as const,
-      tenantId: demoSchoolTenant.id,
-    },
-    // Admission Team
-    {
-      email: "admission@demoschool.com",
-      password: "Admission123!",
-      firstName: "Sarah",
-      lastName: "Wilson",
-      phone: "+91-9876543215",
-      role: "ADMISSION_TEAM" as const,
-      tenantId: demoSchoolTenant.id,
-    },
-    // Admission Head
-    {
-      email: "head@demoschool.com",
-      password: "Head123!",
-      firstName: "Robert",
-      lastName: "Brown",
-      phone: "+91-9876543216",
-      role: "ADMISSION_HEAD" as const,
-      tenantId: demoSchoolTenant.id,
-    },
-    // Student
-    {
-      email: "student@demoschool.com",
-      password: "Student123!",
-      firstName: "Alex",
-      lastName: "Student",
-      phone: "+91-9876543217",
-      role: "STUDENT" as const,
-      tenantId: demoSchoolTenant.id,
-    },
-    // Parent
-    {
-      email: "parent@demoschool.com",
-      password: "Parent123!",
-      firstName: "David",
-      lastName: "Parent",
-      phone: "+91-9876543218",
-      role: "PARENT" as const,
       tenantId: demoSchoolTenant.id,
     },
   ];
@@ -494,7 +432,7 @@ async function main() {
       lastName: "Kumar",
       phone: "+91-9876543220",
       role: "TELECALLER" as const,
-      tenantId: "cmgos35zh0002vzh024sxpl3v",
+      tenantId: demoSchoolTenant.id,
     },
     {
       email: "telecaller2@demoschool.com",
@@ -503,7 +441,7 @@ async function main() {
       lastName: "Sharma",
       phone: "+91-9876543221",
       role: "TELECALLER" as const,
-      tenantId: "cmgos35zh0002vzh024sxpl3v",
+      tenantId: demoSchoolTenant.id,
     },
     {
       email: "telecaller3@demoschool.com",
@@ -512,7 +450,7 @@ async function main() {
       lastName: "Singh",
       phone: "+91-9876543222",
       role: "TELECALLER" as const,
-      tenantId: "cmgos35zh0002vzh024sxpl3v",
+      tenantId: demoSchoolTenant.id,
     },
     {
       email: "telecaller4@demoschool.com",
@@ -521,7 +459,7 @@ async function main() {
       lastName: "Patel",
       phone: "+91-9876543223",
       role: "TELECALLER" as const,
-      tenantId: "cmgos35zh0002vzh024sxpl3v",
+      tenantId: demoSchoolTenant.id,
     },
     {
       email: "telecaller5@demoschool.com",
@@ -530,7 +468,7 @@ async function main() {
       lastName: "Gupta",
       phone: "+91-9876543224",
       role: "TELECALLER" as const,
-      tenantId: "cmgos35zh0002vzh024sxpl3v",
+      tenantId: demoSchoolTenant.id,
     },
     {
       email: "telecaller6@demoschool.com",
@@ -539,7 +477,7 @@ async function main() {
       lastName: "Reddy",
       phone: "+91-9876543225",
       role: "TELECALLER" as const,
-      tenantId: "cmgos35zh0002vzh024sxpl3v",
+      tenantId: demoSchoolTenant.id,
     },
     {
       email: "telecaller7@demoschool.com",
@@ -548,7 +486,7 @@ async function main() {
       lastName: "Mehta",
       phone: "+91-9876543226",
       role: "TELECALLER" as const,
-      tenantId: "cmgos35zh0002vzh024sxpl3v",
+      tenantId: demoSchoolTenant.id,
     },
     {
       email: "telecaller8@demoschool.com",
@@ -557,7 +495,7 @@ async function main() {
       lastName: "Joshi",
       phone: "+91-9876543227",
       role: "TELECALLER" as const,
-      tenantId: "cmgos35zh0002vzh024sxpl3v",
+      tenantId: demoSchoolTenant.id,
     },
     {
       email: "telecaller9@demoschool.com",
@@ -566,7 +504,7 @@ async function main() {
       lastName: "Kumar",
       phone: "+91-9876543228",
       role: "TELECALLER" as const,
-      tenantId: "cmgos35zh0002vzh024sxpl3v",
+      tenantId: demoSchoolTenant.id,
     },
     {
       email: "telecaller10@demoschool.com",
@@ -575,7 +513,7 @@ async function main() {
       lastName: "Desai",
       phone: "+91-9876543229",
       role: "TELECALLER" as const,
-      tenantId: "cmgos35zh0002vzh024sxpl3v",
+      tenantId: demoSchoolTenant.id,
     },
   ];
 
@@ -642,7 +580,7 @@ async function main() {
       email: "vikram.gupta@email.com",
       phone: "+91-9876543305",
       source: "Referral",
-      status: "APPLICATION_STARTED" as const,
+      status: "NEW" as const,
       score: 95,
       tenantId: demoSchoolTenant.id,
     },
@@ -687,7 +625,7 @@ async function main() {
       email: "suresh.kumar@email.com",
       phone: "+91-9876543310",
       source: "WhatsApp Business",
-      status: "APPLICATION_STARTED" as const,
+      status: "NEW" as const,
       score: 83,
       tenantId: demoSchoolTenant.id,
     },
@@ -777,7 +715,7 @@ async function main() {
       email: "suresh.yadav@email.com",
       phone: "+91-9876543320",
       source: "Referral",
-      status: "APPLICATION_STARTED" as const,
+      status: "NEW" as const,
       score: 93,
       tenantId: demoSchoolTenant.id,
     },
@@ -867,7 +805,7 @@ async function main() {
       email: "akhil.sharma@email.com",
       phone: "+91-9876543330",
       source: "Snapchat Ads",
-      status: "APPLICATION_STARTED" as const,
+      status: "NEW" as const,
       score: 84,
       tenantId: demoSchoolTenant.id,
     },
@@ -957,7 +895,7 @@ async function main() {
       email: "ashok.gupta@email.com",
       phone: "+91-9876543340",
       source: "WhatsApp Business",
-      status: "APPLICATION_STARTED" as const,
+      status: "NEW" as const,
       score: 87,
       tenantId: demoSchoolTenant.id,
     },
