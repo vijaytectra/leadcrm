@@ -11,13 +11,13 @@ import {
     Calendar,
     Edit,
     Search,
-    Filter,
-    Clock,
     User,
     Mail,
-    PhoneCall
+    PhoneCall,
+    Eye
 } from "lucide-react";
 import { getTelecallerLeads } from "@/lib/api/telecaller";
+import { TelecallerLeadDetailsModal } from "./TelecallerLeadDetailsModal";
 
 interface Lead {
     id: string;
@@ -56,7 +56,6 @@ interface Lead {
 
 interface LeadQueueProps {
     tenantSlug: string;
-    onLeadSelect?: (leadId: string) => void;
     onCallLog?: (leadId: string) => void;
     onFollowUp?: (leadId: string) => void;
     onStatusUpdate?: (leadId: string) => void;
@@ -64,7 +63,6 @@ interface LeadQueueProps {
 
 export const LeadQueue = memo(function LeadQueue({
     tenantSlug,
-    onLeadSelect,
     onCallLog,
     onFollowUp,
     onStatusUpdate
@@ -74,14 +72,15 @@ export const LeadQueue = memo(function LeadQueue({
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState<string>("all");
     const [sortBy, setSortBy] = useState<string>("updatedAt");
-    const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+    const [sortOrder] = useState<"asc" | "desc">("desc");
+    const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
     const fetchLeads = useCallback(async () => {
         try {
             setLoading(true);
-        
+
             const response = await getTelecallerLeads(tenantSlug);
 
             if (response.success) {
@@ -109,7 +108,7 @@ export const LeadQueue = memo(function LeadQueue({
                 })));
                 setTotalPages(response.data.pagination.pages);
             }
-        } catch (error) {
+        } catch {
         } finally {
             setLoading(false);
         }
@@ -129,14 +128,6 @@ export const LeadQueue = memo(function LeadQueue({
         setPage(1);
     }, []);
 
-    const handleSort = useCallback((field: string) => {
-        if (sortBy === field) {
-            setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-        } else {
-            setSortBy(field);
-            setSortOrder("desc");
-        }
-    }, [sortBy, sortOrder]);
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -297,6 +288,14 @@ export const LeadQueue = memo(function LeadQueue({
                                     <div className="flex flex-col gap-2 ml-4">
                                         <Button
                                             size="sm"
+                                            onClick={() => setSelectedLeadId(lead.id)}
+                                            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+                                        >
+                                            <Eye className="h-4 w-4" />
+                                            View Details
+                                        </Button>
+                                        <Button
+                                            size="sm"
                                             onClick={() => onCallLog?.(lead.id)}
                                             className="flex items-center gap-2"
                                         >
@@ -368,6 +367,28 @@ export const LeadQueue = memo(function LeadQueue({
                     </CardContent>
                 </Card>
             )}
+
+            {/* Lead Details Modal */}
+            <TelecallerLeadDetailsModal
+                leadId={selectedLeadId}
+                tenantSlug={tenantSlug}
+                onClose={() => setSelectedLeadId(null)}
+                onLeadUpdated={(updatedLead) => {
+                    // Update the lead in the local state
+                    setLeads(prev => prev.map(lead =>
+                        lead.id === updatedLead.id ? {
+                            ...lead,
+                            name: updatedLead.name,
+                            email: updatedLead.email,
+                            phone: updatedLead.phone,
+                            source: updatedLead.source,
+                            status: updatedLead.status,
+                            score: updatedLead.score,
+                            assignee: updatedLead.assignee
+                        } : lead
+                    ));
+                }}
+            />
         </div>
     );
 });

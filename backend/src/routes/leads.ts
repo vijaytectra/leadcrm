@@ -886,12 +886,17 @@ router.get(
   "/:tenant/leads/:id/notes",
   requireAuth,
   requireActiveUser,
-  requireRole(["INSTITUTION_ADMIN"]),
+  requireRole(["INSTITUTION_ADMIN", "TELECALLER"]),
   async (req: AuthedRequest, res) => {
     try {
       const { id, tenant } = req.params;
       const tenantSlug = tenant;
-
+      const userId = req.auth!.sub;
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { role: true },
+      });
+      console.log("user", user);
       if (!tenantSlug) {
         return res.status(400).json({
           error: "Tenant slug is required",
@@ -965,7 +970,7 @@ router.get(
   "/:tenant/leads/:id",
   requireAuth,
   requireActiveUser,
-  requireRole(["INSTITUTION_ADMIN"]),
+  requireRole(["INSTITUTION_ADMIN", "TELECALLER"]),
   async (req: AuthedRequest, res) => {
     try {
       ("🔍 GET SINGLE LEAD - Route handler executed");
@@ -1032,6 +1037,18 @@ router.get(
         return res.status(404).json({
           error: "Lead not found",
           code: "LEAD_NOT_FOUND",
+        });
+      }
+
+      // Authorization check for telecallers
+      if (
+        req.auth!.rol === "TELECALLER" &&
+        req.auth!.sub &&
+        lead.assigneeId !== req.auth!.sub
+      ) {
+        return res.status(403).json({
+          error: "Access denied. You can only view leads assigned to you.",
+          code: "ACCESS_DENIED",
         });
       }
 
@@ -1183,7 +1200,7 @@ router.put(
   "/:tenant/leads/:id",
   requireAuth,
   requireActiveUser,
-  requireRole(["INSTITUTION_ADMIN"]),
+  requireRole(["INSTITUTION_ADMIN", "TELECALLER"]),
   async (req: AuthedRequest, res) => {
     try {
       const { id, tenant } = req.params;
@@ -1237,6 +1254,17 @@ router.put(
         return res.status(404).json({
           error: "Lead not found",
           code: "LEAD_NOT_FOUND",
+        });
+      }
+
+      // Authorization check for telecallers
+      if (
+        req.auth!.rol === "TELECALLER" &&
+        existingLead.assigneeId !== req.auth!.sub
+      ) {
+        return res.status(403).json({
+          error: "Access denied. You can only update leads assigned to you.",
+          code: "ACCESS_DENIED",
         });
       }
 
@@ -1389,9 +1417,15 @@ router.post(
   "/:tenant/leads/:id/notes",
   requireAuth,
   requireActiveUser,
-  requireRole(["INSTITUTION_ADMIN"]),
+  requireRole(["INSTITUTION_ADMIN", "TELECALLER"]),
   async (req: AuthedRequest, res) => {
     try {
+      const userId = req.auth!.sub;
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { role: true },
+      });
+      console.log("user", user);
       const { id, tenant } = req.params;
       const tenantSlug = tenant;
 
@@ -1439,6 +1473,19 @@ router.post(
         return res.status(404).json({
           error: "Lead not found",
           code: "LEAD_NOT_FOUND",
+        });
+      }
+
+      // Authorization check for telecallers
+      if (
+        req.auth!.rol === "TELECALLER" &&
+        req.auth!.sub &&
+        lead.assigneeId !== req.auth!.sub
+      ) {
+        return res.status(403).json({
+          error:
+            "Access denied. You can only add notes to leads assigned to you.",
+          code: "ACCESS_DENIED",
         });
       }
 

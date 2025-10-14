@@ -22,6 +22,7 @@ import { Lead, getLeadNotes, addLeadNote } from "@/lib/api/leads";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/stores/auth";
 
+
 interface LeadDetailsModalProps {
     lead: Lead;
     onClose: () => void;
@@ -42,6 +43,7 @@ export function LeadDetailsModal({ lead, onClose }: LeadDetailsModalProps) {
     });
     const { currentTenantSlug } = useAuthStore();
 
+
     const { toast } = useToast();
 
     useEffect(() => {
@@ -61,10 +63,11 @@ export function LeadDetailsModal({ lead, onClose }: LeadDetailsModalProps) {
 
     const handleAddNote = async () => {
         if (!newNote.trim()) return;
+        if (!currentTenantSlug) return;
 
         try {
             setLoading(true);
-            await addLeadNote("demo-institution", lead.id, { note: newNote });
+            await addLeadNote(currentTenantSlug, lead.id, { note: newNote });
             setNewNote("");
             loadNotes(); // Refresh notes
             toast({
