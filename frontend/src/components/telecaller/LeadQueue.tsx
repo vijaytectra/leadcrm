@@ -81,7 +81,7 @@ export const LeadQueue = memo(function LeadQueue({
     const fetchLeads = useCallback(async () => {
         try {
             setLoading(true);
-            ("Tenant Slug", tenantSlug);
+        
             const response = await getTelecallerLeads(tenantSlug);
 
             if (response.success) {

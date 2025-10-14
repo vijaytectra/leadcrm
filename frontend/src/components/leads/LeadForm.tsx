@@ -32,16 +32,17 @@ export const LeadForm = memo(function LeadForm({ lead, users, onSave, onClose }:
     const [errors, setErrors] = useState<Record<string, string>>({});
     useEffect(() => {
         if (lead) {
-            setFormData({
-                name: lead.name,
+            const newFormData = {
+                name: lead.name || "",
                 email: lead.email || "",
                 phone: lead.phone || "",
                 source: lead.source || "",
-                status: lead.status,
-                score: lead.score,
+                status: lead.status || "NEW",
+                score: lead.score || 0,
                 assigneeId: lead.assigneeId || "unassigned",
                 notes: "",
-            });
+            };
+            setFormData(newFormData);
         } else {
             // Reset form when no lead is provided (creating new lead)
             setFormData({
@@ -56,6 +57,7 @@ export const LeadForm = memo(function LeadForm({ lead, users, onSave, onClose }:
             });
         }
     }, [lead]);
+
 
     const validateForm = useCallback(() => {
         const newErrors: Record<string, string> = {};
@@ -233,11 +235,25 @@ export const LeadForm = memo(function LeadForm({ lead, users, onSave, onClose }:
                                             Lead Status
                                         </Label>
                                         <Select
+                                            key={`status-${lead?.id || 'new'}`}
                                             value={formData.status}
                                             onValueChange={(value) => handleChange("status", value)}
                                         >
                                             <SelectTrigger className="focus:border-blue-500 text-black hover:bg-transparent hover:text-black">
-                                                <SelectValue />
+                                                <SelectValue placeholder="Select status">
+                                                    {formData.status === "NEW" && "🆕 New"}
+                                                    {formData.status === "CONTACTED" && "📞 Contacted"}
+                                                    {formData.status === "QUALIFIED" && "✅ Qualified"}
+                                                    {formData.status === "INTERESTED" && "💡 Interested"}
+                                                    {formData.status === "APPLICATION_STARTED" && "📝 Application Started"}
+                                                    {formData.status === "DOCUMENTS_SUBMITTED" && "📄 Documents Submitted"}
+                                                    {formData.status === "UNDER_REVIEW" && "🔍 Under Review"}
+                                                    {formData.status === "ADMITTED" && "🎓 Admitted"}
+                                                    {formData.status === "ENROLLED" && "📚 Enrolled"}
+                                                    {formData.status === "REJECTED" && "❌ Rejected"}
+                                                    {formData.status === "LOST" && "💔 Lost"}
+                                                    {!formData.status && "Select status"}
+                                                </SelectValue>
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="NEW">🆕 New</SelectItem>
@@ -276,12 +292,32 @@ export const LeadForm = memo(function LeadForm({ lead, users, onSave, onClose }:
                                             Assign to Telecaller
                                         </Label>
                                         <Select
-                                            key={lead?.id || 'new'} // Force re-render when lead changes
+                                            key={`assignee-${lead?.id || 'new'}`}
                                             value={formData.assigneeId}
                                             onValueChange={(value) => handleChange("assigneeId", value)}
                                         >
                                             <SelectTrigger className="focus:border-blue-500 text-black hover:bg-transparent hover:text-black">
-                                                <SelectValue placeholder="Select telecaller" />
+                                                <SelectValue placeholder="Select telecaller">
+                                                    {formData.assigneeId === "unassigned" && (
+                                                        <div className="flex items-center">
+                                                            <Users className="w-4 h-4 mr-2 text-gray-400" />
+                                                            Unassigned
+                                                        </div>
+                                                    )}
+                                                    {formData.assigneeId !== "unassigned" && telecallers.find(t => t.id === formData.assigneeId) && (
+                                                        <div className="flex items-center">
+                                                            <User className="w-4 h-4 mr-2 text-blue-500" />
+                                                            {telecallers.find(t => t.id === formData.assigneeId)?.firstName} {telecallers.find(t => t.id === formData.assigneeId)?.lastName}
+                                                        </div>
+                                                    )}
+                                                    {formData.assigneeId !== "unassigned" && !telecallers.find(t => t.id === formData.assigneeId) && lead?.assignee && (
+                                                        <div className="flex items-center">
+                                                            <User className="w-4 h-4 mr-2 text-blue-500" />
+                                                            {lead.assignee.firstName} {lead.assignee.lastName}
+                                                        </div>
+                                                    )}
+                                                    {!formData.assigneeId && "Select telecaller"}
+                                                </SelectValue>
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="unassigned">
@@ -295,11 +331,12 @@ export const LeadForm = memo(function LeadForm({ lead, users, onSave, onClose }:
                                                         <div className="flex items-center">
                                                             <User className="w-4 h-4 mr-2 text-blue-500" />
                                                             {user.firstName} {user.lastName}
+                                                            {lead?.assigneeId === user.id && " (Current)"}
                                                         </div>
                                                     </SelectItem>
                                                 ))}
-                                                {/* Show current assignee if they're not in the telecallers list */}
-                                                {lead?.assignee && lead.assigneeId && !telecallers.find(t => t.id === lead.assigneeId) && (
+                                                {/* Show current assignee only if they're not in the telecallers list */}
+                                                {lead?.assignee && lead.assigneeId && !telecallers.some(t => t.id === lead.assigneeId) && (
                                                     <SelectItem value={lead.assigneeId}>
                                                         <div className="flex items-center">
                                                             <User className="w-4 h-4 mr-2 text-blue-500" />

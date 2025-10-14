@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { TelecallerDashboard } from "@/components/telecaller/TelecallerDashboard";
 import { Card, CardContent } from "@/components/ui/card";
 import { NotificationCenter } from "@/components/communications/NotificationCenter";
+import { getTelecallerDashboard } from "@/lib/api/telecaller";
 
 
 interface TelecallerDashboardPageProps {
@@ -10,8 +11,13 @@ interface TelecallerDashboardPageProps {
     }>;
 }
 
-async function getTelecallerDashboardData() {
+async function getTelecallerDashboardData(tenantSlug: string) {
     try {
+        const response = await getTelecallerDashboard(tenantSlug);
+        if (!response.success) {
+            throw new Error(response.error || "Failed to fetch dashboard data");
+        }
+        return response.data;
         // This would be replaced with actual API call
         // const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/${tenantSlug}/telecaller/dashboard`, {
         //   headers: {
@@ -104,7 +110,7 @@ export default async function TelecallerDashboardPage({ searchParams }: Telecall
     const resolvedSearchParams = await searchParams;
     const tenant = resolvedSearchParams.tenant || "demo-tenant";
 
-    const dashboardData = await getTelecallerDashboardData();
+    const dashboardData = await getTelecallerDashboardData(tenant);
 
     if (!dashboardData) {
         return (
