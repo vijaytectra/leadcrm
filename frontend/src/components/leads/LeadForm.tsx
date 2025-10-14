@@ -30,7 +30,6 @@ export const LeadForm = memo(function LeadForm({ lead, users, onSave, onClose }:
     });
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
-
     useEffect(() => {
         if (lead) {
             setFormData({
@@ -41,6 +40,18 @@ export const LeadForm = memo(function LeadForm({ lead, users, onSave, onClose }:
                 status: lead.status,
                 score: lead.score,
                 assigneeId: lead.assigneeId || "unassigned",
+                notes: "",
+            });
+        } else {
+            // Reset form when no lead is provided (creating new lead)
+            setFormData({
+                name: "",
+                email: "",
+                phone: "",
+                source: "",
+                status: "NEW",
+                score: 0,
+                assigneeId: "unassigned",
                 notes: "",
             });
         }
@@ -265,6 +276,7 @@ export const LeadForm = memo(function LeadForm({ lead, users, onSave, onClose }:
                                             Assign to Telecaller
                                         </Label>
                                         <Select
+                                            key={lead?.id || 'new'} // Force re-render when lead changes
                                             value={formData.assigneeId}
                                             onValueChange={(value) => handleChange("assigneeId", value)}
                                         >
@@ -286,6 +298,15 @@ export const LeadForm = memo(function LeadForm({ lead, users, onSave, onClose }:
                                                         </div>
                                                     </SelectItem>
                                                 ))}
+                                                {/* Show current assignee if they're not in the telecallers list */}
+                                                {lead?.assignee && lead.assigneeId && !telecallers.find(t => t.id === lead.assigneeId) && (
+                                                    <SelectItem value={lead.assigneeId}>
+                                                        <div className="flex items-center">
+                                                            <User className="w-4 h-4 mr-2 text-blue-500" />
+                                                            {lead.assignee.firstName} {lead.assignee.lastName} (Current)
+                                                        </div>
+                                                    </SelectItem>
+                                                )}
                                             </SelectContent>
                                         </Select>
                                     </div>
