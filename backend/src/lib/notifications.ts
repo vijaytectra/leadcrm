@@ -44,10 +44,11 @@ export enum NotificationCategory {
   PERFORMANCE = "PERFORMANCE",
 }
 
-// Notification service class
+// Enhanced notification service class
 export class NotificationService {
   private io: any = null; // SocketIOServer instance
   private connectedUsers: Map<string, Set<string>> = new Map(); // tenantId -> Set of socketIds
+  private sseConnections: Map<string, any> = new Map(); // userId -> SSE response object
 
   /**
    * Initialize Socket.IO server
@@ -158,7 +159,58 @@ export class NotificationService {
   }
 
   /**
-   * Send real-time notification
+   * Add SSE connection for user
+   */
+  addSSEConnection(userId: string, res: any): void {
+    this.sseConnections.set(userId, res);
+    console.log(`SSE connection added for user ${userId}`);
+  }
+
+  /**
+   * Remove SSE connection for user
+   */
+  removeSSEConnection(userId: string): void {
+    this.sseConnections.delete(userId);
+    console.log(`SSE connection removed for user ${userId}`);
+  }
+
+  /**
+   * Send real-time notification via SSE
+   */
+  private sendSSENotification(userId: string, notification: any): void {
+    const connection = this.sseConnections.get(userId);
+    if (connection && !connection.destroyed) {
+      try {
+        connection.write(
+          `data: ${JSON.stringify({
+            type: "notification",
+            notification: {
+              id: notification.id,
+              title: notification.title,
+              message: notification.message,
+              type: notification.type,
+              category: notification.category,
+              actionType: notification.actionType,
+              priority: notification.priority,
+              leadId: notification.leadId,
+              data: notification.data,
+              read: notification.read,
+              createdAt: notification.createdAt,
+            },
+          })}\n\n`
+        );
+      } catch (error) {
+        console.error(
+          `Failed to send SSE notification to user ${userId}:`,
+          error
+        );
+        this.sseConnections.delete(userId);
+      }
+    }
+  }
+
+  /**
+   * Send enhanced real-time notification
    */
   async sendNotification(
     tenantId: string,
@@ -167,6 +219,9 @@ export class NotificationService {
     message: string,
     type: "INFO" | "SUCCESS" | "WARNING" | "ERROR" | "SYSTEM" = "INFO",
     category: string = "GENERAL",
+    actionType?: string,
+    priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT" = "MEDIUM",
+    leadId?: string,
     data?: Record<string, any>
   ): Promise<string> {
     try {
@@ -179,11 +234,17 @@ export class NotificationService {
           message,
           type,
           category,
+          actionType,
+          priority,
+          leadId,
           data: data || {},
         },
       });
 
-      // Send real-time notification via Socket.IO
+      // Send real-time notification via SSE
+      this.sendSSENotification(userId, notification);
+
+      // Send real-time notification via Socket.IO (if available)
       if (this.io) {
         this.io.to(`user:${userId}`).emit("notification", {
           id: notification.id,
@@ -191,6 +252,9 @@ export class NotificationService {
           message,
           type,
           category,
+          actionType,
+          priority,
+          leadId,
           data,
           createdAt: notification.createdAt,
         });
@@ -236,6 +300,9 @@ export class NotificationService {
           message,
           type,
           category,
+          undefined, // actionType
+          "MEDIUM", // priority
+          undefined, // leadId
           data
         );
         notificationIds.push(notificationId);
@@ -320,16 +387,22 @@ export class NotificationService {
     userId: string,
     limit: number = 50,
     offset: number = 0,
-    unreadOnly: boolean = false
+    unreadOnly: boolean = false,
+    sortBy: string = "createdAt",
+    sortOrder: string = "desc"
   ): Promise<Notification[]> {
     const where: any = { userId };
     if (unreadOnly) {
       where.read = false;
     }
 
+    // Build orderBy object
+    const orderBy: any = {};
+    orderBy[sortBy] = sortOrder;
+
     const notifications = await (prisma as any).notification.findMany({
       where,
-      orderBy: { createdAt: "desc" },
+      orderBy,
       take: limit,
       skip: offset,
     });
@@ -346,6 +419,21 @@ export class NotificationService {
       read: notification.read,
       createdAt: notification.createdAt,
     }));
+  }
+
+  /**
+   * Get user notification count
+   */
+  async getUserNotificationCount(
+    userId: string,
+    unreadOnly: boolean = false
+  ): Promise<number> {
+    const where: any = { userId };
+    if (unreadOnly) {
+      where.read = false;
+    }
+
+    return await (prisma as any).notification.count({ where });
   }
 
   /**
@@ -582,12 +670,111 @@ export class NotificationService {
   }
 
   /**
+   * Send lead assignment notification
+   */
+  async sendLeadAssignmentNotification(
+    tenantId: string,
+    assigneeId: string,
+    leadId: string,
+    leadName: string,
+    assignedBy: string
+  ): Promise<string> {
+    return await this.sendNotification(
+      tenantId,
+      assigneeId,
+      "New Lead Assigned",
+      `You have been assigned a new lead: ${leadName}`,
+      "INFO",
+      "LEAD",
+      "LEAD_ASSIGNED",
+      "HIGH",
+      leadId,
+      {
+        leadName,
+        assignedBy,
+        assignedAt: new Date().toISOString(),
+      }
+    );
+  }
+
+  /**
+   * Send announcement to team members
+   */
+  async sendAnnouncement(
+    tenantId: string,
+    title: string,
+    message: string,
+    priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT" = "MEDIUM",
+    targetRoles?: string[],
+    targetUsers?: string[]
+  ): Promise<string[]> {
+    let userIds: string[] = [];
+
+    if (targetUsers && targetUsers.length > 0) {
+      // Send to specific users
+      userIds = targetUsers;
+    } else if (targetRoles && targetRoles.length > 0) {
+      // Send to users with specific roles
+      const users = await prisma.user.findMany({
+        where: {
+          tenantId,
+          role: { in: targetRoles as any[] },
+          isActive: true,
+        },
+        select: { id: true },
+      });
+      userIds = users.map((user) => user.id);
+    } else {
+      // Send to all active users in tenant
+      const users = await prisma.user.findMany({
+        where: {
+          tenantId,
+          isActive: true,
+        },
+        select: { id: true },
+      });
+      userIds = users.map((user) => user.id);
+    }
+
+    const notificationIds: string[] = [];
+    for (const userId of userIds) {
+      try {
+        const notificationId = await this.sendNotification(
+          tenantId,
+          userId,
+          title,
+          message,
+          "SYSTEM",
+          "ANNOUNCEMENT",
+          "ANNOUNCEMENT",
+          priority,
+          undefined,
+          {
+            announcementType: "TEAM_ANNOUNCEMENT",
+            sentAt: new Date().toISOString(),
+          }
+        );
+        notificationIds.push(notificationId);
+      } catch (error) {
+        console.error(`Failed to send announcement to user ${userId}:`, error);
+      }
+    }
+
+    return notificationIds;
+  }
+
+  /**
    * Get service status
    */
-  getStatus(): { initialized: boolean; connectedUsers: number } {
+  getStatus(): {
+    initialized: boolean;
+    connectedUsers: number;
+    sseConnections: number;
+  } {
     return {
       initialized: this.io !== null,
       connectedUsers: this.getConnectedUsersCount(),
+      sseConnections: this.sseConnections.size,
     };
   }
 }

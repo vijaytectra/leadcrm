@@ -10,6 +10,7 @@ import { z } from "zod";
 import multer from "multer";
 import * as XLSX from "xlsx";
 import { Readable } from "stream";
+import { notificationService } from "../lib/notifications";
 
 const router = Router();
 
@@ -1177,6 +1178,62 @@ router.post(
         },
       });
 
+      // Send real-time notification to assigned telecaller if assignee exists
+      if (leadData.assigneeId) {
+        try {
+          // Get the assignee details for the notification
+          const assignee = await prisma.user.findUnique({
+            where: { id: leadData.assigneeId },
+            select: { firstName: true, lastName: true, email: true },
+          });
+
+          // Get the admin who created the lead
+          const admin = await prisma.user.findUnique({
+            where: { id: req.auth!.sub },
+            select: { firstName: true, lastName: true },
+          });
+
+          const adminName = admin
+            ? `${admin.firstName} ${admin.lastName}`
+            : "Admin";
+
+          // Send notification to the assigned telecaller
+          await notificationService.sendNotification(
+            tenant.id,
+            leadData.assigneeId,
+            "New Lead Assigned",
+            `You have been assigned a new lead: ${leadData.name}${
+              leadData.phone ? ` (${leadData.phone})` : ""
+            }${leadData.email ? ` - ${leadData.email}` : ""}`,
+            "INFO",
+            "ASSIGNMENT",
+            "LEAD_ASSIGNED",
+            "URGENT",
+            lead.id,
+            {
+              leadName: leadData.name,
+              leadPhone: leadData.phone,
+              leadEmail: leadData.email,
+              leadSource: leadData.source,
+              leadScore: leadData.score,
+              assignedBy: adminName,
+              assignedAt: new Date().toISOString(),
+              actionUrl: `/telecaller/leads/${lead.id}`,
+            }
+          );
+
+          console.log(
+            `Lead assignment notification sent to telecaller: ${leadData.assigneeId}`
+          );
+        } catch (notificationError) {
+          console.error(
+            "Failed to send lead assignment notification:",
+            notificationError
+          );
+          // Don't fail the lead creation if notification fails
+        }
+      }
+
       res.status(201).json({
         success: true,
         message: "Lead created successfully",
@@ -1763,6 +1820,67 @@ router.post(
           },
         },
       });
+      // Send bulk assignment notifications
+      try {
+        // Get the admin who performed the assignment
+        const admin = await prisma.user.findUnique({
+          where: { id: req.auth!.sub },
+          select: { firstName: true, lastName: true },
+        });
+
+        const adminName = admin
+          ? `${admin.firstName} ${admin.lastName}`
+          : "Admin";
+
+        // Group assignments by telecaller
+        const assignmentsByTelecaller = assignments.reduce(
+          (acc, assignment) => {
+            if (!acc[assignment.assigneeId]) {
+              acc[assignment.assigneeId] = [];
+            }
+            acc[assignment.assigneeId].push(assignment.leadId);
+            return acc;
+          },
+          {} as Record<string, string[]>
+        );
+
+        // Send one summary notification per telecaller
+        for (const [telecallerId, leadIds] of Object.entries(
+          assignmentsByTelecaller
+        )) {
+          await notificationService.sendNotification(
+            tenant.id,
+            telecallerId,
+            "Bulk Lead Assignment",
+            `You have been assigned ${leadIds.length} new leads via ${config.algorithm} algorithm`,
+            "INFO",
+            "ASSIGNMENT",
+            "BULK_LEAD_ASSIGNMENT",
+            "HIGH",
+            undefined, // No specific lead ID for bulk
+            {
+              assignedCount: leadIds.length,
+              algorithm: config.algorithm,
+              assignedBy: adminName,
+              assignedAt: new Date().toISOString(),
+              leadIds: leadIds.slice(0, 5), // Include first 5 lead IDs for reference
+              actionUrl: `/telecaller/leads`,
+            }
+          );
+        }
+
+        console.log(
+          `Bulk assignment notifications sent to ${
+            Object.keys(assignmentsByTelecaller).length
+          } telecallers`
+        );
+      } catch (notificationError) {
+        console.error(
+          "Failed to send bulk assignment notifications:",
+          notificationError
+        );
+        // Don't fail the assignment if notification fails
+      }
 
       res.json({
         success: true,
@@ -1835,6 +1953,80 @@ router.post(
           tenantId: tenantRecord.id,
         },
       });
+      if (!existingLead) {
+        return res.status(404).json({
+          error: "Lead not found",
+          code: "LEAD_NOT_FOUND",
+        });
+      }
+      try {
+        // Get the admin who reassigned the lead
+        const admin = await prisma.user.findUnique({
+          where: { id: req.auth!.sub },
+          select: { firstName: true, lastName: true },
+        });
+
+        const adminName = admin
+          ? `${admin.firstName} ${admin.lastName}`
+          : "Admin";
+
+        // Notify the new assignee
+        await notificationService.sendNotification(
+          tenantRecord.id,
+          assigneeId,
+          "Lead Reassigned to You",
+          `You have been assigned lead: ${existingLead.name}${
+            existingLead.phone ? ` (${existingLead.phone})` : ""
+          }${existingLead.email ? ` - ${existingLead.email}` : ""}`,
+          "INFO",
+          "ASSIGNMENT",
+          "LEAD_REASSIGNED",
+          "URGENT",
+          id,
+          {
+            leadName: existingLead.name,
+            leadPhone: existingLead.phone,
+            leadEmail: existingLead.email,
+            leadSource: existingLead.source,
+            leadScore: existingLead.score,
+            assignedBy: adminName,
+            reason: reason || "No reason provided",
+            assignedAt: new Date().toISOString(),
+            actionUrl: `/telecaller/leads/${id}`,
+          }
+        );
+
+        // Notify the previous assignee if they exist
+        if (existingLead.assigneeId && existingLead.assigneeId !== assigneeId) {
+          await notificationService.sendNotification(
+            tenantRecord.id,
+            existingLead.assigneeId,
+            "Lead Reassigned",
+            `Lead ${existingLead.name} has been reassigned to another telecaller`,
+            "WARNING",
+            "ASSIGNMENT",
+            "LEAD_UNASSIGNED",
+            "MEDIUM",
+            id,
+            {
+              leadName: existingLead.name,
+              leadPhone: existingLead.phone,
+              leadEmail: existingLead.email,
+              reassignedBy: adminName,
+              reason: reason || "No reason provided",
+              reassignedAt: new Date().toISOString(),
+            }
+          );
+        }
+
+        console.log(`Lead reassignment notifications sent for lead: ${id}`);
+      } catch (notificationError) {
+        console.error(
+          "Failed to send lead reassignment notifications:",
+          notificationError
+        );
+        // Don't fail the reassignment if notification fails
+      }
 
       if (!existingLead) {
         return res.status(404).json({
@@ -1899,6 +2091,76 @@ router.post(
           newValues: { assigneeId, reason },
         },
       });
+
+      // Send real-time notifications for reassignment
+      try {
+        // Get the admin who reassigned the lead
+        const admin = await prisma.user.findUnique({
+          where: { id: req.auth!.sub },
+          select: { firstName: true, lastName: true },
+        });
+
+        const adminName = admin
+          ? `${admin.firstName} ${admin.lastName}`
+          : "Admin";
+
+        // Notify the new assignee
+        await notificationService.sendNotification(
+          tenantRecord.id,
+          assigneeId,
+          "Lead Reassigned to You",
+          `You have been assigned lead: ${existingLead.name}${
+            existingLead.phone ? ` (${existingLead.phone})` : ""
+          }${existingLead.email ? ` - ${existingLead.email}` : ""}`,
+          "INFO",
+          "ASSIGNMENT",
+          "LEAD_REASSIGNED",
+          "URGENT",
+          id,
+          {
+            leadName: existingLead.name,
+            leadPhone: existingLead.phone,
+            leadEmail: existingLead.email,
+            leadSource: existingLead.source,
+            leadScore: existingLead.score,
+            assignedBy: adminName,
+            reason: reason || "No reason provided",
+            assignedAt: new Date().toISOString(),
+            actionUrl: `/telecaller/leads/${id}`,
+          }
+        );
+
+        // Notify the previous assignee if they exist
+        if (existingLead.assigneeId && existingLead.assigneeId !== assigneeId) {
+          await notificationService.sendNotification(
+            tenantRecord.id,
+            existingLead.assigneeId,
+            "Lead Reassigned",
+            `Lead ${existingLead.name} has been reassigned to another telecaller`,
+            "WARNING",
+            "ASSIGNMENT",
+            "LEAD_UNASSIGNED",
+            "MEDIUM",
+            id,
+            {
+              leadName: existingLead.name,
+              leadPhone: existingLead.phone,
+              leadEmail: existingLead.email,
+              reassignedBy: adminName,
+              reason: reason || "No reason provided",
+              reassignedAt: new Date().toISOString(),
+            }
+          );
+        }
+
+        console.log(`Lead reassignment notifications sent for lead: ${id}`);
+      } catch (notificationError) {
+        console.error(
+          "Failed to send lead reassignment notifications:",
+          notificationError
+        );
+        // Don't fail the reassignment if notification fails
+      }
 
       res.json({
         success: true,

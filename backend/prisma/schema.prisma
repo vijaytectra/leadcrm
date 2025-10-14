@@ -166,6 +166,7 @@ model Lead {
     callLogs          CallLog[]
     followUpReminders FollowUpReminder[]
     sourceTracking    LeadSourceTracking?
+    notifications     Notification[]
 }
 
 enum LeadStatus {
@@ -552,27 +553,36 @@ model EmailQueue {
     @@index([priority])
 }
 
-// Notification model
+// Enhanced Notification model
 model Notification {
-    id        String   @id @default(cuid())
-    tenantId  String
-    userId    String
-    title     String
-    message   String
-    type      String   @default("INFO") // INFO, SUCCESS, WARNING, ERROR, SYSTEM
-    category  String   @default("GENERAL")
-    data      Json?
-    read      Boolean  @default(false)
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    id         String    @id @default(cuid())
+    tenantId   String
+    userId     String
+    title      String
+    message    String
+    type       String    @default("INFO") // INFO, SUCCESS, WARNING, ERROR, SYSTEM
+    category   String    @default("GENERAL") // LEAD, ANNOUNCEMENT, SYSTEM, PAYMENT, DOCUMENT, ADMISSION, FINANCE, COMMUNICATION, PERFORMANCE
+    actionType String? // LEAD_ASSIGNED, LEAD_UPDATED, ANNOUNCEMENT, SYSTEM_ALERT, etc.
+    priority   String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+    leadId     String? // Link to specific lead if applicable
+    data       Json? // Additional metadata
+    read       Boolean   @default(false)
+    readAt     DateTime?
+    createdAt  DateTime  @default(now())
+    updatedAt  DateTime  @updatedAt
 
     tenant Tenant @relation(fields: [tenantId], references: [id])
     user   User   @relation("NotificationUser", fields: [userId], references: [id])
+    lead   Lead?  @relation(fields: [leadId], references: [id])
 
     @@index([tenantId])
     @@index([userId])
     @@index([read])
     @@index([createdAt])
+    @@index([category])
+    @@index([actionType])
+    @@index([priority])
+    @@index([leadId])
 }
 
 // Audit and Activity Logging

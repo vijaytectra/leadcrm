@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { Search, Bell, User, Settings, LogOut, ChevronDown, Building2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, Bell, User, Settings, LogOut, ChevronDown } from "lucide-react";
 import { useAuthStore } from "@/stores/auth";
+import { useNotifications } from "@/hooks/useNotifications";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,6 +17,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
+import { NotificationToast } from "@/components/notifications/NotificationToast";
+import { Notification } from "@/types/notifications";
 
 export interface NotificationItem {
     id: string;
@@ -40,18 +43,25 @@ export interface BaseHeaderProps {
 
 export function BaseHeader({
     className,
-    title,
-    subtitle,
     searchPlaceholder = "Search...",
-    notifications = [],
     showSearch = true,
     showNotifications = true,
     showUserMenu = true,
     customActions,
 }: BaseHeaderProps) {
     const [searchQuery, setSearchQuery] = useState("");
-    const { logout, currentTenantSlug, user } = useAuthStore();
+    const [toastNotifications, setToastNotifications] = useState<Notification[]>([]);
+    const [isClient, setIsClient] = useState(false);
+    const { logout, user } = useAuthStore();
     const router = useRouter();
+
+    // Use real-time notifications (always call the hook, but conditionally use the data)
+    const { notifications: realTimeNotifications, stats, markAsRead } = useNotifications();
+
+    // Ensure we're on the client side
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
 
     const handleLogout = async () => {
         try {
@@ -62,14 +72,51 @@ export function BaseHeader({
         }
     };
 
-    const unreadCount = notifications.filter(n => n.unread).length;
+    // Show toast for new notifications (only on client side)
+    useEffect(() => {
+        if (isClient && realTimeNotifications.length > 0) {
+            const latestNotification = realTimeNotifications[0];
+            if (!latestNotification.read) {
+                setToastNotifications(prev => [latestNotification, ...prev.slice(0, 2)]);
+
+                // Auto-remove toast after 8 seconds
+                setTimeout(() => {
+                    setToastNotifications(prev => prev.filter(n => n.id !== latestNotification.id));
+                }, 8000);
+            }
+        }
+    }, [isClient, realTimeNotifications]);
+
+    const handleToastClose = (id: string) => {
+        setToastNotifications(prev => prev.filter(n => n.id !== id));
+    };
+
+    const handleToastMarkAsRead = async (id: string) => {
+        try {
+            await markAsRead(id);
+        } catch (error) {
+            console.error("Failed to mark notification as read:", error);
+        }
+    };
+
+    const handleToastNavigate = (notification: Notification) => {
+        if (notification.leadId) {
+            const basePath = user?.role === "TELECALLER" ? "/telecaller" : "/institution-admin";
+            router.push(`${basePath}/leads?leadId=${notification.leadId}`);
+        } else {
+            const basePath = user?.role === "TELECALLER" ? "/telecaller" : "/institution-admin";
+            router.push(`${basePath}/notifications`);
+        }
+    };
+
+    const unreadCount = isClient ? (stats?.unread || 0) : 0;
 
     return (
         <header className={`bg-white border-b border-gray-200 shadow-sm ${className}`}>
             <div className="flex items-center justify-between px-6 py-4">
                 {/* Left Section - Tenant Info and Search */}
                 <div className="flex items-center space-x-6 flex-1 max-w-3xl">
-                  
+
 
                     {/* Enhanced Search */}
                     {showSearch && (
@@ -121,34 +168,56 @@ export function BaseHeader({
                                     )}
                                 </DropdownMenuLabel>
                                 <div className="max-h-80 overflow-y-auto">
-                                    {notifications.map((notification) => (
+                                    {realTimeNotifications.slice(0, 5).map((notification) => (
                                         <DropdownMenuItem key={notification.id} className="p-0">
                                             <div className="w-full p-4 hover:bg-gray-50 transition-colors">
                                                 <div className="flex items-start space-x-3">
-                                                    <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 ${notification.unread ? 'bg-blue-500' : 'bg-gray-300'
+                                                    <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 ${!notification.read ? 'bg-blue-500' : 'bg-gray-300'
                                                         }`} />
                                                     <div className="flex-1 space-y-1">
                                                         <div className="flex items-center justify-between">
-                                                            <span className={`text-sm ${notification.unread ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'
+                                                            <span className={`text-sm ${!notification.read ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'
                                                                 }`}>
                                                                 {notification.title}
                                                             </span>
                                                             <span className="text-xs text-gray-500">
-                                                                {notification.time}
+                                                                {new Date(notification.createdAt).toLocaleString()}
                                                             </span>
                                                         </div>
                                                         <p className="text-sm text-gray-600 leading-relaxed">
                                                             {notification.message}
                                                         </p>
+                                                        <div className="flex items-center space-x-2">
+                                                            <Badge variant="outline" className="text-xs">
+                                                                {notification.category}
+                                                            </Badge>
+                                                            {notification.priority !== "MEDIUM" && (
+                                                                <Badge variant="secondary" className="text-xs">
+                                                                    {notification.priority}
+                                                                </Badge>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </DropdownMenuItem>
                                     ))}
+                                    {realTimeNotifications.length === 0 && (
+                                        <div className="p-4 text-center text-gray-500">
+                                            No notifications
+                                        </div>
+                                    )}
                                 </div>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem className="p-3 text-center">
-                                    <Button variant="ghost" className="w-full text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+                                    <Button
+                                        variant="ghost"
+                                        className="w-full text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                        onClick={() => {
+                                            const basePath = user?.role === "TELECALLER" ? "/telecaller" : "/institution-admin";
+                                            router.push(`${basePath}/notifications`);
+                                        }}
+                                    >
                                         View all notifications
                                     </Button>
                                 </DropdownMenuItem>
@@ -227,6 +296,21 @@ export function BaseHeader({
                         </DropdownMenu>
                     )}
                 </div>
+            </div>
+
+            {/* Toast Notifications */}
+            <div className="fixed bottom-4 right-4 z-50 space-y-2">
+                {toastNotifications.map((notification) => (
+                    <NotificationToast
+                        key={notification.id}
+                        notification={notification}
+                        onMarkAsRead={handleToastMarkAsRead}
+                        onNavigate={handleToastNavigate}
+                        onClose={handleToastClose}
+                        autoClose={true}
+                        duration={8000}
+                    />
+                ))}
             </div>
         </header>
     );

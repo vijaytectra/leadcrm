@@ -112,7 +112,6 @@ export function ConfirmationDialog({
         </Dialog>
     );
 }
-
 // Specialized dialog components for common use cases
 export function DeleteDialog({
     open,
