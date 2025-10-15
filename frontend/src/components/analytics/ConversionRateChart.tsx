@@ -51,7 +51,7 @@ export default function ConversionRateChart({ data }: ConversionRateChartProps) 
                     Conversion Rate
                 </CardTitle>
                 <CardDescription>
-                    Track how effectively you're converting leads
+                    Track how effectively you&apos;re converting leads
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -140,7 +140,7 @@ export default function ConversionRateChart({ data }: ConversionRateChartProps) 
                         <h4 className="font-medium text-blue-900 mb-2">Conversion Insights</h4>
                         <div className="text-sm text-blue-800">
                             {conversionRate >= 20 ? (
-                                <p>🎉 Excellent conversion rate! You're performing above industry average.</p>
+                                <p>🎉 Excellent conversion rate! You&apos;re performing above industry average.</p>
                             ) : conversionRate >= 10 ? (
                                 <p>👍 Good conversion rate. Consider optimizing your follow-up process.</p>
                             ) : (

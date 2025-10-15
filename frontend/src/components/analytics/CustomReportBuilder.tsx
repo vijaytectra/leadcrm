@@ -23,7 +23,7 @@ import {
     Save,
     Play
 } from 'lucide-react';
-import { apiPost, apiGet } from '@/lib/utils';
+import { apiPost, apiGet, ApiException } from '@/lib/utils';
 
 interface ReportTemplate {
     id: string;
@@ -96,8 +96,13 @@ export default function CustomReportBuilder({ onReportGenerated }: CustomReportB
             if (response.success) {
                 setSavedTemplates(response.data);
             }
-        } catch (err) {
-            console.error('Failed to load templates:', err);
+        } catch (error) {
+
+            if (error instanceof ApiException) {
+                console.error('Failed to load templates:', error.message);
+            } else {
+                console.error('Failed to load templates:', error);
+            }
         }
     };
 
@@ -155,8 +160,12 @@ export default function CustomReportBuilder({ onReportGenerated }: CustomReportB
             } else {
                 setError(response.error || 'Failed to save template');
             }
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'An error occurred');
+            } catch (error) {
+            if (error instanceof ApiException) {
+                setError(error.message || 'Failed to save template');
+            } else {
+                setError(error instanceof Error ? error.message : 'An error occurred');
+            }
         }
     };
 
@@ -174,11 +183,13 @@ export default function CustomReportBuilder({ onReportGenerated }: CustomReportB
             if (response.success) {
                 setSuccess('Report generated successfully!');
                 onReportGenerated?.(response.data);
+            } 
+        } catch (error) {
+            if (error instanceof ApiException) {
+                setError(error.message || 'Failed to generate report');
             } else {
-                setError(response.error || 'Failed to generate report');
+                setError(error instanceof Error ? error.message : 'An error occurred');
             }
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'An error occurred');
         } finally {
             setIsGenerating(false);
         }

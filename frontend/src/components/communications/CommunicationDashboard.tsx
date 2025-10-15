@@ -21,7 +21,7 @@ import {
 import { EmailTemplateManager } from "./EmailTemplateManager";
 import { NotificationCenter } from "./NotificationCenter";
 import { CommunicationStats } from "./CommunicationStats";
-import { apiGetClientNew } from "@/lib/utils";
+import { ApiException, apiGetClientNew } from "@/lib/utils";
 import { getClientToken } from "@/lib/client-token";
 
 interface CommunicationStats {
@@ -72,7 +72,13 @@ export function CommunicationDashboard({ tenantSlug }: CommunicationDashboardPro
             const data = await apiGetClientNew(`/${tenantSlug}/communications/stats`, { token: getClientToken() || undefined });
             setStats(data as CommunicationStats);
         } catch (error) {
+
             console.error("Error fetching communication stats:", error);
+            if (error instanceof ApiException) {
+                console.error("Error fetching communication stats:", error.message);
+            } else {
+                console.error("Error fetching communication stats:", error);
+            }
         } finally {
             setLoading(false);
         }

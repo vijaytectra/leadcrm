@@ -64,7 +64,7 @@ router.get(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -80,7 +80,7 @@ router.get(
 
         if (!user || user.tenant.slug !== tenantSlug) {
           return res.status(403).json({
-            error: "Access denied to this tenant",
+            message: "Access denied to this tenant",
             code: "TENANT_ACCESS_DENIED",
           });
         }
@@ -113,7 +113,7 @@ router.get(
     } catch (error) {
       console.error("Get users error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }
@@ -137,7 +137,7 @@ router.post(
 
       if (!validation.success) {
         return res.status(400).json({
-          error: "Validation failed",
+          message: "Validation failed",
           details: validation.error.issues,
           code: "VALIDATION_ERROR",
         });
@@ -152,7 +152,7 @@ router.post(
 
       if (!tenant) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -164,7 +164,7 @@ router.post(
 
       if (existingUser) {
         return res.status(409).json({
-          error: "User with this email already exists",
+          message: "User with this email already exists",
           code: "USER_EXISTS",
         });
       }
@@ -228,7 +228,7 @@ router.post(
     } catch (error) {
       console.error("Create user error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }
@@ -281,7 +281,7 @@ router.get(
 
       if (!user) {
         return res.status(404).json({
-          error: "User not found",
+          message: "User not found",
           code: "USER_NOT_FOUND",
         });
       }
@@ -290,7 +290,7 @@ router.get(
     } catch (error) {
       console.error("Get user error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }
@@ -314,7 +314,7 @@ router.put(
 
       if (!validation.success) {
         return res.status(400).json({
-          error: "Validation failed",
+          message: "Validation failed",
           details: validation.error.issues,
           code: "VALIDATION_ERROR",
         });
@@ -336,7 +336,7 @@ router.put(
 
       if (!existingUser) {
         return res.status(404).json({
-          error: "User not found",
+          message: "User not found",
           code: "USER_NOT_FOUND",
         });
       }
@@ -363,7 +363,7 @@ router.put(
     } catch (error) {
       console.error("Update user error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }
@@ -387,7 +387,7 @@ router.delete(
       // Prevent self-deletion
       if (req.auth?.sub === userId) {
         return res.status(400).json({
-          error: "Cannot deactivate your own account",
+          message: "Cannot deactivate your own account",
           code: "SELF_DELETE_NOT_ALLOWED",
         });
       }
@@ -406,7 +406,7 @@ router.delete(
 
       if (!existingUser) {
         return res.status(404).json({
-          error: "User not found",
+          message: "User not found",
           code: "USER_NOT_FOUND",
         });
       }
@@ -427,7 +427,7 @@ router.delete(
     } catch (error) {
       console.error("Delete user error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }

@@ -55,7 +55,7 @@ router.get(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found" , code: "TENANT_NOT_FOUND"});
       }
 
       const integrations = await prisma.integrationConfig.findMany({
@@ -105,7 +105,7 @@ router.get(
         },
       });
     } catch (error) {
-      res.status(500).json({ error: "Failed to fetch integrations" });
+      res.status(500).json({ message: "Failed to fetch integrations" , code: "INTERNAL_ERROR"});
     }
   }
 );
@@ -130,13 +130,14 @@ router.post(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found" , code: "TENANT_NOT_FOUND"});
       }
 
       const validation = createIntegrationSchema.safeParse(req.body);
       if (!validation.success) {
         return res.status(400).json({
-          error: "Validation error",
+          message: "Validation error",
+          code: "VALIDATION_ERROR",
           details: validation.error.issues,
         });
       }
@@ -164,9 +165,9 @@ router.post(
       });
     } catch (error) {
       if (error instanceof Error && error.message.includes("Maximum")) {
-        return res.status(400).json({ error: error.message });
+        return res.status(400).json({ message: error.message , code: "MAXIMUM_INTEGRATIONS"});
       }
-      res.status(500).json({ error: "Failed to create integration" });
+      res.status(500).json({ message: "Failed to create integration" , code: "INTERNAL_ERROR"});
     }
   }
 );
@@ -192,13 +193,14 @@ router.put(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found" , code: "TENANT_NOT_FOUND"});
       }
 
       const validation = updateIntegrationSchema.safeParse(req.body);
       if (!validation.success) {
         return res.status(400).json({
-          error: "Validation error",
+          message: "Validation error",
+          code: "VALIDATION_ERROR",
           details: validation.error.issues,
         });
       }
@@ -218,7 +220,7 @@ router.put(
         data: integration,
       });
     } catch (error) {
-      res.status(500).json({ error: "Failed to update integration" });
+      res.status(500).json({ message: "Failed to update integration" , code: "INTERNAL_ERROR"});
     }
   }
 );
@@ -244,7 +246,7 @@ router.delete(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found" , code: "TENANT_NOT_FOUND"});
       }
 
       await prisma.integrationConfig.delete({
@@ -259,7 +261,7 @@ router.delete(
         message: "Integration deleted successfully",
       });
     } catch (error) {
-      res.status(500).json({ error: "Failed to delete integration" });
+      res.status(500).json({ message: "Failed to delete integration" , code: "INTERNAL_ERROR"});
     }
   }
 );
@@ -279,7 +281,7 @@ router.post("/webhooks/leads/:tenantSlug/:platform", async (req, res) => {
     });
 
     if (!tenant) {
-      return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found" , code: "TENANT_NOT_FOUND"});
     }
 
     const integration = await prisma.integrationConfig.findFirst({
@@ -293,7 +295,7 @@ router.post("/webhooks/leads/:tenantSlug/:platform", async (req, res) => {
     if (!integration) {
       return res
         .status(404)
-        .json({ error: "Integration not found or inactive" });
+        .json({ message: "Integration not found or inactive" , code: "INTEGRATION_NOT_FOUND"});
     }
 
     let leads: WebhookLeadData[] = [];
@@ -310,7 +312,7 @@ router.post("/webhooks/leads/:tenantSlug/:platform", async (req, res) => {
         leads = [linkedInIntegration.parseWebhookPayload(req.body)];
         break;
       default:
-        return res.status(400).json({ error: "Unsupported platform" });
+        return res.status(400).json({ message: "Unsupported platform" , code: "UNSUPPORTED_PLATFORM"});
     }
 
     // Process each lead
@@ -335,7 +337,7 @@ router.post("/webhooks/leads/:tenantSlug/:platform", async (req, res) => {
       message: `Processed ${created} lead(s), ${failed} failed`,
     });
   } catch (error) {
-    res.status(500).json({ error: "Failed to process webhook" });
+    res.status(500).json({ message: "Failed to process webhook" , code: "INTERNAL_ERROR"});
   }
 });
 
@@ -352,7 +354,7 @@ router.get("/webhooks/leads/:tenantSlug/meta", async (req, res) => {
   if (mode === "subscribe" && token === verifyToken) {
     res.status(200).send(challenge);
   } else {
-    res.status(403).json({ error: "Verification failed" });
+      res.status(403).json({ message: "Verification failed" , code: "VERIFICATION_FAILED"});
   }
 });
 

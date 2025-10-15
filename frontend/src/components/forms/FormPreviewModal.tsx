@@ -31,6 +31,7 @@ import { StepBasedFormPreview } from "./StepBasedFormPreview";
 import { getVisibleFields } from "@/lib/conditional-logic";
 import { toast } from "sonner";
 import type { FormField } from "@/types/form-builder";
+import { ApiException } from "@/lib/utils";
 
 interface FormPreviewModalProps {
     onClose: () => void;
@@ -67,9 +68,17 @@ export function FormPreviewModal({ onClose }: FormPreviewModalProps) {
             await new Promise(resolve => setTimeout(resolve, 1000));
             toast.success("Form submitted successfully!");
             onClose();
-        } catch {
-            toast.error("Failed to submit form");
-        } finally {
+        } catch (error) {
+            console.error("Error fetching preferences:", error);
+            if (error instanceof ApiException) {
+                console.error("Error fetching preferences:", error.message);
+                toast.error(error.message);
+            } else {
+                console.error("Error fetching preferences:", error);
+                toast.error("Failed to submit form");
+            }
+        } 
+        finally {
             setIsSubmitting(false);
         }
     };

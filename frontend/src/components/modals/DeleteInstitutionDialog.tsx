@@ -64,7 +64,7 @@ export const DeleteInstitutionDialog: React.FC<DeleteInstitutionDialogProps> = (
             onClose();
         } catch (error) {
             console.error("Error deleting institution:", error);
-            toast.error("Failed to delete institution", {
+            toast.error(error instanceof Error ? error.message : "Failed to delete institution", {
                 description: error instanceof Error ? error.message : "Please try again later"
             });
         } finally {

@@ -161,7 +161,7 @@ router.post(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -174,7 +174,7 @@ router.post(
 
       if (!tenant) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -182,7 +182,7 @@ router.post(
       const validation = createFormSchema.safeParse(req.body);
       if (!validation.success) {
         return res.status(400).json({
-          error: "Validation failed",
+          message: "Validation failed",
           details: validation.error.issues,
           code: "VALIDATION_ERROR",
         });
@@ -216,7 +216,7 @@ router.post(
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
-        error: formError.message,
+        message: formError.message,
         code: formError.code,
       });
     }
@@ -235,7 +235,7 @@ router.get(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -248,7 +248,7 @@ router.get(
 
       if (!tenant) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -293,7 +293,7 @@ router.get(
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
-        error: formError.message,
+        message: formError.message,
         code: formError.code,
       });
     }
@@ -313,7 +313,7 @@ router.get(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -326,7 +326,7 @@ router.get(
 
       if (!tenantRecord) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -344,7 +344,7 @@ router.get(
       const formError = error as FormBuilderError;
       res.status(404).json({
         success: false,
-        error: formError.message,
+        message: formError.message,
         code: formError.code,
       });
     }
@@ -364,7 +364,7 @@ router.put(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -377,7 +377,7 @@ router.put(
 
       if (!tenantRecord) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -385,7 +385,7 @@ router.put(
       const validation = updateFormSchema.safeParse(req.body);
       if (!validation.success) {
         return res.status(400).json({
-          error: "Validation failed",
+          message: "Validation failed",
           details: validation.error.issues,
           code: "VALIDATION_ERROR",
         });
@@ -423,7 +423,7 @@ router.put(
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
-        error: formError.message,
+        message: formError.message,
         code: formError.code,
       });
     }
@@ -442,7 +442,7 @@ router.delete(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -455,7 +455,7 @@ router.delete(
 
       if (!tenantRecord) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -482,7 +482,7 @@ router.delete(
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
-        error: formError.message,
+        message: formError.message,
         code: formError.code,
       });
     }
@@ -503,7 +503,7 @@ router.post(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -516,7 +516,7 @@ router.post(
 
       if (!tenantRecord) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -524,7 +524,7 @@ router.post(
       const validation = createFieldSchema.safeParse(req.body);
       if (!validation.success) {
         return res.status(400).json({
-          error: "Validation failed",
+          message: "Validation failed",
           details: validation.error.issues,
           code: "VALIDATION_ERROR",
         });
@@ -565,7 +565,7 @@ router.post(
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
-        error: formError.message,
+        message: formError.message,
         code: formError.code,
       });
     }
@@ -585,7 +585,7 @@ router.get(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -598,7 +598,7 @@ router.get(
 
       if (!tenantRecord) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -622,7 +622,7 @@ router.get(
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
-        error: formError.message,
+        message: formError.message,
         code: formError.code,
       });
     }
@@ -642,7 +642,7 @@ router.put(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -655,7 +655,7 @@ router.put(
 
       if (!tenantRecord) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -663,7 +663,7 @@ router.put(
       const validation = updateFieldSchema.safeParse(req.body);
       if (!validation.success) {
         return res.status(400).json({
-          error: "Validation failed",
+          message: "Validation failed",
           details: validation.error.issues,
           code: "VALIDATION_ERROR",
         });
@@ -706,7 +706,7 @@ router.put(
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
-        error: formError.message,
+        message: formError.message,
         code: formError.code,
       });
     }
@@ -726,7 +726,7 @@ router.delete(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -739,7 +739,7 @@ router.delete(
 
       if (!tenantRecord) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -766,7 +766,7 @@ router.delete(
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
-        error: formError.message,
+        message: formError.message,
         code: formError.code,
       });
     }
@@ -812,7 +812,7 @@ router.post("/:formId/submit", async (req: Request, res: Response) => {
     const formError = error as FormBuilderError;
     res.status(400).json({
       success: false,
-      error: formError.message,
+      message: formError.message,
       code: formError.code,
     });
   }
@@ -847,7 +847,7 @@ router.get(
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
-        error: formError.message,
+        message: formError.message,
         code: formError.code,
       });
     }
@@ -882,7 +882,7 @@ router.post(
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
-        error: formError.message,
+        message: formError.message,
         code: formError.code,
       });
     }
@@ -916,7 +916,7 @@ router.get(
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
-        error: formError.message,
+        message: formError.message,
         code: formError.code,
       });
     }
@@ -937,7 +937,7 @@ router.post(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -950,7 +950,7 @@ router.post(
 
       if (!tenantRecord) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -986,7 +986,7 @@ router.post(
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
-        error: formError.message,
+        message: formError.message,
         code: formError.code,
       });
     }
@@ -1006,7 +1006,7 @@ router.get(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -1019,7 +1019,7 @@ router.get(
 
       if (!tenantRecord) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -1043,7 +1043,7 @@ router.get(
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
-        error: formError.message,
+        message: formError.message,
         code: formError.code,
       });
     }
@@ -1063,7 +1063,7 @@ router.put(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -1076,7 +1076,7 @@ router.put(
 
       if (!tenantRecord) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -1113,7 +1113,7 @@ router.put(
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
-        error: formError.message,
+        message: formError.message,
         code: formError.code,
       });
     }
@@ -1133,7 +1133,7 @@ router.delete(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -1146,7 +1146,7 @@ router.delete(
 
       if (!tenantRecord) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -1173,7 +1173,7 @@ router.delete(
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
-        error: formError.message,
+        message: formError.message,
         code: formError.code,
       });
     }
@@ -1194,7 +1194,7 @@ router.post(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -1207,7 +1207,7 @@ router.post(
 
       if (!tenantRecord) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -1259,7 +1259,7 @@ router.post(
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
-        error: formError.message,
+        message: formError.message,
         code: formError.code,
       });
     }
@@ -1285,7 +1285,7 @@ router.get("/templates", async (req: Request, res: Response) => {
     const formError = error as FormBuilderError;
     res.status(400).json({
       success: false,
-      error: formError.message,
+      message: formError.message,
       code: formError.code,
     });
   }
@@ -1312,7 +1312,7 @@ router.post(
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
-        error: formError.message,
+        message: formError.message,
         code: formError.code,
       });
     }

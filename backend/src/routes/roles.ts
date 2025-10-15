@@ -70,7 +70,7 @@ router.get(
     } catch (error) {
       console.error("Error fetching permissions:", error);
       res.status(500).json({
-        error: "Failed to fetch permissions",
+        message: "Failed to fetch permissions",
         code: "FETCH_PERMISSIONS_ERROR",
       });
     }
@@ -102,7 +102,7 @@ router.get(
     } catch (error) {
       console.error("Error fetching role permissions:", error);
       res.status(500).json({
-        error: "Failed to fetch role permissions",
+        message: "Failed to fetch role permissions",
         code: "FETCH_ROLE_PERMISSIONS_ERROR",
       });
     }
@@ -118,7 +118,7 @@ router.post("/roles/assign", requireAuth, async (req: AuthedRequest, res) => {
     const validation = assignRoleSchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({
-        error: "Validation failed",
+        message: "Validation failed",
         details: validation.error.issues,
         code: "VALIDATION_ERROR",
       });
@@ -137,7 +137,7 @@ router.post("/roles/assign", requireAuth, async (req: AuthedRequest, res) => {
 
     if (!user) {
       return res.status(404).json({
-        error: "User not found",
+        message: "User not found",
         code: "USER_NOT_FOUND",
       });
     }
@@ -177,7 +177,7 @@ router.post("/roles/assign", requireAuth, async (req: AuthedRequest, res) => {
   } catch (error) {
     console.error("Error assigning role:", error);
     res.status(500).json({
-      error: "Failed to assign role",
+      message: "Failed to assign role",
       code: "ASSIGN_ROLE_ERROR",
     });
   }
@@ -195,7 +195,7 @@ router.put(
       const validation = updatePermissionsSchema.safeParse(req.body);
       if (!validation.success) {
         return res.status(400).json({
-          error: "Validation failed",
+          message: "Validation failed",
           details: validation.error.issues,
           code: "VALIDATION_ERROR",
         });
@@ -210,7 +210,7 @@ router.put(
 
       if (permissions.length !== permissionIds.length) {
         return res.status(400).json({
-          error: "One or more permissions not found",
+          message: "One or more permissions not found",
           code: "INVALID_PERMISSIONS",
         });
       }
@@ -249,7 +249,7 @@ router.put(
     } catch (error) {
       console.error("Error updating role permissions:", error);
       res.status(500).json({
-        error: "Failed to update role permissions",
+        message: "Failed to update role permissions",
         code: "UPDATE_ROLE_PERMISSIONS_ERROR",
       });
     }
@@ -287,7 +287,7 @@ router.get("/roles/users", requireAuth, async (req: AuthedRequest, res) => {
   } catch (error) {
     console.error("Error fetching users:", error);
     res.status(500).json({
-      error: "Failed to fetch users",
+      message: "Failed to fetch users",
       code: "FETCH_USERS_ERROR",
     });
   }

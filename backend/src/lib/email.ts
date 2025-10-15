@@ -74,6 +74,18 @@ export interface UserInvitationEmail {
   supportEmail: string;
 }
 
+export interface StudentCredentials {
+  studentName: string;
+  studentEmail: string;
+  studentPassword: string;
+  institutionName: string;
+  institutionSlug: string;
+  loginUrl: string;
+  supportEmail: string;
+  applicationId: string;
+  courseName?: string;
+}
+
 class EmailService {
   private isConfigured = false;
   private fromEmail: string = "";
@@ -593,6 +605,129 @@ class EmailService {
     `;
 
     return await this.sendEmailInternal(data.userEmail, subject, html, text);
+  }
+
+  /**
+   * Send student credentials email
+   */
+  async sendStudentCredentials(data: StudentCredentials): Promise<boolean> {
+    const subject = `Welcome to ${data.institutionName} - Your Student Portal Access`;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Welcome to ${data.institutionName}</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: #2563eb; color: white; padding: 20px; text-align: center; }
+          .content { padding: 20px; background: #f9fafb; }
+          .credentials { background: #e5e7eb; padding: 15px; border-radius: 5px; margin: 15px 0; }
+          .button { display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 15px 0; }
+          .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 14px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Welcome to ${data.institutionName}</h1>
+            <p>Your student portal access is ready!</p>
+          </div>
+          
+          <div class="content">
+            <h2>Hello ${data.studentName}!</h2>
+            
+            <p>Congratulations! Your application has been accepted and you now have access to your student portal.</p>
+            
+            <div class="credentials">
+              <h3>Your Student Portal Credentials:</h3>
+              <p><strong>Institution:</strong> ${data.institutionName}</p>
+              <p><strong>Email:</strong> ${data.studentEmail}</p>
+              <p><strong>Password:</strong> ${data.studentPassword}</p>
+              <p><strong>Application ID:</strong> ${data.applicationId}</p>
+              ${
+                data.courseName
+                  ? `<p><strong>Course:</strong> ${data.courseName}</p>`
+                  : ""
+              }
+              <p><strong>Login URL:</strong> <a href="${data.loginUrl}">${
+      data.loginUrl
+    }</a></p>
+            </div>
+            
+            <p><strong>Important:</strong> Please change your password after your first login for security purposes.</p>
+            
+            <div style="text-align: center;">
+              <a href="${
+                data.loginUrl
+              }" class="button">Access Student Portal</a>
+            </div>
+            
+            <h3>What You Can Do in Your Portal:</h3>
+            <ul>
+              <li>View your application status</li>
+              <li>Upload required documents</li>
+              <li>Track your admission progress</li>
+              <li>Communicate with the admission team</li>
+              <li>View your offer letter (when available)</li>
+              <li>Make payments online</li>
+            </ul>
+            
+            <h3>Need Help?</h3>
+            <p>If you have any questions or need assistance, please contact our support team at <a href="mailto:${
+              data.supportEmail
+            }">${data.supportEmail}</a></p>
+          </div>
+          
+          <div class="footer">
+            <p>This email was sent by ${
+              data.institutionName
+            } - Your Education Partner</p>
+            <p>© 2025 ${data.institutionName}. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const text = `
+      Welcome to ${data.institutionName} - Your Student Portal Access
+      
+      Hello ${data.studentName}!
+      
+      Congratulations! Your application has been accepted and you now have access to your student portal.
+      
+      Your Student Portal Credentials:
+      Institution: ${data.institutionName}
+      Email: ${data.studentEmail}
+      Password: ${data.studentPassword}
+      Application ID: ${data.applicationId}
+      ${data.courseName ? `Course: ${data.courseName}` : ""}
+      Login URL: ${data.loginUrl}
+      
+      Important: Please change your password after your first login for security purposes.
+      
+      What You Can Do in Your Portal:
+      - View your application status
+      - Upload required documents
+      - Track your admission progress
+      - Communicate with the admission team
+      - View your offer letter (when available)
+      - Make payments online
+      
+      Need Help?
+      If you have any questions or need assistance, please contact our support team at ${
+        data.supportEmail
+      }
+      
+      This email was sent by ${data.institutionName} - Your Education Partner
+      © 2025 ${data.institutionName}. All rights reserved.
+    `;
+
+    return await this.sendEmailInternal(data.studentEmail, subject, html, text);
   }
 
   /**

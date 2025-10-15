@@ -7,6 +7,7 @@ import {
   requireRole,
 } from "../middleware/auth";
 import type { AuthedRequest } from "../middleware/auth";
+import { CommunicationStatus } from "@prisma/client";
 
 const router = Router();
 
@@ -74,7 +75,9 @@ router.get(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res
+          .status(404)
+          .json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       // Get dashboard statistics
@@ -144,7 +147,9 @@ router.get(
       });
     } catch (error) {
       console.error("Error fetching admission team dashboard:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res
+        .status(500)
+        .json({ message: "Internal server error", code: "INTERNAL_ERROR" });
     }
   }
 );
@@ -165,7 +170,9 @@ router.get(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res
+          .status(404)
+          .json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       const where: any = { tenantId: tenant.id };
@@ -227,7 +234,9 @@ router.get(
       });
     } catch (error) {
       console.error("Error fetching applications:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res
+        .status(500)
+        .json({ message: "Internal server error", code: "INTERNAL_ERROR" });
     }
   }
 );
@@ -247,7 +256,9 @@ router.get(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res
+          .status(404)
+          .json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       const application = await prisma.application.findFirst({
@@ -308,13 +319,18 @@ router.get(
       });
 
       if (!application) {
-        return res.status(404).json({ error: "Application not found" });
+        return res.status(404).json({
+          message: "Application not found",
+          code: "APPLICATION_NOT_FOUND",
+        });
       }
 
       res.json(application);
     } catch (error) {
       console.error("Error fetching application details:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res
+        .status(500)
+        .json({ message: "Internal server error", code: "INTERNAL_ERROR" });
     }
   }
 );
@@ -335,7 +351,9 @@ router.post(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res
+          .status(404)
+          .json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       // Check if application exists
@@ -347,7 +365,10 @@ router.post(
       });
 
       if (!application) {
-        return res.status(404).json({ error: "Application not found" });
+        return res.status(404).json({
+          message: "Application not found",
+          code: "APPLICATION_NOT_FOUND",
+        });
       }
 
       // Create or update admission review
@@ -355,15 +376,19 @@ router.post(
         where: { applicationId: id },
         update: {
           ...body,
-          reviewerId: req.user!.id,
+          reviewerId: req.auth!.sub,
           reviewedAt: new Date(),
           status: "COMPLETED",
         },
         create: {
           tenantId: tenant.id,
           applicationId: id,
-          reviewerId: req.user!.id,
-          ...body,
+          reviewerId: req.auth!.sub,
+          interviewNotes: body.interviewNotes,
+          academicScore: body.academicScore,
+          recommendations: body.recommendations,
+          decision: body.decision,
+          decisionReason: body.decisionReason,
           reviewedAt: new Date(),
           status: "COMPLETED",
         },
@@ -383,10 +408,12 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+          .json({ message: "Validation error", details: error.issues });
       }
       console.error("Error creating admission review:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res
+        .status(500)
+        .json({ message: "Internal server error", code: "INTERNAL_ERROR" });
     }
   }
 );
@@ -406,7 +433,9 @@ router.get(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res
+          .status(404)
+          .json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       const communications = await prisma.communication.findMany({
@@ -429,7 +458,9 @@ router.get(
       res.json(communications);
     } catch (error) {
       console.error("Error fetching communications:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res
+        .status(500)
+        .json({ message: "Internal server error", code: "INTERNAL_ERROR" });
     }
   }
 );
@@ -450,7 +481,9 @@ router.post(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res
+          .status(404)
+          .json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       // Get applications
@@ -468,7 +501,10 @@ router.post(
       });
 
       if (applications.length !== body.applicationIds.length) {
-        return res.status(400).json({ error: "Some applications not found" });
+        return res.status(400).json({
+          message: "Some applications not found",
+          code: "APPLICATIONS_NOT_FOUND",
+        });
       }
 
       // Create communications for each application
@@ -481,8 +517,8 @@ router.post(
               type: body.type,
               subject: body.subject,
               content: body.message,
-              senderId: req.user!.id,
-              status: "PENDING",
+              senderId: req.auth!.sub,
+              status: "PENDING" as CommunicationStatus,
             },
           })
         )
@@ -496,10 +532,12 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+          .json({ message: "Validation error", details: error.issues });
       }
       console.error("Error creating bulk communication:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res
+        .status(500)
+        .json({ message: "Internal server error", code: "INTERNAL_ERROR" });
     }
   }
 );
@@ -520,7 +558,9 @@ router.get(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res
+          .status(404)
+          .json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       const where: any = { tenantId: tenant.id };
@@ -565,7 +605,9 @@ router.get(
       res.json(appointments);
     } catch (error) {
       console.error("Error fetching appointments:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res
+        .status(500)
+        .json({ message: "Internal server error", code: "INTERNAL_ERROR" });
     }
   }
 );
@@ -586,14 +628,16 @@ router.post(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res
+          .status(404)
+          .json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       const appointment = await prisma.appointment.create({
         data: {
           tenantId: tenant.id,
           applicationId: body.applicationId,
-          assigneeId: req.user!.id,
+          assigneeId: req.auth!.sub,
           studentName: body.studentName,
           studentEmail: body.studentEmail,
           studentPhone: body.studentPhone,
@@ -624,10 +668,12 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+          .json({ message: "Validation error", details: error.issues });
       }
       console.error("Error creating appointment:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res
+        .status(500)
+        .json({ message: "Internal server error", code: "INTERNAL_ERROR" });
     }
   }
 );
@@ -648,7 +694,9 @@ router.put(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res
+          .status(404)
+          .json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       const appointment = await prisma.appointment.findFirst({
@@ -660,7 +708,10 @@ router.put(
       });
 
       if (!appointment) {
-        return res.status(404).json({ error: "Appointment not found" });
+        return res.status(404).json({
+          message: "Appointment not found",
+          code: "APPOINTMENT_NOT_FOUND",
+        });
       }
 
       const updateData: any = { ...body };
@@ -694,10 +745,12 @@ router.put(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+          .json({ message: "Validation error", details: error.issues });
       }
       console.error("Error updating appointment:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res
+        .status(500)
+        .json({ message: "Internal server error", code: "INTERNAL_ERROR" });
     }
   }
 );

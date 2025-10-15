@@ -61,7 +61,7 @@ router.get(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -84,7 +84,7 @@ router.get(
 
       if (!tenant) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -129,7 +129,7 @@ router.get(
     } catch (error) {
       console.error("Get settings error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }
@@ -153,7 +153,7 @@ router.put(
 
       if (!validation.success) {
         return res.status(400).json({
-          error: "Validation failed",
+          message: "Validation failed",
           details: validation.error.issues,
           code: "VALIDATION_ERROR",
         });
@@ -169,7 +169,7 @@ router.put(
 
       if (!tenant) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -231,7 +231,7 @@ router.put(
     } catch (error) {
       console.error("Update settings error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }

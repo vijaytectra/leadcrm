@@ -42,7 +42,7 @@ router.get(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found",code: "TENANT_NOT_FOUND" });
       }
 
       const application = await prisma.application.findFirst({
@@ -106,7 +106,7 @@ router.get(
       });
 
       if (!application) {
-        return res.status(404).json({ error: "Application not found" });
+        return res.status(404).json({ message: "Application not found",code: "APPLICATION_NOT_FOUND" });
       }
 
       // Calculate progress
@@ -172,7 +172,7 @@ router.get(
       });
     } catch (error) {
       console.error("Error fetching application:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error",code: "INTERNAL_SERVER_ERROR" });
     }
   }
 );
@@ -192,7 +192,7 @@ router.get(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found",code: "TENANT_NOT_FOUND" });
       }
 
       // Verify application belongs to tenant
@@ -204,7 +204,7 @@ router.get(
       });
 
       if (!application) {
-        return res.status(404).json({ error: "Application not found" });
+        return res.status(404).json({ message: "Application not found",code: "APPLICATION_NOT_FOUND" });
       }
 
       const documents = await prisma.document.findMany({
@@ -236,7 +236,7 @@ router.get(
       res.json(documents);
     } catch (error) {
       console.error("Error fetching documents:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error",code: "INTERNAL_SERVER_ERROR" });
     }
   }
 );
@@ -257,7 +257,7 @@ router.post(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found",code: "TENANT_NOT_FOUND" });
       }
 
       // Verify application belongs to tenant
@@ -269,7 +269,7 @@ router.post(
       });
 
       if (!application) {
-        return res.status(404).json({ error: "Application not found" });
+        return res.status(404).json({ message: "Application not found",code: "APPLICATION_NOT_FOUND" });
       }
 
       const document = await prisma.document.create({
@@ -289,10 +289,10 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+          .json({ message: "Validation error", details: error.issues,code: "VALIDATION_ERROR" });
       }
       console.error("Error uploading document:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error",code: "INTERNAL_SERVER_ERROR" });
     }
   }
 );
@@ -312,7 +312,7 @@ router.get(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found",code: "TENANT_NOT_FOUND" });
       }
 
       // Verify application belongs to tenant
@@ -324,7 +324,7 @@ router.get(
       });
 
       if (!application) {
-        return res.status(404).json({ error: "Application not found" });
+          return res.status(404).json({ message: "Application not found",code: "APPLICATION_NOT_FOUND" });
       }
 
       const payments = await prisma.payment.findMany({
@@ -364,7 +364,7 @@ router.get(
       });
     } catch (error) {
       console.error("Error fetching payments:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error",code: "INTERNAL_SERVER_ERROR" });
     }
   }
 );
@@ -384,7 +384,7 @@ router.get(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found",code: "TENANT_NOT_FOUND" });
       }
 
       // Verify application belongs to tenant
@@ -396,7 +396,7 @@ router.get(
       });
 
       if (!application) {
-        return res.status(404).json({ error: "Application not found" });
+        return res.status(404).json({ message: "Application not found",code: "APPLICATION_NOT_FOUND" });
       }
 
       const communications = await prisma.communication.findMany({
@@ -496,7 +496,7 @@ router.post(
           applicationId: body.applicationId,
           paymentId: body.paymentId,
           studentName: application.studentName,
-          studentEmail: application.studentEmail,
+          studentEmail: application.studentEmail || "",
           studentPhone: application.studentPhone,
           amount: body.amount,
           reason: body.reason,
@@ -510,10 +510,10 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+            .json({ message: "Validation error", details: error.issues,code: "VALIDATION_ERROR" });
       }
       console.error("Error creating refund request:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error",code: "INTERNAL_SERVER_ERROR" });
     }
   }
 );
@@ -533,7 +533,7 @@ router.get(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found",code: "TENANT_NOT_FOUND" });
       }
 
       // Verify application belongs to tenant
@@ -545,7 +545,7 @@ router.get(
       });
 
       if (!application) {
-        return res.status(404).json({ error: "Application not found" });
+        return res.status(404).json({ message: "Application not found",code: "APPLICATION_NOT_FOUND" });
       }
 
       const offerLetter = await prisma.offerLetter.findUnique({
@@ -568,13 +568,13 @@ router.get(
       });
 
       if (!offerLetter) {
-        return res.status(404).json({ error: "Offer letter not found" });
+        return res.status(404).json({ message: "Offer letter not found",code: "OFFER_LETTER_NOT_FOUND" });
       }
 
       res.json(offerLetter);
     } catch (error) {
       console.error("Error fetching offer letter:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error",code: "INTERNAL_SERVER_ERROR" });
     }
   }
 );
@@ -594,7 +594,7 @@ router.post(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found",code: "TENANT_NOT_FOUND" });
       }
 
       // Verify application belongs to tenant
@@ -606,7 +606,7 @@ router.post(
       });
 
       if (!application) {
-        return res.status(404).json({ error: "Application not found" });
+        return res.status(404).json({ message: "Application not found",code: "APPLICATION_NOT_FOUND" });
       }
 
       const offerLetter = await prisma.offerLetter.findUnique({
@@ -614,17 +614,17 @@ router.post(
       });
 
       if (!offerLetter) {
-        return res.status(404).json({ error: "Offer letter not found" });
+          return res.status(404).json({ message: "Offer letter not found",code: "OFFER_LETTER_NOT_FOUND" });
       }
 
       if (offerLetter.status === "ACCEPTED") {
-        return res.status(400).json({ error: "Offer letter already accepted" });
+        return res.status(400).json({ message: "Offer letter already accepted",code: "OFFER_LETTER_ALREADY_ACCEPTED" });
       }
 
       if (offerLetter.status === "DECLINED") {
         return res
           .status(400)
-          .json({ error: "Offer letter has been declined" });
+          .json({ message: "Offer letter has been declined",code: "OFFER_LETTER_HAS_BEEN_DECLINED" });
       }
 
       // Update offer letter status
@@ -646,7 +646,7 @@ router.post(
       res.json(updatedOfferLetter);
     } catch (error) {
       console.error("Error accepting offer letter:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error",code: "INTERNAL_SERVER_ERROR" });
     }
   }
 );
@@ -667,7 +667,7 @@ router.post(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found",code: "TENANT_NOT_FOUND" });
       }
 
       // Verify application belongs to tenant
@@ -679,7 +679,7 @@ router.post(
       });
 
       if (!application) {
-        return res.status(404).json({ error: "Application not found" });
+        return res.status(404).json({ message: "Application not found",code: "APPLICATION_NOT_FOUND" });
       }
 
       const offerLetter = await prisma.offerLetter.findUnique({
@@ -687,17 +687,17 @@ router.post(
       });
 
       if (!offerLetter) {
-        return res.status(404).json({ error: "Offer letter not found" });
+        return res.status(404).json({ message: "Offer letter not found",code: "OFFER_LETTER_NOT_FOUND" });
       }
 
       if (offerLetter.status === "DECLINED") {
-        return res.status(400).json({ error: "Offer letter already declined" });
+        return res.status(400).json({ message: "Offer letter already declined",code: "OFFER_LETTER_ALREADY_DECLINED" });
       }
 
       if (offerLetter.status === "ACCEPTED") {
         return res
           .status(400)
-          .json({ error: "Offer letter has been accepted" });
+          .json({ message: "Offer letter has been accepted",code: "OFFER_LETTER_HAS_BEEN_ACCEPTED" });
       }
 
       // Update offer letter status
@@ -713,7 +713,7 @@ router.post(
       res.json(updatedOfferLetter);
     } catch (error) {
       console.error("Error declining offer letter:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error",code: "INTERNAL_SERVER_ERROR" });
     }
   }
 );

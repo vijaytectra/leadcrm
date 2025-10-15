@@ -28,6 +28,7 @@ import {
 import { useFormBuilder } from "./FormBuilderProvider";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { ApiException } from "@/lib/utils";
 
 interface FormBuilderHeaderProps {
     onPreview?: () => void;
@@ -64,7 +65,14 @@ export function FormBuilderHeader({
                 toast.success("Form saved successfully");
                 setSaveDialogOpen(false); // Close the dialog after successful save
             } catch (error) {
-                toast.error("Failed to save form");
+                console.error("Error fetching preferences:", error);
+                if (error instanceof ApiException) {
+                    console.error("Error fetching preferences:", error.message);
+                    toast.error(error.message);
+                } else {
+                    console.error("Error fetching preferences:", error);
+                    toast.error("Failed to save form");
+                }
             } finally {
                 setIsSaving(false);
             }
@@ -96,8 +104,15 @@ export function FormBuilderHeader({
         try {
             await actions.publishForm();
             toast.success("Form published successfully");
-        } catch {
-            toast.error("Failed to publish form");
+        } catch (error) {
+            console.error("Error fetching preferences:", error);
+            if (error instanceof ApiException) {
+                console.error("Error fetching preferences:", error.message);
+                toast.error(error.message);
+            } else {
+                console.error("Error fetching preferences:", error);
+                toast.error("Failed to publish form");
+            }
         } finally {
             setPublishDialogOpen(false);
         }
@@ -133,8 +148,15 @@ export function FormBuilderHeader({
         try {
             await actions.deleteForm(state.currentForm.id);
             toast.success("Form deleted successfully");
-        } catch {
-            toast.error("Failed to delete form");
+        } catch (error) {
+            console.error("Error fetching preferences:", error);
+            if (error instanceof ApiException) {
+                console.error("Error fetching preferences:", error.message);
+                toast.error(error.message);
+            } else {
+                console.error("Error fetching preferences:", error);
+                toast.error("Failed to delete form");
+            }
         } finally {
             setDeleteDialogOpen(false);
         }

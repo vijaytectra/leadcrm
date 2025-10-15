@@ -9,6 +9,7 @@ import { GripVertical, Copy, Trash2, CheckCircle, AlertCircle } from "lucide-rea
 import { formBuilderUtils } from "@/lib/api/forms";
 import { useFormBuilder } from "./FormBuilderProvider";
 import { toast } from "sonner";
+import { ApiException } from "@/lib/utils";
 
 interface DraggableFieldRendererProps {
     field: FormField;
@@ -50,8 +51,12 @@ export function DraggableFieldRenderer({ field, index, onMove }: DraggableFieldR
                 onMove(data.index, index);
             }
         } catch (error) {
-            console.error("Error parsing drag data:", error);
-            // Silently fail to prevent app crash
+            console.error("Error fetching preferences:", error);
+            if (error instanceof ApiException) {
+                console.error("Error fetching preferences:", error.message);
+            } else {
+                console.error("Error fetching preferences:", error);
+            }
         }
     };
 
@@ -60,13 +65,25 @@ export function DraggableFieldRenderer({ field, index, onMove }: DraggableFieldR
     };
 
     const handleFieldDelete = () => {
-        if (confirm("Are you sure you want to delete this field?")) {
-            actions.deleteField(field.id);
-            if (state.selectedField?.id === field.id) {
-                actions.setSelectedField(null);
+        try {
+            if (confirm("Are you sure you want to delete this field?")) {
+                actions.deleteField(field.id);
+                if (state.selectedField?.id === field.id) {
+                    actions.setSelectedField(null);
+                }
+                toast.success("Field deleted");
             }
-            toast.success("Field deleted");
+
+        } catch (error) {
+            console.error("Error fetching preferences:", error);
+            if (error instanceof ApiException) {
+                console.error("Error fetching preferences:", error.message);
+            } else {
+                console.error("Error fetching preferences:", error);
+            }
+
         }
+
     };
 
     const handleFieldDuplicate = () => {

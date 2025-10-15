@@ -158,7 +158,7 @@ router.get(
     } catch (error) {
       console.error("Get subscriptions error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }
@@ -196,7 +196,7 @@ router.get(
 
       if (!subscription) {
         return res.status(404).json({
-          error: "Subscription not found",
+          message: "Subscription not found",
           code: "SUBSCRIPTION_NOT_FOUND",
         });
       }
@@ -205,7 +205,7 @@ router.get(
     } catch (error) {
       console.error("Get subscription error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }
@@ -227,7 +227,7 @@ router.post(
 
       if (!validation.success) {
         return res.status(400).json({
-          error: "Validation failed",
+          message: "Validation failed",
           details: validation.error.issues,
           code: "VALIDATION_ERROR",
         });
@@ -243,7 +243,7 @@ router.post(
 
       if (!tenant) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -306,7 +306,7 @@ router.post(
     } catch (error) {
       console.error("Create subscription error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }
@@ -329,7 +329,7 @@ router.put(
 
       if (!validation.success) {
         return res.status(400).json({
-          error: "Validation failed",
+          message: "Validation failed",
           details: validation.error.issues,
           code: "VALIDATION_ERROR",
         });
@@ -345,7 +345,7 @@ router.put(
 
       if (!existingSubscription) {
         return res.status(404).json({
-          error: "Subscription not found",
+          message: "Subscription not found",
           code: "SUBSCRIPTION_NOT_FOUND",
         });
       }
@@ -415,7 +415,7 @@ router.put(
     } catch (error) {
       console.error("Update subscription error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }
@@ -437,7 +437,7 @@ router.get(
     } catch (error) {
       console.error("Get subscription tiers error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }
@@ -549,7 +549,7 @@ router.get(
     } catch (error) {
       console.error("Get subscription analytics error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }
@@ -577,7 +577,7 @@ router.post(
 
       if (!subscription) {
         return res.status(404).json({
-          error: "Subscription not found",
+          message: "Subscription not found",
           code: "SUBSCRIPTION_NOT_FOUND",
         });
       }
@@ -639,7 +639,7 @@ router.post(
     } catch (error) {
       console.error("Renew subscription error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }

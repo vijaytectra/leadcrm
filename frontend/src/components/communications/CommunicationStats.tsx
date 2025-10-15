@@ -19,7 +19,7 @@ import {
     XCircle,
     AlertCircle
 } from "lucide-react";
-import { apiGetClientNew } from "@/lib/utils";
+import { ApiException, apiGetClientNew } from "@/lib/utils";
 import { getClientToken } from "@/lib/client-token";
 
 interface CommunicationStats {
@@ -79,6 +79,12 @@ export function CommunicationStats({ tenantSlug }: CommunicationStatsProps) {
             setStats(data as CommunicationStats);
         } catch (error) {
             console.error("Error fetching communication stats:", error);
+            console.error("Error fetching communication stats:", error);
+            if (error instanceof ApiException) {
+                console.error("Error fetching communication stats:", error.message);
+            } else {
+                console.error("Error fetching communication stats:", error);
+            }
         } finally {
             setLoading(false);
         }

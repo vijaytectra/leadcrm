@@ -58,15 +58,13 @@ router.post("/auth/login", async (req, res) => {
     const validation = loginSchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({
-        error: "Validation failed",
+        message: "Validation failed",
         details: validation.error.issues,
         code: "VALIDATION_ERROR",
       });
     }
 
     const { tenant, email, password } = validation.data;
-
-  
 
     // Find user with tenant
     const user = await prisma.user.findFirst({
@@ -77,11 +75,10 @@ router.post("/auth/login", async (req, res) => {
       },
       include: { tenant: true },
     });
- 
 
     if (!user) {
       return res.status(401).json({
-        error: "Invalid credentials",
+        message: "Invalid credentials",
         code: "INVALID_CREDENTIALS",
       });
     }
@@ -90,7 +87,7 @@ router.post("/auth/login", async (req, res) => {
     const isValidPassword = await comparePassword(password, user.passwordHash);
     if (!isValidPassword) {
       return res.status(401).json({
-        error: "Invalid credentials",
+        message: "Invalid credentials",
         code: "INVALID_CREDENTIALS",
       });
     }
@@ -158,7 +155,7 @@ router.post("/auth/login", async (req, res) => {
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({
-      error: "Internal server error",
+      message: "Internal server error",
       code: "INTERNAL_ERROR",
     });
   }
@@ -175,7 +172,7 @@ router.post("/auth/refresh", async (req, res) => {
 
     if (!refreshToken) {
       return res.status(401).json({
-        error: "No refresh token provided",
+        message: "No refresh token provided",
         code: "NO_REFRESH_TOKEN",
       });
     }
@@ -198,7 +195,7 @@ router.post("/auth/refresh", async (req, res) => {
 
     if (!matchId) {
       return res.status(401).json({
-        error: "Invalid or expired refresh token",
+        message: "Invalid or expired refresh token",
         code: "INVALID_REFRESH_TOKEN",
       });
     }
@@ -256,7 +253,7 @@ router.post("/auth/refresh", async (req, res) => {
   } catch (error) {
     console.error("Refresh error:", error);
     res.status(401).json({
-      error: "Invalid refresh token",
+      message: "Invalid refresh token",
       code: "INVALID_REFRESH_TOKEN",
     });
   }
@@ -302,7 +299,7 @@ router.post("/auth/logout", async (req, res) => {
   } catch (error) {
     console.error("Logout error:", error);
     res.status(500).json({
-      error: "Internal server error",
+      message: "Internal server error",
       code: "INTERNAL_ERROR",
     });
   }
@@ -320,7 +317,7 @@ router.post(
       const validation = changePasswordSchema.safeParse(req.body);
       if (!validation.success) {
         return res.status(400).json({
-          error: "Validation failed",
+          message: "Validation failed",
           details: validation.error.issues,
           code: "VALIDATION_ERROR",
         });
@@ -332,7 +329,7 @@ router.post(
       const passwordValidation = validatePasswordStrength(newPassword);
       if (!passwordValidation.isValid) {
         return res.status(400).json({
-          error: "Password does not meet requirements",
+          message: "Password does not meet requirements",
           details: passwordValidation.errors,
           code: "WEAK_PASSWORD",
         });
@@ -340,7 +337,7 @@ router.post(
 
       if (!req.auth) {
         return res.status(401).json({
-          error: "Authentication required",
+          message: "Authentication required",
           code: "AUTH_REQUIRED",
         });
       }
@@ -353,7 +350,7 @@ router.post(
 
       if (!user) {
         return res.status(404).json({
-          error: "User not found",
+          message: "User not found",
           code: "USER_NOT_FOUND",
         });
       }
@@ -365,7 +362,7 @@ router.post(
       );
       if (!isValidCurrentPassword) {
         return res.status(400).json({
-          error: "Current password is incorrect",
+          message: "Current password is incorrect",
           code: "INVALID_CURRENT_PASSWORD",
         });
       }
@@ -389,7 +386,7 @@ router.post(
     } catch (error) {
       console.error("Change password error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }
@@ -404,7 +401,7 @@ router.get("/auth/me", requireAuth, async (req: AuthedRequest, res) => {
   try {
     if (!req.auth) {
       return res.status(401).json({
-        error: "Authentication required",
+        message: "Authentication required",
         code: "AUTH_REQUIRED",
       });
     }
@@ -435,7 +432,7 @@ router.get("/auth/me", requireAuth, async (req: AuthedRequest, res) => {
 
     if (!user) {
       return res.status(404).json({
-        error: "User not found",
+        message: "User not found",
         code: "USER_NOT_FOUND",
       });
     }
@@ -444,7 +441,7 @@ router.get("/auth/me", requireAuth, async (req: AuthedRequest, res) => {
   } catch (error) {
     console.error("Get user error:", error);
     res.status(500).json({
-      error: "Internal server error",
+      message: "Internal server error",
       code: "INTERNAL_ERROR",
     });
   }
@@ -481,7 +478,7 @@ router.post("/auth/request-password-reset", async (req, res) => {
       // Don't reveal if user exists or not for security
       return res.json({
         success: true,
-        message: "If the email exists, a password reset link has been sent.",
+        error: "If the email exists, a password reset link has been sent.",
       });
     }
 
@@ -540,7 +537,7 @@ router.post("/auth/request-password-reset", async (req, res) => {
   } catch (error) {
     console.error("Error requesting password reset:", error);
     res.status(500).json({
-      error: "Failed to process password reset request",
+      message: "Failed to process password reset request",
       code: "PASSWORD_RESET_ERROR",
     });
   }
@@ -589,7 +586,7 @@ router.post("/auth/reset-password", async (req, res) => {
 
     if (!resetTokenRecord) {
       return res.status(400).json({
-        error: "Invalid or expired reset token",
+        message: "Invalid or expired reset token",
         code: "INVALID_RESET_TOKEN",
       });
     }
@@ -601,7 +598,7 @@ router.post("/auth/reset-password", async (req, res) => {
     );
     if (!isValidToken) {
       return res.status(400).json({
-        error: "Invalid or expired reset token",
+        message: "Invalid or expired reset token",
         code: "INVALID_RESET_TOKEN",
       });
     }
@@ -638,7 +635,7 @@ router.post("/auth/reset-password", async (req, res) => {
   } catch (error) {
     console.error("Error resetting password:", error);
     res.status(500).json({
-      error: "Failed to reset password",
+      message: "Failed to reset password",
       code: "RESET_PASSWORD_ERROR",
     });
   }
@@ -664,7 +661,7 @@ router.get("/auth/test-email", async (req, res) => {
   } catch (error) {
     console.error("Test email error:", error);
     res.status(500).json({
-      error: "Failed to test email service",
+      message: "Failed to test email service",
       code: "EMAIL_TEST_ERROR",
     });
   }

@@ -24,6 +24,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { WidgetEmbedCodeModal } from './WidgetEmbedCodeModal';
 import { WidgetPreview } from './WidgetPreview';
+import { ApiException } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface WidgetCardProps {
     widget: {
@@ -74,6 +76,13 @@ export function WidgetCard({
             // You could add a toast notification here
         } catch (err) {
             console.error('Failed to copy embed code:', err);
+            if (err instanceof ApiException) {
+                console.error("Error fetching preferences:", err.message);
+                toast.error(err.message);
+            } else {
+                console.error("Error fetching preferences:", err);
+                toast.error("Failed to copy embed code");
+            }
         }
     };
 

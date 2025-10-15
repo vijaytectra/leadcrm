@@ -95,7 +95,11 @@ export const AddInstitutionModal: React.FC<AddInstitutionModalProps> = ({
             });
             onClose();
         } catch (error) {
-            console.error("Error creating institution:", error);
+            if (error instanceof Error) {
+                console.error("Error creating institution:", error.message);
+            } else {
+                console.error("Error creating institution:", error);
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -273,8 +277,8 @@ export const AddInstitutionModal: React.FC<AddInstitutionModalProps> = ({
                                             <div
                                                 key={option.value}
                                                 className={`relative border-2 rounded-2xl p-6 cursor-pointer transition-all duration-300 hover:scale-105 ${isSelected
-                                                        ? `${option.borderColor} bg-gradient-to-br ${option.bgGradient} shadow-lg ring-2 ring-offset-2 ring-purple-200`
-                                                        : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-md"
+                                                    ? `${option.borderColor} bg-gradient-to-br ${option.bgGradient} shadow-lg ring-2 ring-offset-2 ring-purple-200`
+                                                    : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-md"
                                                     }`}
                                                 onClick={() => handleInputChange("subscriptionTier", option.value)}
                                             >
@@ -341,7 +345,7 @@ export const AddInstitutionModal: React.FC<AddInstitutionModalProps> = ({
                                                 value={formData.maxLeads}
                                                 onChange={(e) => handleInputChange("maxLeads", parseInt(e.target.value) || 0)}
                                                 min="1"
-                                                    className="border-slate-300 text-black focus:border-violet-400 focus:ring-violet-400/20 rounded-lg transition-all duration-200"
+                                                className="border-slate-300 text-black focus:border-violet-400 focus:ring-violet-400/20 rounded-lg transition-all duration-200"
                                             />
                                             {formData.maxLeads >= 99999 && (
                                                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">

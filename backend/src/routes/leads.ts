@@ -974,13 +974,13 @@ router.get(
   requireRole(["INSTITUTION_ADMIN", "TELECALLER"]),
   async (req: AuthedRequest, res) => {
     try {
-      ("🔍 GET SINGLE LEAD - Route handler executed");
+  
       const { id, tenant } = req.params;
       const tenantSlug = tenant;
-      ("Fetching lead");
+
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -993,7 +993,7 @@ router.get(
 
       if (!tenantRecord) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -1036,7 +1036,7 @@ router.get(
 
       if (!lead) {
         return res.status(404).json({
-          error: "Lead not found",
+          message: "Lead not found",
           code: "LEAD_NOT_FOUND",
         });
       }
@@ -1048,7 +1048,7 @@ router.get(
         lead.assigneeId !== req.auth!.sub
       ) {
         return res.status(403).json({
-          error: "Access denied. You can only view leads assigned to you.",
+          message: "Access denied. You can only view leads assigned to you.",
           code: "ACCESS_DENIED",
         });
       }
@@ -1059,7 +1059,7 @@ router.get(
       });
     } catch (error) {
       res.status(500).json({
-        error: "Failed to fetch lead",
+        message: "Failed to fetch lead",
         code: "FETCH_LEAD_ERROR",
       });
     }
@@ -1081,7 +1081,7 @@ router.post(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -1094,7 +1094,7 @@ router.post(
 
       if (!tenant) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -1103,7 +1103,7 @@ router.post(
       console.log("validation", validation);
       if (!validation.success) {
         return res.status(400).json({
-          error: "Validation failed",
+          message: "Validation failed",
           details: validation.error.issues,
           code: "VALIDATION_ERROR",
         });
@@ -1125,7 +1125,7 @@ router.post(
 
         if (!assignee) {
           return res.status(400).json({
-            error: "Assignee not found or inactive",
+            message: "Assignee not found or inactive",
             code: "INVALID_ASSIGNEE",
           });
         }
@@ -1242,7 +1242,7 @@ router.post(
     } catch (error) {
       console.error("Error creating lead:", error);
       res.status(500).json({
-        error: "Failed to create lead",
+        message: "Failed to create lead",
         code: "CREATE_LEAD_ERROR",
       });
     }
@@ -1266,7 +1266,7 @@ router.put(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -1279,7 +1279,7 @@ router.put(
 
       if (!tenantRecord) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -1291,7 +1291,7 @@ router.put(
 
       if (!validation.success) {
         return res.status(400).json({
-          error: "Validation failed",
+          message: "Validation failed",
           details: validation.error.issues,
           code: "VALIDATION_ERROR",
         });
@@ -1309,7 +1309,7 @@ router.put(
 
       if (!existingLead) {
         return res.status(404).json({
-          error: "Lead not found",
+          message: "Lead not found",
           code: "LEAD_NOT_FOUND",
         });
       }
@@ -1320,7 +1320,7 @@ router.put(
         existingLead.assigneeId !== req.auth!.sub
       ) {
         return res.status(403).json({
-          error: "Access denied. You can only update leads assigned to you.",
+          message: "Access denied. You can only update leads assigned to you.",
           code: "ACCESS_DENIED",
         });
       }
@@ -1337,7 +1337,7 @@ router.put(
 
         if (!assignee) {
           return res.status(400).json({
-            error: "Assignee not found or inactive",
+            message: "Assignee not found or inactive",
             code: "INVALID_ASSIGNEE",
           });
         }
@@ -1379,7 +1379,7 @@ router.put(
       });
     } catch (error) {
       res.status(500).json({
-        error: "Failed to update lead",
+        message: "Failed to update lead",
         code: "UPDATE_LEAD_ERROR",
       });
     }
@@ -1402,7 +1402,7 @@ router.delete(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -1415,7 +1415,7 @@ router.delete(
 
       if (!tenantRecord) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -1430,7 +1430,7 @@ router.delete(
 
       if (!lead) {
         return res.status(404).json({
-          error: "Lead not found",
+          message: "Lead not found",
           code: "LEAD_NOT_FOUND",
         });
       }
@@ -1472,7 +1472,7 @@ router.delete(
     } catch (error) {
       console.error("Error deleting lead:", error);
       res.status(500).json({
-        error: "Failed to delete lead",
+        message: "Failed to delete lead",
         code: "DELETE_LEAD_ERROR",
       });
     }
@@ -1501,7 +1501,7 @@ router.post(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -1514,7 +1514,7 @@ router.post(
       console.log("tenantRecord", tenantRecord);
       if (!tenantRecord) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -1541,7 +1541,7 @@ router.post(
       console.log("lead", lead);
       if (!lead) {
         return res.status(404).json({
-          error: "Lead not found",
+          message: "Lead not found",
           code: "LEAD_NOT_FOUND",
         });
       }
@@ -1553,7 +1553,7 @@ router.post(
         lead.assigneeId !== req.auth!.sub
       ) {
         return res.status(403).json({
-          error:
+          message:
             "Access denied. You can only add notes to leads assigned to you.",
           code: "ACCESS_DENIED",
         });
@@ -1584,7 +1584,7 @@ router.post(
       });
     } catch (error) {
       res.status(500).json({
-        error: "Failed to add note",
+        message: "Failed to add note",
         code: "ADD_NOTE_ERROR",
       });
     }
@@ -1607,7 +1607,7 @@ router.post(
       ("Bulk importing leads");
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -1620,14 +1620,14 @@ router.post(
 
       if (!tenant) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
 
       if (!req.file) {
         return res.status(400).json({
-          error: "No file uploaded",
+          message: "No file uploaded",
           code: "NO_FILE_UPLOADED",
         });
       }
@@ -1672,7 +1672,7 @@ router.post(
 
       if (leads.length === 0) {
         return res.status(400).json({
-          error: "No valid leads found in file",
+          message: "No valid leads found in file",
           code: "NO_VALID_LEADS",
         });
       }
@@ -1681,7 +1681,7 @@ router.post(
       const validation = bulkImportSchema.safeParse({ leads });
       if (!validation.success) {
         return res.status(400).json({
-          error: "Validation failed",
+          message: "Validation failed",
           details: validation.error.issues,
           code: "VALIDATION_ERROR",
         });
@@ -1718,7 +1718,7 @@ router.post(
       });
     } catch (error) {
       res.status(500).json({
-        error: "Failed to import leads",
+        message: "Failed to import leads",
         code: "IMPORT_LEADS_ERROR",
       });
     }
@@ -1740,7 +1740,7 @@ router.post(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -1753,7 +1753,7 @@ router.post(
 
       if (!tenant) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -1761,7 +1761,7 @@ router.post(
       const validation = assignmentConfigSchema.safeParse(req.body);
       if (!validation.success) {
         return res.status(400).json({
-          error: "Validation failed",
+          message: "Validation failed",
           details: validation.error.issues,
           code: "VALIDATION_ERROR",
         });
@@ -1906,7 +1906,7 @@ router.post(
       });
     } catch (error) {
       res.status(500).json({
-        error: "Failed to assign leads",
+        message: "Failed to assign leads",
         code: "ASSIGN_LEADS_ERROR",
       });
     }
@@ -1929,7 +1929,7 @@ router.post(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -1942,7 +1942,7 @@ router.post(
 
       if (!tenantRecord) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -1951,7 +1951,7 @@ router.post(
 
       if (!validation.success) {
         return res.status(400).json({
-          error: "Validation failed",
+          message: "Validation failed",
           details: validation.error.issues,
           code: "VALIDATION_ERROR",
         });
@@ -1968,7 +1968,7 @@ router.post(
       });
       if (!existingLead) {
         return res.status(404).json({
-          error: "Lead not found",
+          message: "Lead not found",
           code: "LEAD_NOT_FOUND",
         });
       }
@@ -2043,7 +2043,7 @@ router.post(
 
       if (!existingLead) {
         return res.status(404).json({
-          error: "Lead not found",
+          message: "Lead not found",
           code: "LEAD_NOT_FOUND",
         });
       }
@@ -2060,7 +2060,7 @@ router.post(
 
       if (!assignee) {
         return res.status(400).json({
-          error: "Invalid assignee or assignee is not a telecaller",
+          message: "Invalid assignee or assignee is not a telecaller",
           code: "INVALID_ASSIGNEE",
         });
       }
@@ -2182,7 +2182,7 @@ router.post(
       });
     } catch (error) {
       res.status(500).json({
-        error: "Failed to reassign lead",
+        message: "Failed to reassign lead",
         code: "REASSIGN_LEAD_ERROR",
       });
     }

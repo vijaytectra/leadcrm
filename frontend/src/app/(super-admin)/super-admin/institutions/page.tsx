@@ -232,8 +232,8 @@ export default function InstitutionsPage() {
     const [selectedInstitution, setSelectedInstitution] = React.useState<InstitutionType | null>(null);
     const [isLoading, setIsLoading] = React.useState(true);
     const [error, setError] = React.useState<string | null>(null);
-  
-        const [pagination, setPagination] = React.useState<PaginationState>({
+
+    const [pagination, setPagination] = React.useState<PaginationState>({
         page: 1,
         pageSize: 10,
         total: 0,
@@ -330,10 +330,12 @@ export default function InstitutionsPage() {
                 await fetchInstitutions();
             }
         } catch (error) {
-            console.error("Error creating institution:", error);
-            toast.error("Failed to create institution", {
-                description: "Please check the details and try again"
-            });
+            if (error instanceof Error) {
+                console.error("Error creating institution:", error.message);
+                toast.error(error.message, {
+                    description: error.message
+                });
+            }
         }
     };
 
@@ -415,7 +417,7 @@ export default function InstitutionsPage() {
     // Handle view institution
     const handleViewInstitution = async (institutionId: string) => {
         try {
-            
+
             const institution = await getInstitutionById(institutionId);
             setSelectedInstitution(institution);
             setIsViewModalOpen(true);

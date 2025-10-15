@@ -305,7 +305,7 @@ router.get(
       });
     } catch (error) {
       res.status(500).json({
-        error: "Failed to fetch dashboard data",
+        message: "Failed to fetch dashboard data",
         code: "DASHBOARD_ERROR",
       });
     }
@@ -329,7 +329,7 @@ router.get(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -342,7 +342,7 @@ router.get(
 
       if (!tenant) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -436,7 +436,7 @@ router.get(
       });
     } catch (error) {
       res.status(500).json({
-        error: "Failed to fetch leads",
+        message: "Failed to fetch leads",
         code: "LEADS_ERROR",
       });
     }
@@ -462,7 +462,7 @@ router.get(
 
       if (!lead) {
         return res.status(404).json({
-          error: "Lead not found",
+          message: "Lead not found",
           code: "LEAD_NOT_FOUND",
         });
       }
@@ -472,7 +472,7 @@ router.get(
       });
     } catch (error) {
       res.status(500).json({
-        error: "Failed to fetch lead",
+        message: "Failed to fetch lead",
         code: "LEAD_ERROR",
       });
     }
@@ -504,7 +504,7 @@ router.get(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -517,7 +517,7 @@ router.get(
 
       if (!tenant) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -604,7 +604,7 @@ router.get(
       });
     } catch (error) {
       res.status(500).json({
-        error: "Failed to fetch call logs",
+        message: "Failed to fetch call logs",
         code: "CALL_LOGS_ERROR",
       });
     }
@@ -627,7 +627,7 @@ router.post(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -640,7 +640,7 @@ router.post(
 
       if (!tenant) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -649,7 +649,7 @@ router.post(
 
       if (!validation.success) {
         return res.status(400).json({
-          error: "Validation failed",
+          message: "Validation failed",
           details: validation.error.issues,
           code: "VALIDATION_ERROR",
         });
@@ -668,7 +668,7 @@ router.post(
 
       if (!lead) {
         return res.status(404).json({
-          error: "Lead not found or not assigned to you",
+          message: "Lead not found or not assigned to you",
           code: "LEAD_NOT_FOUND",
         });
       }
@@ -708,7 +708,7 @@ router.post(
       });
     } catch (error) {
       res.status(500).json({
-        error: "Failed to create call log",
+        message: "Failed to create call log",
         code: "CALL_LOG_ERROR",
       });
     }
@@ -732,7 +732,7 @@ router.put(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -745,7 +745,7 @@ router.put(
 
       if (!tenant) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -754,7 +754,7 @@ router.put(
 
       if (!validation.success) {
         return res.status(400).json({
-          error: "Validation failed",
+          message: "Validation failed",
           details: validation.error.issues,
           code: "VALIDATION_ERROR",
         });
@@ -773,7 +773,7 @@ router.put(
 
       if (!existingCallLog) {
         return res.status(404).json({
-          error: "Call log not found",
+          message: "Call log not found",
           code: "CALL_LOG_NOT_FOUND",
         });
       }
@@ -814,7 +814,7 @@ router.put(
       });
     } catch (error) {
       res.status(500).json({
-        error: "Failed to update call log",
+        message: "Failed to update call log",
         code: "CALL_LOG_UPDATE_ERROR",
       });
     }
@@ -847,7 +847,7 @@ router.get(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -860,7 +860,7 @@ router.get(
 
       if (!tenant) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -947,7 +947,7 @@ router.get(
     } catch (error) {
       console.error("Get follow-up reminders error:", error);
       res.status(500).json({
-        error: "Failed to fetch follow-up reminders",
+        message: "Failed to fetch follow-up reminders",
         code: "FOLLOW_UPS_ERROR",
       });
     }
@@ -970,7 +970,7 @@ router.post(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -983,7 +983,7 @@ router.post(
 
       if (!tenant) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -992,7 +992,7 @@ router.post(
 
       if (!validation.success) {
         return res.status(400).json({
-          error: "Validation failed",
+          message: "Validation failed",
           details: validation.error.issues,
           code: "VALIDATION_ERROR",
         });
@@ -1011,7 +1011,7 @@ router.post(
 
       if (!lead) {
         return res.status(404).json({
-          error: "Lead not found or not assigned to you",
+          message: "Lead not found or not assigned to you",
           code: "LEAD_NOT_FOUND",
         });
       }
@@ -1046,7 +1046,7 @@ router.post(
     } catch (error) {
       console.error("Create follow-up error:", error);
       res.status(500).json({
-        error: "Failed to create follow-up",
+        message: "Failed to create follow-up",
         code: "FOLLOW_UP_ERROR",
       });
     }
@@ -1070,7 +1070,7 @@ router.put(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -1083,7 +1083,7 @@ router.put(
 
       if (!tenant) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -1092,7 +1092,7 @@ router.put(
 
       if (!validation.success) {
         return res.status(400).json({
-          error: "Validation failed",
+          message: "Validation failed",
           details: validation.error.issues,
           code: "VALIDATION_ERROR",
         });
@@ -1111,7 +1111,7 @@ router.put(
 
       if (!existingFollowUp) {
         return res.status(404).json({
-          error: "Follow-up not found",
+          message: "Follow-up not found",
           code: "FOLLOW_UP_NOT_FOUND",
         });
       }
@@ -1145,7 +1145,7 @@ router.put(
     } catch (error) {
       console.error("Update follow-up error:", error);
       res.status(500).json({
-        error: "Failed to update follow-up",
+        message: "Failed to update follow-up",
         code: "FOLLOW_UP_UPDATE_ERROR",
       });
     }
@@ -1169,7 +1169,7 @@ router.put(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -1182,7 +1182,7 @@ router.put(
 
       if (!tenant) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -1191,7 +1191,7 @@ router.put(
 
       if (!validation.success) {
         return res.status(400).json({
-          error: "Validation failed",
+          message: "Validation failed",
           details: validation.error.issues,
           code: "VALIDATION_ERROR",
         });
@@ -1210,7 +1210,7 @@ router.put(
 
       if (!lead) {
         return res.status(404).json({
-          error: "Lead not found or not assigned to you",
+          message: "Lead not found or not assigned to you",
           code: "LEAD_NOT_FOUND",
         });
       }
@@ -1262,7 +1262,7 @@ router.put(
     } catch (error) {
       console.error("Update lead status error:", error);
       res.status(500).json({
-        error: "Failed to update lead status",
+        message: "Failed to update lead status",
         code: "LEAD_STATUS_UPDATE_ERROR",
       });
     }
@@ -1286,7 +1286,7 @@ router.get(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -1299,7 +1299,7 @@ router.get(
 
       if (!tenant) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -1315,7 +1315,7 @@ router.get(
 
       if (!lead) {
         return res.status(404).json({
-          error: "Lead not found or not assigned to you",
+          message: "Lead not found or not assigned to you",
           code: "LEAD_NOT_FOUND",
         });
       }
@@ -1421,7 +1421,7 @@ router.get(
     } catch (error) {
       console.error("Get lead activities error:", error);
       res.status(500).json({
-        error: "Failed to fetch lead activities",
+        message: "Failed to fetch lead activities",
         code: "LEAD_ACTIVITIES_ERROR",
       });
     }
@@ -1444,7 +1444,7 @@ router.get(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -1457,7 +1457,7 @@ router.get(
 
       if (!tenant) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -1472,7 +1472,7 @@ router.get(
 
       if (!lead) {
         return res.status(404).json({
-          error: "Lead not found",
+          message: "Lead not found",
           code: "LEAD_NOT_FOUND",
         });
       }
@@ -1596,7 +1596,7 @@ router.get(
     } catch (error) {
       console.error("Get lead activities error:", error);
       res.status(500).json({
-        error: "Failed to fetch lead activities",
+        message: "Failed to fetch lead activities",
         code: "LEAD_ACTIVITIES_ERROR",
       });
     }
@@ -1620,7 +1620,7 @@ router.get(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -1633,7 +1633,7 @@ router.get(
 
       if (!tenant) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -1729,7 +1729,7 @@ router.get(
     } catch (error) {
       console.error("Telecaller performance error:", error);
       res.status(500).json({
-        error: "Failed to fetch performance data",
+        message: "Failed to fetch performance data",
         code: "PERFORMANCE_ERROR",
       });
     }

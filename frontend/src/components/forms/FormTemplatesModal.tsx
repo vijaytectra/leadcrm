@@ -24,6 +24,7 @@ import {
 import { formsApi } from "@/lib/api/forms";
 import { toast } from "sonner";
 import type { FormTemplate, FormCategory } from "@/types/form-builder";
+import { ApiException } from "@/lib/utils";
 
 interface FormTemplatesModalProps {
     onSelectTemplate: (template: FormTemplate) => void;
@@ -343,7 +344,15 @@ export function FormTemplatesModal({ onSelectTemplate, onClose }: FormTemplatesM
             // In production, this would call the API
             setTemplates(SAMPLE_TEMPLATES);
         } catch (error) {
+            console.error("Error loading templates:", error);
             toast.error("Failed to load templates");
+            if (error instanceof ApiException) {
+                console.error("Error fetching preferences:", error.message);
+                toast.error(error.message);
+            } else {
+                console.error("Error fetching preferences:", error);
+                toast.error("Failed to load templates");
+            }
         } finally {
             setIsLoading(false);
         }

@@ -46,10 +46,12 @@ router.get(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res
+          .status(404)
+          .json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
-      const templates = await prisma.whatsappTemplate.findMany({
+      const templates = await prisma.whatsAppTemplate.findMany({
         where: {
           tenantId: tenant.id,
           status: "APPROVED",
@@ -71,7 +73,10 @@ router.get(
       res.json({ success: true, data: templates });
     } catch (error) {
       console.error("Get WhatsApp templates error:", error);
-      res.status(500).json({ error: "Failed to fetch templates" });
+      res.status(500).json({
+        message: "Failed to fetch templates",
+        code: "FAILED_TO_FETCH_TEMPLATES",
+      });
     }
   }
 );
@@ -93,7 +98,7 @@ router.post(
 
       if (!validation.success) {
         return res.status(400).json({
-          error: "Validation error",
+          message: "Validation error",
           details: validation.error.issues,
         });
       }
@@ -106,7 +111,9 @@ router.post(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res
+          .status(404)
+          .json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       // Get lead details
@@ -119,11 +126,16 @@ router.post(
       });
 
       if (!lead) {
-        return res.status(404).json({ error: "Lead not found" });
+        return res
+          .status(404)
+          .json({ message: "Lead not found", code: "LEAD_NOT_FOUND" });
       }
 
       if (!lead.phone) {
-        return res.status(400).json({ error: "Lead has no phone number" });
+        return res.status(400).json({
+          message: "Lead has no phone number",
+          code: "LEAD_HAS_NO_PHONE_NUMBER",
+        });
       }
 
       // Send message
@@ -135,10 +147,7 @@ router.post(
           )
         : whatsappService.buildTextMessage(lead.phone, message);
 
-      const response = await whatsappService.makeAPIRequest("/messages", {
-        method: "POST",
-        body: JSON.stringify(messageData),
-      });
+      const response = await whatsappService.sendTemplateMessage(messageData);
 
       // Log communication
       await prisma.communication.create({
@@ -147,7 +156,7 @@ router.post(
           leadId: lead.id,
           type: "WHATSAPP",
           content: message,
-          sentBy: req.user!.id,
+          sentBy: req.auth?.sub,
           status: "SENT",
           metadata: {
             messageId: response.messages?.[0]?.id,
@@ -165,7 +174,10 @@ router.post(
       });
     } catch (error) {
       console.error("Send WhatsApp message error:", error);
-      res.status(500).json({ error: "Failed to send message" });
+      res.status(500).json({
+        message: "Failed to send message",
+        code: "FAILED_TO_SEND_MESSAGE",
+      });
     }
   }
 );
@@ -187,7 +199,7 @@ router.post(
 
       if (!validation.success) {
         return res.status(400).json({
-          error: "Validation error",
+          message: "Validation error",
           details: validation.error.issues,
         });
       }
@@ -200,7 +212,9 @@ router.post(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res
+          .status(404)
+          .json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       // Get leads with phone numbers
@@ -214,9 +228,10 @@ router.post(
       });
 
       if (leads.length === 0) {
-        return res
-          .status(400)
-          .json({ error: "No valid leads found with phone numbers" });
+        return res.status(400).json({
+          message: "No valid leads found with phone numbers",
+          code: "NO_VALID_LEADS_FOUND_WITH_PHONE_NUMBERS",
+        });
       }
 
       // Create recipients array
@@ -250,7 +265,10 @@ router.post(
       });
     } catch (error) {
       console.error("Send bulk WhatsApp messages error:", error);
-      res.status(500).json({ error: "Failed to send bulk messages" });
+      res.status(500).json({
+        message: "Failed to send bulk messages",
+        code: "FAILED_TO_SEND_BULK_MESSAGES",
+      });
     }
   }
 );
@@ -276,7 +294,9 @@ router.get(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res
+          .status(404)
+          .json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       const communications = await prisma.communication.findMany({
@@ -298,7 +318,10 @@ router.get(
       res.json({ success: true, data: communications });
     } catch (error) {
       console.error("Get WhatsApp history error:", error);
-      res.status(500).json({ error: "Failed to fetch message history" });
+      res.status(500).json({
+        message: "Failed to fetch message history",
+        code: "FAILED_TO_FETCH_MESSAGE_HISTORY",
+      });
     }
   }
 );
@@ -320,13 +343,19 @@ router.get(
       const job = await whatsappService.getBulkMessageJobStatus(jobId);
 
       if (!job) {
-        return res.status(404).json({ error: "Bulk message job not found" });
+        return res.status(404).json({
+          message: "Bulk message job not found",
+          code: "BULK_MESSAGE_JOB_NOT_FOUND",
+        });
       }
 
       res.json({ success: true, data: job });
     } catch (error) {
       console.error("Get bulk message status error:", error);
-      res.status(500).json({ error: "Failed to fetch job status" });
+      res.status(500).json({
+        message: "Failed to fetch job status",
+        code: "FAILED_TO_FETCH_JOB_STATUS",
+      });
     }
   }
 );
@@ -352,7 +381,9 @@ router.get(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res
+          .status(404)
+          .json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       const jobs = await whatsappService.getBulkMessageHistory(
@@ -365,7 +396,10 @@ router.get(
       res.json({ success: true, data: jobs });
     } catch (error) {
       console.error("Get bulk message history error:", error);
-      res.status(500).json({ error: "Failed to fetch bulk message history" });
+      res.status(500).json({
+        message: "Failed to fetch bulk message history",
+        code: "FAILED_TO_FETCH_BULK_MESSAGE_HISTORY",
+      });
     }
   }
 );

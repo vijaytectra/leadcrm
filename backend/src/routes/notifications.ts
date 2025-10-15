@@ -40,7 +40,7 @@ router.get(
       const userId = req.auth?.sub;
 
       if (!userId) {
-        return res.status(401).json({ error: "User ID required" });
+        return res.status(401).json({ message: "User ID required",code: "USER_ID_REQUIRED" });
       }
 
       // Handle pagination parameters
@@ -82,7 +82,7 @@ router.get(
       });
     } catch (error) {
       console.error("Failed to get user notifications:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error",code: "INTERNAL_SERVER_ERROR" });
     }
   }
 );
@@ -99,7 +99,7 @@ router.get(
     try {
       const userId = req.auth?.sub;
       if (!userId) {
-        return res.status(401).json({ error: "User ID required" });
+        return res.status(401).json({ message: "User ID required",code: "USER_ID_REQUIRED" });
       }
 
       const tenantSlug = req.params.tenant;
@@ -111,7 +111,7 @@ router.get(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found",code: "TENANT_NOT_FOUND" });
       }
 
       const preferences = await notificationService.getUserPreferences(
@@ -135,7 +135,7 @@ router.get(
       res.json({ preferences });
     } catch (error) {
       console.error("Failed to get notification preferences:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error",code: "INTERNAL_SERVER_ERROR" });
     }
   }
 );
@@ -152,7 +152,7 @@ router.put(
     try {
       const userId = req.auth?.sub;
       if (!userId) {
-        return res.status(401).json({ error: "User ID required" });
+        return res.status(401).json({ message: "User ID required",code: "USER_ID_REQUIRED" });
       }
 
       const data = NotificationPreferenceSchema.parse(req.body);
@@ -165,7 +165,7 @@ router.put(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found",code: "TENANT_NOT_FOUND" });
       }
 
       await notificationService.updateUserPreferences(userId, data, tenant.id);
@@ -175,10 +175,10 @@ router.put(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.issues });
+          .json({ message: "Validation error", details: error.issues,code: "VALIDATION_ERROR" });
       }
       console.error("Failed to update notification preferences:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error",code: "INTERNAL_SERVER_ERROR" });
     }
   }
 );
@@ -195,7 +195,7 @@ router.put(
     try {
       const userId = req.auth?.sub;
       if (!userId) {
-        return res.status(401).json({ error: "User ID required" });
+        return res.status(401).json({ message: "User ID required",code: "USER_ID_REQUIRED" });
       }
 
       const data = MarkReadSchema.parse(req.body);
@@ -209,7 +209,7 @@ router.put(
       } else {
         return res
           .status(400)
-          .json({ error: "Must specify notification IDs or markAll" });
+          .json({ message: "Must specify notification IDs or markAll",code: "VALIDATION_ERROR" });
       }
 
       res.json({ success: true });
@@ -217,10 +217,10 @@ router.put(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.issues });
+          .json({ message: "Validation error", details: error.issues,code: "VALIDATION_ERROR" });
       }
       console.error("Failed to mark notifications as read:", error);
-      res.status(500).json({ error: "Internal server error" });
+          res.status(500).json({ message: "Internal server error",code: "INTERNAL_SERVER_ERROR" });
     }
   }
 );
@@ -239,7 +239,7 @@ router.delete(
       const userId = req.auth?.sub;
 
       if (!userId) {
-        return res.status(401).json({ error: "User ID required" });
+        return res.status(401).json({ message: "User ID required",code: "USER_ID_REQUIRED" });
       }
 
       // Verify notification belongs to user
@@ -251,7 +251,7 @@ router.delete(
       });
 
       if (!notification) {
-        return res.status(404).json({ error: "Notification not found" });
+        return res.status(404).json({ message: "Notification not found",code: "NOTIFICATION_NOT_FOUND" });
       }
 
       await notificationService.deleteNotification(id);
@@ -259,7 +259,7 @@ router.delete(
       res.json({ success: true });
     } catch (error) {
       console.error("Failed to delete notification:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error",code: "INTERNAL_SERVER_ERROR" });
     }
   }
 );
@@ -276,7 +276,7 @@ router.get(
     try {
       const userId = req.auth?.sub;
       if (!userId) {
-        return res.status(401).json({ error: "User ID required" });
+        return res.status(401).json({ message: "User ID required",code: "USER_ID_REQUIRED" });
       }
       console.log("Getting notification stats for user:", userId);
 
@@ -320,7 +320,7 @@ router.get(
       });
     } catch (error) {
       console.error("Failed to get notification stats:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error",code: "INTERNAL_SERVER_ERROR" });
     }
   }
 );
@@ -381,7 +381,7 @@ router.get(
       res.json({ categories });
     } catch (error) {
       console.error("Failed to get notification categories:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error",code: "INTERNAL_SERVER_ERROR" });
     }
   }
 );
@@ -400,7 +400,7 @@ router.patch(
       const userId = req.auth?.sub;
 
       if (!userId) {
-        return res.status(401).json({ error: "User ID required" });
+        return res.status(401).json({ message: "User ID required",code: "USER_ID_REQUIRED" });
       }
 
       // Verify notification belongs to user
@@ -412,7 +412,7 @@ router.patch(
       });
 
       if (!notification) {
-        return res.status(404).json({ error: "Notification not found" });
+        return res.status(404).json({ message: "Notification not found",code: "NOTIFICATION_NOT_FOUND" });
       }
 
       // Mark as read
@@ -427,7 +427,7 @@ router.patch(
       res.json({ success: true });
     } catch (error) {
       console.error("Failed to mark notification as read:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error",code: "INTERNAL_SERVER_ERROR" });
     }
   }
 );
@@ -445,7 +445,7 @@ router.patch(
       const userId = req.auth?.sub;
 
       if (!userId) {
-        return res.status(401).json({ error: "User ID required" });
+        return res.status(401).json({ message: "User ID required",code: "USER_ID_REQUIRED" });
       }
 
       await prisma.notification.updateMany({
@@ -462,7 +462,7 @@ router.patch(
       res.json({ success: true });
     } catch (error) {
       console.error("Failed to mark all notifications as read:", error);
-      res.status(500).json({ error: "Internal server error" });
+        res.status(500).json({ message: "Internal server error",code: "INTERNAL_SERVER_ERROR" });
     }
   }
 );
@@ -481,7 +481,7 @@ router.delete(
       const userId = req.auth?.sub;
 
       if (!userId) {
-        return res.status(401).json({ error: "User ID required" });
+        return res.status(401).json({ message: "User ID required",code: "USER_ID_REQUIRED" });
       }
 
       // Verify notification belongs to user
@@ -493,7 +493,7 @@ router.delete(
       });
 
       if (!notification) {
-        return res.status(404).json({ error: "Notification not found" });
+        return res.status(404).json({ message: "Notification not found",code: "NOTIFICATION_NOT_FOUND" });
       }
 
       await prisma.notification.delete({
@@ -503,7 +503,7 @@ router.delete(
       res.json({ success: true });
     } catch (error) {
       console.error("Failed to delete notification:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error",code: "INTERNAL_SERVER_ERROR" });
     }
   }
 );
@@ -521,7 +521,7 @@ router.delete(
       const userId = req.auth?.sub;
 
       if (!userId) {
-        return res.status(401).json({ error: "User ID required" });
+        return res.status(401).json({ message: "User ID required",code: "USER_ID_REQUIRED" });
       }
 
       await prisma.notification.deleteMany({
@@ -531,7 +531,7 @@ router.delete(
       res.json({ success: true });
     } catch (error) {
       console.error("Failed to delete all notifications:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error",code: "INTERNAL_SERVER_ERROR" });
     }
   }
 );
@@ -549,7 +549,7 @@ router.post(
     try {
       const { tenantSlug } = req;
       if (!tenantSlug) {
-        return res.status(400).json({ error: "Tenant slug required" });
+        return res.status(400).json({ message: "Tenant slug required",code: "TENANT_SLUG_REQUIRED" });
       }
 
       const tenant = await prisma.tenant.findUnique({
@@ -557,7 +557,7 @@ router.post(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found",code: "TENANT_NOT_FOUND" });
       }
 
       const {
@@ -571,7 +571,7 @@ router.post(
       if (!title || !message) {
         return res
           .status(400)
-          .json({ error: "Title and message are required" });
+          .json({ message: "Title and message are required",code: "TITLE_AND_MESSAGE_REQUIRED" });
       }
 
       const { notificationService } = await import("../lib/notifications");
@@ -591,7 +591,7 @@ router.post(
       });
     } catch (error) {
       console.error("Failed to send announcement:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error",code: "INTERNAL_SERVER_ERROR" });
     }
   }
 );
@@ -623,7 +623,7 @@ router.get("/:tenant/notifications/stream", async (req: AuthedRequest, res) => {
 
     if (!token) {
       console.log("SSE connection failed: No token provided");
-      return res.status(401).json({ error: "Missing access token" });
+      return res.status(401).json({ message: "Missing access token",code: "MISSING_ACCESS_TOKEN" });
     }
 
     // Verify token manually
@@ -632,7 +632,7 @@ router.get("/:tenant/notifications/stream", async (req: AuthedRequest, res) => {
 
     if (payload.typ !== "access") {
       console.log("SSE connection failed: Invalid token type");
-      return res.status(401).json({ error: "Invalid token type" });
+      return res.status(401).json({ message: "Invalid token type",code: "INVALID_TOKEN_TYPE" });
     }
 
     const userId = payload.sub;
@@ -642,7 +642,7 @@ router.get("/:tenant/notifications/stream", async (req: AuthedRequest, res) => {
 
     if (!userId) {
       console.log("SSE connection failed: No user ID");
-      return res.status(401).json({ error: "User ID required" });
+      return res.status(401).json({ message: "User ID required",code: "USER_ID_REQUIRED" });
     }
 
     // Verify tenant access
@@ -652,7 +652,8 @@ router.get("/:tenant/notifications/stream", async (req: AuthedRequest, res) => {
 
     if (!tenant) {
       console.log("SSE connection failed: Tenant not found");
-      return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found",code: "TENANT_NOT_FOUND" });
+      return res.status(404).json({ message: "Tenant not found",code: "TENANT_NOT_FOUND" });
     }
 
     // Verify user has access to this tenant
@@ -666,7 +667,7 @@ router.get("/:tenant/notifications/stream", async (req: AuthedRequest, res) => {
 
     if (!user) {
       console.log("SSE connection failed: User not found or inactive");
-      return res.status(403).json({ error: "Access denied" });
+      return res.status(403).json({ message: "Access denied",code: "ACCESS_DENIED" });
     }
 
     // Set SSE headers
@@ -710,7 +711,7 @@ router.get("/:tenant/notifications/stream", async (req: AuthedRequest, res) => {
     });
   } catch (error) {
     console.error("Failed to establish SSE connection:", error);
-    res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error",code: "INTERNAL_SERVER_ERROR" });
   }
 });
 

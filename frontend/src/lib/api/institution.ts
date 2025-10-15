@@ -11,6 +11,14 @@ interface InstitutionStats {
   pendingTasks: number;
 }
 
+interface BackendAnalyticsOverview {
+  totalLeads: number;
+  totalForms: number;
+  totalWidgets: number;
+  totalSubmissions: number;
+  overallConversionRate: number;
+}
+
 interface InstitutionSettings {
   id: string;
   name: string;
@@ -62,7 +70,7 @@ interface InstitutionInfo {
   updatedAt: string;
 }
 
-import { apiGet, apiPost } from "@/lib/utils";
+import { ApiException, apiGet, apiPost } from "@/lib/utils";
 import { getToken } from "../getToken";
 
 export async function getInstitutionStats(
@@ -73,16 +81,38 @@ export async function getInstitutionStats(
     if (!token) {
       throw new Error("No token found");
     }
-    const data = await apiGet<{ stats: InstitutionStats }>(
-      `/${tenantSlug}/analytics/stats`,
+    const data = await apiGet<{ data: { overview: BackendAnalyticsOverview } }>(
+      `/${tenantSlug}/analytics/dashboard`,
       {
         token: token,
       }
     );
-  
-    return data.stats;
+
+    // Map backend data to expected frontend format
+    const backendData = data.data.overview;
+    return {
+      totalUsers: 0, // Not available in analytics
+      activeUsers: 0, // Not available in analytics
+      newUsersThisMonth: 0, // Not available in analytics
+      totalLeads: backendData.totalLeads || 0,
+      convertedLeads: Math.round(
+        ((backendData.totalLeads || 0) *
+          (backendData.overallConversionRate || 0)) /
+          100
+      ),
+      conversionRate: backendData.overallConversionRate || 0,
+      monthlyRevenue: 0, // Not available in analytics
+      revenueGrowth: 0, // Not available in analytics
+      upcomingAppointments: 0, // Not available in analytics
+      pendingTasks: 0, // Not available in analytics
+    };
   } catch (error) {
     console.error("Error fetching institution stats:", error);
+    if (error instanceof ApiException) {
+      console.error("Error fetching institution stats:", error.message);
+    } else {
+      console.error("Error fetching institution stats:", error);
+    }
     // Return mock data for development
     return {
       totalUsers: 12,

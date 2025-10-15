@@ -154,7 +154,10 @@ router.get(
       });
     } catch (error) {
       console.error("Error fetching admission head dashboard:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ 
+        message: "Internal server error",
+        code: "INTERNAL_ERROR",
+       });
     }
   }
 );
@@ -175,7 +178,7 @@ router.get(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       // Calculate date range
@@ -306,7 +309,7 @@ router.get(
       }
     } catch (error) {
       console.error("Error generating reports:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error", code: "INTERNAL_ERROR" });
     }
   }
 );
@@ -327,7 +330,7 @@ router.get(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       const where: any = { tenantId: tenant.id };
@@ -385,10 +388,10 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+          .json({ message: "Validation error", details: error.errors });
       }
       console.error("Error creating template:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error", code: "INTERNAL_ERROR" });
     }
   }
 );
@@ -433,10 +436,10 @@ router.put(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+          .json({ message: "Validation error", details: error.errors });
       }
       console.error("Error updating template:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error", code: "INTERNAL_ERROR" });
     }
   }
 );
@@ -456,7 +459,7 @@ router.delete(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       const template = await prisma.offerLetterTemplate.findFirst({
@@ -477,7 +480,7 @@ router.delete(
       res.json({ message: "Template deleted successfully" });
     } catch (error) {
       console.error("Error deleting template:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error", code: "INTERNAL_ERROR" });
     }
   }
 );
@@ -498,7 +501,7 @@ router.post(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       // Check if application exists and is approved
@@ -513,12 +516,13 @@ router.post(
       });
 
       if (!application) {
-        return res.status(404).json({ error: "Application not found" });
+        return res.status(404).json({ message: "Application not found", code: "APPLICATION_NOT_FOUND" });
       }
 
       if (application.admissionReview?.decision !== "APPROVED") {
         return res.status(400).json({
-          error: "Application must be approved before generating offer letter",
+          message: "Application must be approved before generating offer letter",
+          code: "APPLICATION_NOT_APPROVED",
         });
       }
 
@@ -530,7 +534,7 @@ router.post(
       if (existingOffer) {
         return res
           .status(400)
-          .json({ error: "Offer letter already exists for this application" });
+          .json({ message: "Offer letter already exists for this application", code: "OFFER_LETTER_ALREADY_EXISTS" });
       }
 
       let template = null;
@@ -544,7 +548,7 @@ router.post(
         });
 
         if (!template) {
-          return res.status(404).json({ error: "Template not found" });
+          return res.status(404).json({ message: "Template not found", code: "TEMPLATE_NOT_FOUND" });
         }
       }
 
@@ -589,10 +593,10 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+          .json({ message: "Validation error", details: error.errors });
       }
       console.error("Error generating offer letter:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error", code: "INTERNAL_ERROR" });
     }
   }
 );
@@ -613,7 +617,7 @@ router.post(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       // Get approved applications
@@ -633,7 +637,7 @@ router.post(
       if (applications.length !== body.applicationIds.length) {
         return res
           .status(400)
-          .json({ error: "Some applications are not approved or not found" });
+          .json({ message: "Some applications are not approved or not found", code: "APPLICATIONS_NOT_APPROVED" });
       }
 
       // Check for existing offer letters
@@ -645,7 +649,8 @@ router.post(
 
       if (existingOffers.length > 0) {
         return res.status(400).json({
-          error: "Some applications already have offer letters",
+          message: "Some applications already have offer letters",
+          code: "APPLICATIONS_ALREADY_HAVE_OFFER_LETTERS",
           existingApplications: existingOffers.map(
             (offer) => offer.applicationId
           ),
@@ -663,7 +668,7 @@ router.post(
         });
 
         if (!template) {
-          return res.status(404).json({ error: "Template not found" });
+          return res.status(404).json({ message: "Template not found", code: "TEMPLATE_NOT_FOUND" });
         }
       }
 
@@ -696,10 +701,10 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+          .json({ message: "Validation error", details: error.errors });
       }
       console.error("Error bulk generating offer letters:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error", code: "INTERNAL_ERROR" });
     }
   }
 );
@@ -720,7 +725,7 @@ router.post(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       // Get offer letters
@@ -742,7 +747,7 @@ router.post(
       });
 
       if (offerLetters.length !== body.offerLetterIds.length) {
-        return res.status(400).json({ error: "Some offer letters not found" });
+        return res.status(400).json({ message: "Some offer letters not found", code: "OFFER_LETTERS_NOT_FOUND" });
       }
 
       // Update offer letters status and create communications
@@ -790,10 +795,10 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.errors });
+          .json({ message: "Validation error", details: error.errors });
       }
       console.error("Error distributing offer letters:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error", code: "INTERNAL_ERROR" });
     }
   }
 );
@@ -814,7 +819,7 @@ router.get(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       const where: any = {
@@ -857,7 +862,7 @@ router.get(
       res.json(approvals);
     } catch (error) {
       console.error("Error fetching approvals:", error);
-      res.status(500).json({ error: "Internal server error" });
+        res.status(500).json({ message: "Internal server error", code: "INTERNAL_ERROR" });
     }
   }
 );

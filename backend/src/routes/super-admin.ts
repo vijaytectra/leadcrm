@@ -205,7 +205,7 @@ router.get(
     } catch (error) {
       console.error("Get dashboard error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }
@@ -377,7 +377,7 @@ router.get(
     } catch (error) {
       console.error("Get analytics error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }
@@ -493,7 +493,7 @@ router.get(
     } catch (error) {
       console.error("Get report error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }
@@ -585,7 +585,7 @@ router.get(
     } catch (error) {
       console.error("Get system health error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }

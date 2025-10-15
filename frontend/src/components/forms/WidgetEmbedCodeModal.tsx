@@ -16,6 +16,8 @@ import {
     Tablet,
     X
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { ApiException } from '@/lib/utils';
 
 interface WidgetEmbedCodeModalProps {
     widget: {
@@ -49,6 +51,13 @@ export function WidgetEmbedCodeModal({
             setTimeout(() => setCopied(false), 2000);
         } catch (err) {
             console.error('Failed to copy embed code:', err);
+            if (err instanceof ApiException) {
+                console.error("Error fetching preferences:", err.message);
+                toast.error(err.message);
+            } else {
+                console.error("Error fetching preferences:", err);
+                toast.error("Failed to copy embed code");
+            }
         }
     };
 

@@ -150,9 +150,9 @@ export default function LoginPage() {
             else {
                 router.push("/");
             }
-        } catch (err: unknown) {
-            if (err instanceof ApiException) {
-                setError(err.error.error || "Login failed");
+        } catch (error) {
+            if (error instanceof Error) {
+                setError(error.message || "Login failed");
             } else {
                 setError("Login failed. Please check your credentials.");
             }

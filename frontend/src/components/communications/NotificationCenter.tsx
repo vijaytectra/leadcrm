@@ -21,7 +21,7 @@ import {
     Info
 } from "lucide-react";
 import { toast } from "sonner";
-import { apiDeleteClient, apiGetClientNew, apiPutClient } from "@/lib/utils";
+import { ApiException, apiDeleteClient, apiGetClientNew, apiPutClient } from "@/lib/utils";
 import { getClientToken } from "@/lib/client-token";
 
 
@@ -87,6 +87,12 @@ export function NotificationCenter({ tenantSlug }: NotificationCenterProps) {
             const data = await apiGetClientNew(`/${tenantSlug}/notifications/preferences`, { token: getClientToken() || undefined });
             setPreferences((data as { preferences: NotificationPreferences }).preferences);
         } catch (error) {
+            console.error("Error fetching preferences:", error);
+            if (error instanceof ApiException) {
+                console.error("Error fetching preferences:", error.message);
+            } else {
+                console.error("Error fetching preferences:", error);
+            }
         }
     };
 
@@ -102,6 +108,12 @@ export function NotificationCenter({ tenantSlug }: NotificationCenterProps) {
             setSelectedNotifications([]);
         } catch (error) {
             toast.error("Failed to mark notifications as read");
+            console.error("Error fetching preferences:", error);
+            if (error instanceof ApiException) {
+                console.error("Error fetching preferences:", error.message);
+            } else {
+                console.error("Error fetching preferences:", error);
+            }
 
         }
     };
@@ -120,6 +132,12 @@ export function NotificationCenter({ tenantSlug }: NotificationCenterProps) {
             fetchNotifications();
         } catch (error) {
             toast.error("Failed to mark all notifications as read");
+            console.error("Error fetching preferences:", error);
+            if (error instanceof ApiException) {
+                console.error("Error fetching preferences:", error.message);
+            } else {
+                console.error("Error fetching preferences:", error);
+            }
 
         }
     };
@@ -134,6 +152,12 @@ export function NotificationCenter({ tenantSlug }: NotificationCenterProps) {
             fetchNotifications();
         } catch (error) {
             toast.error("Failed to delete notification");
+            console.error("Error fetching preferences:", error);
+            if (error instanceof ApiException) {
+                console.error("Error fetching preferences:", error.message);
+            } else {
+                console.error("Error fetching preferences:", error);
+            }
 
         }
     };
@@ -151,6 +175,12 @@ export function NotificationCenter({ tenantSlug }: NotificationCenterProps) {
             setPreferences(newPreferences);
         } catch (error) {
             toast.error("Failed to update notification preferences");
+            console.error("Error fetching preferences:", error);
+            if (error instanceof ApiException) {
+                console.error("Error fetching preferences:", error.message);
+            } else {
+                console.error("Error fetching preferences:", error);
+            }
 
         }
     };

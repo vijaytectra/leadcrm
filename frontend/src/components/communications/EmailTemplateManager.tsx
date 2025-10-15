@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Edit, Trash2, Eye, Copy, Mail } from "lucide-react";
 
-import { apiDeleteClient, apiGetClientNew, apiPostClientNew, apiPutClient } from "@/lib/utils";
+import { ApiException, apiDeleteClient, apiGetClientNew, apiPostClientNew, apiPutClient } from "@/lib/utils";
 import { toast } from "sonner";
 import { getClientToken } from "@/lib/client-token";
 
@@ -63,7 +63,12 @@ export function EmailTemplateManager({ tenantSlug }: EmailTemplateManagerProps) 
             }
         } catch (error) {
             console.error("Error fetching templates:", error);
-            toast.error("Failed to fetch email templates");
+            console.error("Error fetching communication stats:", error);
+            if (error instanceof ApiException) {
+                console.error("Error fetching communication stats:", error.message);
+            } else {
+                console.error("Error fetching communication stats:", error);
+            }
 
         } finally {
             setLoading(false);
@@ -83,8 +88,13 @@ export function EmailTemplateManager({ tenantSlug }: EmailTemplateManagerProps) 
             }
 
         } catch (error) {
+            console.error("Error creating template:", error);   
             console.error("Error creating template:", error);
-            toast.error("Failed to create email template");
+            if (error instanceof ApiException) {
+                console.error("Error creating template:", error.message);
+            } else {
+                console.error("Error creating template:", error);
+            }
         }
     };
 
@@ -105,7 +115,12 @@ export function EmailTemplateManager({ tenantSlug }: EmailTemplateManagerProps) 
             }
         } catch (error) {
             console.error("Error updating template:", error);
-            toast.error("Failed to update email template");
+            console.error("Error updating template:", error);
+            if (error instanceof ApiException) {
+                console.error("Error updating template:", error.message);
+            } else {
+                console.error("Error updating template:", error);
+            }
 
         }
     };
@@ -125,7 +140,12 @@ export function EmailTemplateManager({ tenantSlug }: EmailTemplateManagerProps) 
             fetchTemplates();
         } catch (error) {
             console.error("Error deleting template:", error);
-            toast.error("Failed to delete email template");
+            console.error("Error deleting template:", error);
+            if (error instanceof ApiException) {
+                console.error("Error deleting template:", error.message);
+            } else {
+                console.error("Error deleting template:", error);
+            }
 
         }
     };

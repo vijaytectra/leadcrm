@@ -13,6 +13,7 @@ import { FormTemplatesModal } from "./FormTemplatesModal";
 import { formsApi } from "@/lib/api/forms";
 import { useAuthStore } from "@/stores/auth";
 import type { FormBuilderConfig, FormField, FormTemplate } from "@/types/form-builder";
+import { ApiException } from "@/lib/utils";
 
 interface FormBuilderContainerProps {
     formId?: string;
@@ -94,9 +95,17 @@ export function FormBuilderContainer({
             setLoadedForm(formData);
             setLoadedFields(fieldsResponse.data.fields);
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : "Failed to load form";
-            setError(errorMessage);
-            toast.error(errorMessage);
+            console.error("Error fetching preferences:", err);
+            if (err instanceof ApiException) {
+                console.error("Error fetching preferences:", err.message)
+                setError(err.message);
+                toast.error(err.message);
+            } else {
+                console.error("Error fetching preferences:", err);
+                setError("Failed to load form");
+                toast.error("Failed to load form");
+            }
+           
         } finally {
             setIsLoading(false);
         }
@@ -123,9 +132,19 @@ export function FormBuilderContainer({
 
             setSelectedTemplate(template);
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : "Failed to load template";
-            setError(errorMessage);
-            toast.error(errorMessage);
+            
+                   
+            console.error("Error fetching preferences:", err);
+            if (err instanceof ApiException) {
+                console.error("Error fetching preferences:", err.message);
+                setError(err.message);
+                toast.error(err.message);
+            } else {
+                console.error("Error fetching preferences:", err);
+                setError("Failed to load template");
+                toast.error("Failed to load template");
+            }
+
         } finally {
             setIsLoading(false);
         }
@@ -199,10 +218,17 @@ export function FormBuilderContainer({
             setTimeout(() => {
                 router.push("/institution-admin/forms");
             }, 1000);
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : "Failed to publish form";
-            setError(errorMessage);
-            toast.error(errorMessage);
+        } catch (err) { 
+            console.error("Error fetching preferences:", err);
+            if (err instanceof ApiException) {
+                console.error("Error fetching preferences:", err.message);
+                setError(err.message);
+                toast.error(err.message);
+            } else {
+                console.error("Error fetching preferences:", err);
+                setError("Failed to publish form");
+                toast.error("Failed to publish form");
+            }
         } finally {
             setIsLoading(false);
         }

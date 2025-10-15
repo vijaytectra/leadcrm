@@ -148,11 +148,11 @@ router.get(
       formId;
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
-    
+
       // Get tenant
       const tenant = await prisma.tenant.findUnique({
         where: { slug: tenantSlug },
@@ -161,7 +161,7 @@ router.get(
 
       if (!tenant) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -184,7 +184,7 @@ router.get(
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
-        error: formError.message,
+        message: formError.message,
         code: formError.code,
       });
     }
@@ -211,7 +211,7 @@ router.get(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -224,7 +224,7 @@ router.get(
 
       if (!tenant) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -323,7 +323,7 @@ router.get(
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
-        error: formError.message,
+        message: formError.message,
         code: formError.code,
       });
     }
@@ -346,7 +346,7 @@ router.get(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -359,7 +359,7 @@ router.get(
 
       if (!tenant) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -385,7 +385,7 @@ router.get(
 
       if (!widget) {
         return res.status(404).json({
-          error: "Widget not found",
+          message: "Widget not found",
           code: "WIDGET_NOT_FOUND",
         });
       }
@@ -414,7 +414,7 @@ router.get(
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
-        error: formError.message,
+        message: formError.message,
         code: formError.code,
       });
     }
@@ -437,7 +437,7 @@ router.put(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -450,7 +450,7 @@ router.put(
 
       if (!tenant) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -458,7 +458,7 @@ router.put(
       const validation = updateWidgetSchema.safeParse(req.body);
       if (!validation.success) {
         return res.status(400).json({
-          error: "Validation failed",
+          message: "Validation failed",
           details: validation.error.issues,
           code: "VALIDATION_ERROR",
         });
@@ -491,7 +491,7 @@ router.put(
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
-        error: formError.message,
+        message: formError.message,
         code: formError.code,
       });
     }
@@ -514,7 +514,7 @@ router.delete(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -527,7 +527,7 @@ router.delete(
 
       if (!tenant) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -543,7 +543,7 @@ router.delete(
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
-        error: formError.message,
+        message: formError.message,
         code: formError.code,
       });
     }
@@ -566,7 +566,7 @@ router.get(
 
       if (!tenantSlug) {
         return res.status(400).json({
-          error: "Tenant slug is required",
+          message: "Tenant slug is required",
           code: "TENANT_REQUIRED",
         });
       }
@@ -579,7 +579,7 @@ router.get(
 
       if (!tenant) {
         return res.status(404).json({
-          error: "Tenant not found",
+          message: "Tenant not found",
           code: "TENANT_NOT_FOUND",
         });
       }
@@ -587,7 +587,7 @@ router.get(
       const query = analyticsQuerySchema.safeParse(req.query);
       if (!query.success) {
         return res.status(400).json({
-          error: "Invalid date range",
+          message: "Invalid date range",
           details: query.error.issues,
           code: "VALIDATION_ERROR",
         });
@@ -611,7 +611,7 @@ router.get(
       const formError = error as FormBuilderError;
       res.status(400).json({
         success: false,
-        error: formError.message,
+        message: formError.message,
         code: formError.code,
       });
     }
@@ -638,7 +638,7 @@ router.get("/public/widgets/:widgetId", async (req: Request, res: Response) => {
     const formError = error as FormBuilderError;
     res.status(404).json({
       success: false,
-      error: formError.message,
+      message: formError.message,
       code: formError.code,
     });
   }
@@ -679,7 +679,7 @@ router.post(
 
 /**
  * POST /public/widgets/:widgetId/submit
- * Submit form via widget (public)
+ * Submit form via widget (public) with lead conversion
  */
 router.post(
   "/public/widgets/:widgetId/submit",
@@ -695,6 +695,13 @@ router.post(
           form: {
             include: {
               fields: true,
+              tenant: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                },
+              },
             },
           },
         },
@@ -702,15 +709,58 @@ router.post(
 
       if (!widget || !widget.isActive) {
         return res.status(404).json({
-          error: "Widget not found or inactive",
+          message: "Widget not found or inactive",
           code: "WIDGET_NOT_FOUND",
         });
       }
 
       if (!widget.form.isPublished) {
         return res.status(400).json({
-          error: "Form is not published",
+          message: "Form is not published",
           code: "FORM_NOT_ACTIVE",
+        });
+      }
+
+      // Import services
+      const { FieldMappingService } = await import("../lib/field-mapping");
+      const { leadScoringService } = await import("../lib/lead-scoring");
+      const { emailService } = await import("../lib/email");
+      const { notificationService } = await import("../lib/notifications");
+
+      // Map form data to standardized lead fields
+      const { mappedData, unmappedFields, mappingLog } =
+        FieldMappingService.mapFormDataToLead(formData);
+
+      // Extract additional information
+      const leadSource = FieldMappingService.extractLeadSource(formData);
+      const courseInterest =
+        FieldMappingService.extractCourseInterest(formData);
+
+      // Calculate lead score
+      const scoringData = {
+        formType: widget.form.title.toLowerCase(),
+        formData: mappedData,
+        submissionTime: new Date(),
+        source: leadSource,
+        courseInterest,
+        budget: mappedData.budget,
+        responseTime: 0, // Immediate response
+      };
+
+      const scoringResult = leadScoringService.calculateScore(scoringData);
+
+      // Validate mapped data
+      const validation = FieldMappingService.validateMappedData(mappedData);
+
+      if (!validation.isValid) {
+        return res.status(400).json({
+          success: false,
+          message: "Required fields missing",
+          details: {
+            missingFields: validation.missingFields,
+            completeness: validation.score,
+          },
+          code: "VALIDATION_ERROR",
         });
       }
 
@@ -727,10 +777,157 @@ router.post(
             deviceType: "unknown",
             browser: "unknown",
             os: "unknown",
+            mappingLog,
+            unmappedFields,
           },
           status: "submitted",
         },
       });
+
+      // Create lead from mapped data
+      const lead = await prisma.lead.create({
+        data: {
+          tenantId: widget.form.tenantId,
+          formSubmissionId: submission.id,
+          name: mappedData.name,
+          email: mappedData.email,
+          phone: mappedData.phone,
+          source: leadSource,
+          status: "NEW",
+          score: scoringResult.score,
+          createdAt: new Date(),
+        },
+      });
+
+      // Update submission with lead ID
+      await prisma.formSubmission.update({
+        where: { id: submission.id },
+        data: { leadId: lead.id },
+      });
+
+      // Auto-assign lead using existing assignment algorithms
+      try {
+        const {
+          roundRobinAssignment,
+          loadBasedAssignment,
+          skillBasedAssignment,
+        } = await import("../routes/leads");
+
+        // Get assignment configuration (default to round-robin)
+        const assignmentConfig = {
+          algorithm: "ROUND_ROBIN" as const,
+          skillRequirements: {},
+        };
+
+        let assignments: Array<{ leadId: string; assigneeId: string }> = [];
+
+        switch (assignmentConfig.algorithm) {
+          case "ROUND_ROBIN":
+            assignments = await roundRobinAssignment(widget.form.tenantId, [
+              lead.id,
+            ]);
+            break;
+          case "LOAD_BASED":
+            assignments = await loadBasedAssignment(widget.form.tenantId, [
+              lead.id,
+            ]);
+            break;
+          case "SKILL_BASED":
+            assignments = await skillBasedAssignment(
+              widget.form.tenantId,
+              [lead.id],
+              assignmentConfig.skillRequirements
+            );
+            break;
+        }
+
+        if (assignments.length > 0) {
+          await prisma.lead.update({
+            where: { id: lead.id },
+            data: { assigneeId: assignments[0].assigneeId },
+          });
+        }
+      } catch (assignmentError) {
+        console.error("Error auto-assigning lead:", assignmentError);
+        // Continue without assignment
+      }
+
+      // Create lead source tracking
+      try {
+        await prisma.leadSourceTracking.create({
+          data: {
+            leadId: lead.id,
+            integrationId: "widget", // Default integration
+            platform: "WEBSITE" as any,
+            externalId: widgetId,
+            campaignId: widgetId,
+            campaignName: widget.name,
+            metadata: {
+              widgetId,
+              formId: widget.formId,
+              scoringResult,
+              mappingLog,
+            },
+          },
+        });
+      } catch (trackingError) {
+        console.error("Error creating lead source tracking:", trackingError);
+        // Continue without tracking
+      }
+
+      // Send notifications
+      try {
+        // Send notification to assigned telecaller
+        if (lead.assigneeId) {
+          await notificationService.createNotification({
+            tenantId: widget.form.tenantId,
+            userId: lead.assigneeId,
+            title: "New Lead Assigned",
+            message: `New lead ${lead.name} has been assigned to you`,
+            type: "INFO",
+            category: "LEAD",
+            actionType: "LEAD_ASSIGNED",
+            priority: "MEDIUM",
+            leadId: lead.id,
+            data: {
+              leadName: lead.name,
+              leadEmail: lead.email,
+              leadPhone: lead.phone,
+              leadSource: lead.source,
+              leadScore: lead.score,
+              formType: widget.form.title,
+            },
+          });
+        }
+
+        // Send welcome email to lead
+        if (mappedData.email) {
+          const welcomeEmailContent = `
+            <h2>Welcome to ${widget.form.tenant.name}!</h2>
+            <p>Thank you for your interest in our programs. We have received your application and our team will contact you soon.</p>
+            <p><strong>Application Details:</strong></p>
+            <ul>
+              <li>Name: ${mappedData.name}</li>
+              <li>Email: ${mappedData.email}</li>
+              <li>Phone: ${mappedData.phone}</li>
+              ${
+                mappedData.course ? `<li>Course: ${mappedData.course}</li>` : ""
+              }
+            </ul>
+            <p>Our admission team will review your application and contact you within 24 hours.</p>
+            <p>If you have any questions, please don't hesitate to contact us.</p>
+          `;
+
+          await emailService.sendEmail(
+            mappedData.email,
+            `Welcome to ${widget.form.tenant.name} - Application Received`,
+            welcomeEmailContent
+          );
+        }
+      } catch (notificationError) {
+        console.error("Error sending notifications:", notificationError);
+        // Continue without notifications
+      }
 
       // Track submission analytics
       await widgetService.trackWidgetSubmission(widgetId, true);
@@ -739,7 +936,15 @@ router.post(
         success: true,
         data: {
           submissionId: submission.id,
-          message: "Form submitted successfully",
+          leadId: lead.id,
+          leadScore: scoringResult.score,
+          leadPercentage: scoringResult.percentage,
+          message: "Form submitted successfully and lead created",
+          nextSteps: [
+            "Our team will review your application",
+            "You will receive a confirmation email shortly",
+            "Our admission team will contact you within 24 hours",
+          ],
         },
       });
     } catch (error) {
@@ -754,7 +959,7 @@ router.post(
 
       res.status(400).json({
         success: false,
-        error: "Failed to submit form",
+        message: "Failed to submit form",
         code: "SUBMISSION_ERROR",
       });
     }

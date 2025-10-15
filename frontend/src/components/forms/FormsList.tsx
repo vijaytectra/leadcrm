@@ -33,6 +33,7 @@ import { useAuthStore } from "@/stores/auth";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import type { FormBuilderConfig } from "@/types/form-builder";
+import { ApiException } from "@/lib/utils";
 
 interface FormsListProps {
     onEditForm?: (formId: string) => void;
@@ -74,13 +75,27 @@ export function FormsList({
                     } catch (error) {
                         console.error(`Failed to load widget count for form ${form.id}:`, error);
                         widgetCounts[form.id] = 0;
+                        if (error instanceof ApiException) {
+                            console.error("Error fetching preferences:", error.message);
+                          
+                        } else {
+                            console.error("Error fetching preferences:", error);
+
+                        }
                     }
                 }
                 setWidgetCounts(widgetCounts);
             }
         } catch (error) {
-            console.error("Error loading forms:", error);
-            toast.error("Failed to load forms");
+            console.error("Error deleting form:", error);
+            toast.error("Failed to delete form");
+            if (error instanceof ApiException) {
+                console.error("Error fetching preferences:", error.message);
+                toast.error(error.message);
+            } else {
+                console.error("Error fetching preferences:", error);
+                toast.error("Failed to delete form");
+            }
         } finally {
             setIsLoading(false);
         }
@@ -134,6 +149,14 @@ export function FormsList({
         } catch (error) {
             console.error("Error deleting form:", error);
             toast.error("Failed to delete form");
+            if (error instanceof ApiException) {
+                console.error("Error fetching preferences:", error.message);
+                toast.error(error.message);
+            } else {
+                console.error("Error fetching preferences:", error);
+                toast.error("Failed to delete form");
+            }
+
         } finally {
             setDeleteDialogOpen(false);
             setFormToDelete(null);

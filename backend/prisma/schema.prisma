@@ -86,7 +86,7 @@ model User {
     createdAt    DateTime  @default(now())
     updatedAt    DateTime  @updatedAt
 
-    tenant                  Tenant                   @relation(fields: [tenantId], references: [id])
+    tenant                  Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
     leadNotes               LeadNote[]
     assignedLeads           Lead[]                   @relation("LeadAssignee")
     refreshTokens           RefreshToken[]
@@ -147,26 +147,29 @@ model RolePermission {
 }
 
 model Lead {
-    id         String     @id @default(cuid())
-    tenantId   String
-    name       String
-    email      String?
-    phone      String?
-    source     String?
-    status     LeadStatus @default(NEW)
-    score      Int        @default(0)
-    assigneeId String?
-    createdAt  DateTime   @default(now())
-    updatedAt  DateTime   @updatedAt
+    id               String     @id @default(cuid())
+    tenantId         String
+    formSubmissionId String?    @unique // NEW: Bidirectional link
+    name             String
+    email            String?
+    phone            String?
+    source           String?
+    status           LeadStatus @default(NEW)
+    score            Int        @default(0)
+    assigneeId       String?
+    createdAt        DateTime   @default(now())
+    updatedAt        DateTime   @updatedAt
 
-    tenant            Tenant              @relation(fields: [tenantId], references: [id])
-    assignee          User?               @relation("LeadAssignee", fields: [assigneeId], references: [id])
-    notes             LeadNote[]
-    application       Application?
-    callLogs          CallLog[]
-    followUpReminders FollowUpReminder[]
-    sourceTracking    LeadSourceTracking?
-    notifications     Notification[]
+    tenant                     Tenant              @relation(fields: [tenantId], references: [id])
+    formSubmission             FormSubmission?     @relation("FormSubmissionLead", fields: [formSubmissionId], references: [id])
+    leadFormSubmissionRelation FormSubmission?     @relation("add_lead_form_submission_relation")
+    assignee                   User?               @relation("LeadAssignee", fields: [assigneeId], references: [id])
+    notes                      LeadNote[]
+    application                Application?
+    callLogs                   CallLog[]
+    followUpReminders          FollowUpReminder[]
+    sourceTracking             LeadSourceTracking?
+    notifications              Notification[]
 }
 
 enum LeadStatus {
@@ -256,16 +259,20 @@ model FormStep {
 }
 
 model FormSubmission {
-    id        String   @id @default(cuid())
-    formId    String
-    data      Json // Record<string, FormSubmissionValue>
-    metadata  Json // SubmissionMetadata
-    status    String   @default("submitted") // SubmissionStatus
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    id                           String   @id @default(cuid())
+    formId                       String
+    leadId                       String?  @unique // NEW: Link to created lead
+    leadFormSubmissionRelationId String?  @unique // NEW: Additional relation field
+    data                         Json // Record<string, FormSubmissionValue>
+    metadata                     Json // SubmissionMetadata
+    status                       String   @default("submitted") // SubmissionStatus
+    createdAt                    DateTime @default(now())
+    updatedAt                    DateTime @updatedAt
 
-    form    Form     @relation(fields: [formId], references: [id])
-    payment Payment? @relation("SubmissionPayment")
+    form                       Form     @relation(fields: [formId], references: [id])
+    lead                       Lead?    @relation("FormSubmissionLead") // NEW
+    leadFormSubmissionRelation Lead?    @relation("add_lead_form_submission_relation", fields: [leadFormSubmissionRelationId], references: [id])
+    payment                    Payment? @relation("SubmissionPayment")
 }
 
 model FormWidget {

@@ -65,6 +65,7 @@ export async function getUsers(tenantSlug: string): Promise<User[]> {
         token: token,
       }
     );
+   
 
     return response.users;
   } catch (error) {

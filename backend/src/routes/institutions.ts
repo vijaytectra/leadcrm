@@ -329,19 +329,33 @@ router.post(
   async (req: AuthedRequest, res) => {
     try {
       const institutionData = createInstitutionSchema.parse(req.body);
-
+   
       // Check if slug already exists
       const existingInstitution = await prisma.tenant.findUnique({
         where: { slug: institutionData.slug },
       });
-
+     
       if (existingInstitution) {
         return res.status(400).json({
-          error: "Institution with this slug already exists",
+          message: "Institution with this slug already exists",
           code: "SLUG_ALREADY_EXISTS",
         });
       }
 
+      // Check if email already exists (if provided)
+      if (institutionData.email) {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: institutionData.email },
+        });
+     
+        if (existingUser) {
+          return res.status(400).json({
+            message: "User with this email already exists",
+            code: "EMAIL_ALREADY_EXISTS",
+          });
+        }
+      }
+     
       // Create institution
       const institution = await prisma.tenant.create({
         data: {
@@ -360,20 +374,60 @@ router.post(
           },
         },
       });
-
+      console.log("institution", institution);
       // Create admin user for the institution
       const adminPassword = generateSecurePassword();
-      const adminUser = await prisma.user.create({
-        data: {
-          email: institutionData.email || `${institution.slug}@example.com`,
-          passwordHash: await hashPassword(adminPassword),
-          firstName: "Admin",
-          lastName: institution.name,
-          role: "INSTITUTION_ADMIN",
-          tenantId: institution.id,
-          isActive: true,
-        },
-      });
+
+      // Generate unique email for admin user
+      let adminEmail =
+        institutionData.email || `${institution.slug}@example.com`;
+      let emailCounter = 1;
+      console.log("adminEmail", adminEmail);
+      // Check if email already exists and generate unique one if needed
+      while (true) {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: adminEmail },
+        });
+        console.log("existingUser", existingUser);
+        if (!existingUser) {
+          break; // Email is unique, we can use it
+        }
+
+        // Generate alternative email
+        if (institutionData.email) {
+          // If provided email exists, append counter
+          adminEmail = `${institution.slug}-admin-${emailCounter}@example.com`;
+        } else {
+          // If default email exists, append counter
+          adminEmail = `${institution.slug}-admin-${emailCounter}@example.com`;
+        }
+        emailCounter++;
+      }
+      console.log("adminEmail", adminEmail);
+      let adminUser;
+      try {
+        adminUser = await prisma.user.create({
+          data: {
+            email: adminEmail,
+            passwordHash: await hashPassword(adminPassword),
+            firstName: "Admin",
+            lastName: institution.name,
+            role: "INSTITUTION_ADMIN",
+            tenantId: institution.id,
+            isActive: true,
+          },
+        });
+      } catch (userError) {
+        console.error("Failed to create admin user:", userError);
+        // If user creation fails, we should clean up the institution
+        await prisma.tenant.delete({
+          where: { id: institution.id },
+        });
+        return res.status(500).json({
+          message: "Failed to create admin user for institution",
+          code: "ADMIN_USER_CREATION_FAILED",
+        });
+      }
 
       // Send welcome email to institution admin
       try {
@@ -416,7 +470,7 @@ router.post(
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({
-          error: "Validation error",
+          message: "Validation error",
           code: "VALIDATION_ERROR",
           details: error.issues,
         });
@@ -424,7 +478,7 @@ router.post(
 
       console.error("Create institution error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }
@@ -452,7 +506,7 @@ router.put(
 
       if (!existingInstitution) {
         return res.status(404).json({
-          error: "Institution not found",
+          message: "Institution not found",
           code: "INSTITUTION_NOT_FOUND",
         });
       }
@@ -480,7 +534,7 @@ router.put(
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({
-          error: "Validation error",
+          message: "Validation error",
           code: "VALIDATION_ERROR",
           details: error.issues,
         });
@@ -488,7 +542,7 @@ router.put(
 
       console.error("Update institution error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }
@@ -515,7 +569,7 @@ router.delete(
 
       if (!existingInstitution) {
         return res.status(404).json({
-          error: "Institution not found",
+          message: "Institution not found",
           code: "INSTITUTION_NOT_FOUND",
         });
       }
@@ -556,7 +610,7 @@ router.post(
       const validStatuses = ["ACTIVE", "INACTIVE", "SUSPENDED", "EXPIRED"];
       if (!validStatuses.includes(status)) {
         return res.status(400).json({
-          error: "Invalid status",
+          message: "Invalid status",
           code: "INVALID_STATUS",
         });
       }
@@ -576,7 +630,7 @@ router.post(
     } catch (error) {
       console.error("Update institution status error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }
@@ -602,7 +656,7 @@ router.post(
         institutionIds.length === 0
       ) {
         return res.status(400).json({
-          error: "Institution IDs are required",
+          message: "Institution IDs are required",
           code: "MISSING_INSTITUTION_IDS",
         });
       }
@@ -621,7 +675,7 @@ router.post(
           (id) => !foundIds.includes(id)
         );
         return res.status(404).json({
-          error: "Some institutions not found",
+          message: "Some institutions not found",
           code: "INSTITUTIONS_NOT_FOUND",
           missingIds,
         });
@@ -708,7 +762,7 @@ router.post(
     } catch (error) {
       console.error("Bulk delete institutions error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }
@@ -734,7 +788,7 @@ router.post(
         institutionIds.length === 0
       ) {
         return res.status(400).json({
-          error: "Institution IDs are required",
+          message: "Institution IDs are required",
           code: "MISSING_INSTITUTION_IDS",
         });
       }
@@ -759,7 +813,7 @@ router.post(
     } catch (error) {
       console.error("Bulk activate institutions error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }
@@ -785,7 +839,7 @@ router.post(
         institutionIds.length === 0
       ) {
         return res.status(400).json({
-          error: "Institution IDs are required",
+          message: "Institution IDs are required",
           code: "MISSING_INSTITUTION_IDS",
         });
       }
@@ -810,7 +864,7 @@ router.post(
     } catch (error) {
       console.error("Bulk suspend institutions error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }

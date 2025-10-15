@@ -85,7 +85,7 @@ router.post(
 
       if (!tenantId) {
         return res.status(400).json({
-          error: "Tenant ID is required",
+          message: "Tenant ID is required",
           code: "MISSING_TENANT_ID",
         });
       }
@@ -104,7 +104,7 @@ router.post(
     } catch (error) {
       console.error("Calculate fee error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }
@@ -127,7 +127,7 @@ router.post(
 
       if (!tenantId) {
         return res.status(400).json({
-          error: "Tenant ID is required",
+          message: "Tenant ID is required",
           code: "MISSING_TENANT_ID",
         });
       }
@@ -145,7 +145,7 @@ router.post(
     } catch (error) {
       console.error("Calculate revenue split error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }
@@ -163,13 +163,12 @@ router.get(
   requireRole(["SUPER_ADMIN", "INSTITUTION_ADMIN", "FINANCE_TEAM"]),
   async (req: AuthedRequest, res) => {
     try {
-   
       const { period = "30d" } = req.query;
       const tenantId = req.auth?.ten;
 
       if (!tenantId) {
         return res.status(400).json({
-          error: "Tenant ID is required",
+          message: "Tenant ID is required",
           code: "MISSING_TENANT_ID",
         });
       }
@@ -186,7 +185,7 @@ router.get(
     } catch (error) {
       console.error("Get financial metrics error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }
@@ -215,7 +214,7 @@ router.get(
     } catch (error) {
       console.error("Get platform metrics error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }
@@ -238,7 +237,7 @@ router.post(
 
       if (!tenantId) {
         return res.status(400).json({
-          error: "Tenant ID is required",
+          message: "Tenant ID is required",
           code: "MISSING_TENANT_ID",
         });
       }
@@ -255,7 +254,7 @@ router.post(
     } catch (error) {
       console.error("Create payment error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }
@@ -302,7 +301,7 @@ router.get(
     } catch (error) {
       console.error("Get reconciliation error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }
@@ -336,14 +335,13 @@ router.get(
         tenantId?: string;
       };
 
-
       const userTenantId = req.auth?.ten;
       const allowedTenantId =
         req.auth?.rol === "SUPER_ADMIN" ? tenantId : userTenantId;
 
       if (!allowedTenantId) {
         return res.status(400).json({
-          error: "Tenant ID is required",
+          message: "Tenant ID is required",
           code: "MISSING_TENANT_ID",
         });
       }
@@ -416,7 +414,7 @@ router.get(
     } catch (error) {
       console.error("Get payments error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }
@@ -440,7 +438,7 @@ router.put(
       const validStatuses = ["CREATED", "COMPLETED", "FAILED", "REFUNDED"];
       if (!validStatuses.includes(status)) {
         return res.status(400).json({
-          error: "Invalid payment status",
+          message: "Invalid payment status",
           code: "INVALID_STATUS",
         });
       }
@@ -471,7 +469,7 @@ router.put(
     } catch (error) {
       console.error("Update payment status error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }
@@ -507,7 +505,7 @@ router.get(
 
       if (!allowedTenantId) {
         return res.status(400).json({
-          error: "Tenant ID is required",
+          message: "Tenant ID is required",
           code: "MISSING_TENANT_ID",
         });
       }
@@ -560,7 +558,7 @@ router.get(
           break;
         default:
           return res.status(400).json({
-            error: "Invalid report type",
+            message: "Invalid report type",
             code: "INVALID_REPORT_TYPE",
           });
       }
@@ -577,7 +575,7 @@ router.get(
     } catch (error) {
       console.error("Generate report error:", error);
       res.status(500).json({
-        error: "Internal server error",
+        message: "Internal server error",
         code: "INTERNAL_ERROR",
       });
     }
@@ -653,11 +651,8 @@ router.get(
     } catch (error) {
       console.error("Get finance dashboard error:", error);
       res.status(500).json({
-        success: false,
-        error: {
-          code: "DASHBOARD_ERROR",
-          message: "Failed to fetch dashboard data",
-        },
+        code: "DASHBOARD_ERROR",
+        message: "Failed to fetch dashboard data",
       });
     }
   }
@@ -685,11 +680,8 @@ router.post(
 
       if (!tenant) {
         return res.status(404).json({
-          success: false,
-          error: {
-            code: "TENANT_NOT_FOUND",
-            message: "Tenant not found",
-          },
+          code: "TENANT_NOT_FOUND",
+          message: "Tenant not found",
         });
       }
 
@@ -739,21 +731,15 @@ router.post(
 
       if (error instanceof z.ZodError) {
         return res.status(400).json({
-          success: false,
-          error: {
-            code: "VALIDATION_ERROR",
-            message: "Invalid input data",
-            details: error.issues,
-          },
+          code: "VALIDATION_ERROR",
+          message: "Invalid input data",
+          details: error.issues,
         });
       }
 
       res.status(500).json({
-        success: false,
-        error: {
-          code: "REFUND_REQUEST_ERROR",
-          message: "Failed to create refund request",
-        },
+        code: "REFUND_REQUEST_ERROR",
+        message: "Failed to create refund request",
       });
     }
   }
@@ -781,11 +767,8 @@ router.get(
 
       if (!tenant) {
         return res.status(404).json({
-          success: false,
-          error: {
-            code: "TENANT_NOT_FOUND",
-            message: "Tenant not found",
-          },
+          code: "TENANT_NOT_FOUND",
+          message: "Tenant not found",
         });
       }
 
@@ -846,11 +829,8 @@ router.get(
     } catch (error) {
       console.error("Get refunds error:", error);
       res.status(500).json({
-        success: false,
-        error: {
-          code: "FETCH_ERROR",
-          message: "Failed to fetch refunds",
-        },
+        code: "FETCH_ERROR",
+        message: "Failed to fetch refunds",
       });
     }
   }
@@ -879,11 +859,8 @@ router.put(
 
       if (!tenant) {
         return res.status(404).json({
-          success: false,
-          error: {
-            code: "TENANT_NOT_FOUND",
-            message: "Tenant not found",
-          },
+          code: "TENANT_NOT_FOUND",
+          message: "Tenant not found",
         });
       }
 
@@ -966,11 +943,8 @@ router.put(
       }
 
       res.status(500).json({
-        success: false,
-        error: {
-          code: "APPROVAL_ERROR",
-          message: "Failed to approve/reject refund",
-        },
+        code: "APPROVAL_ERROR",
+        message: "Failed to approve/reject refund",
       });
     }
   }
@@ -998,11 +972,8 @@ router.get(
 
       if (!tenant) {
         return res.status(404).json({
-          success: false,
-          error: {
-            code: "TENANT_NOT_FOUND",
-            message: "Tenant not found",
-          },
+          code: "TENANT_NOT_FOUND",
+          message: "Tenant not found",
         });
       }
 
@@ -1021,11 +992,8 @@ router.get(
     } catch (error) {
       console.error("Get audit trail error:", error);
       res.status(500).json({
-        success: false,
-        error: {
-          code: "AUDIT_TRAIL_ERROR",
-          message: "Failed to fetch audit trail",
-        },
+        code: "AUDIT_TRAIL_ERROR",
+        message: "Failed to fetch audit trail",
       });
     }
   }
@@ -1053,11 +1021,8 @@ router.get(
 
       if (!tenant) {
         return res.status(404).json({
-          success: false,
-          error: {
-            code: "TENANT_NOT_FOUND",
-            message: "Tenant not found",
-          },
+          code: "TENANT_NOT_FOUND",
+          message: "Tenant not found",
         });
       }
 
@@ -1129,11 +1094,8 @@ router.get(
     } catch (error) {
       console.error("Get financial summary error:", error);
       res.status(500).json({
-        success: false,
-        error: {
-          code: "REPORT_ERROR",
-          message: "Failed to generate financial summary",
-        },
+        code: "REPORT_ERROR",
+        message: "Failed to generate financial summary",
       });
     }
   }

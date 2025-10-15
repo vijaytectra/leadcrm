@@ -92,7 +92,7 @@ router.get(
     try {
       const { tenantSlug } = req;
       if (!tenantSlug) {
-        return res.status(400).json({ error: "Tenant slug required" });
+        return res.status(400).json({ message: "Tenant slug required", code: "TENANT_SLUG_REQUIRED" });
       }
 
       const tenant = await prisma.tenant.findUnique({
@@ -100,7 +100,7 @@ router.get(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       const templates = await (prisma as any).emailTemplate.findMany({
@@ -111,7 +111,7 @@ router.get(
       res.json({ templates });
     } catch (error) {
       console.error("Failed to get email templates:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error", code: "INTERNAL_ERROR" });
     }
   }
 );
@@ -128,7 +128,7 @@ router.post(
     try {
       const { tenantSlug } = req;
       if (!tenantSlug) {
-        return res.status(400).json({ error: "Tenant slug required" });
+        return res.status(400).json({ message: "Tenant slug required", code: "TENANT_SLUG_REQUIRED" });
       }
 
       const tenant = await prisma.tenant.findUnique({
@@ -136,7 +136,7 @@ router.post(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       const data = CreateEmailTemplateSchema.parse(req.body);
@@ -163,10 +163,10 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.issues });
+          .json({ message: "Validation error", details: error.issues });
       }
       console.error("Failed to create email template:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error", code: "INTERNAL_ERROR" });
     }
   }
 );
@@ -185,7 +185,7 @@ router.put(
       const { tenantSlug } = req;
 
       if (!tenantSlug) {
-        return res.status(400).json({ error: "Tenant slug required" });
+        return res.status(400).json({ message: "Tenant slug required", code: "TENANT_SLUG_REQUIRED" });
       }
 
       const tenant = await prisma.tenant.findUnique({
@@ -193,7 +193,7 @@ router.put(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       const data = CreateEmailTemplateSchema.partial().parse(req.body);
@@ -215,10 +215,10 @@ router.put(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.issues });
+          .json({ message: "Validation error", details: error.issues });
       }
       console.error("Failed to update email template:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error", code: "INTERNAL_ERROR" });
     }
   }
 );
@@ -237,7 +237,7 @@ router.delete(
       const { tenantSlug } = req;
 
       if (!tenantSlug) {
-        return res.status(400).json({ error: "Tenant slug required" });
+          return res.status(400).json({ message: "Tenant slug required", code: "TENANT_SLUG_REQUIRED" });
       }
 
       const tenant = await prisma.tenant.findUnique({
@@ -245,7 +245,7 @@ router.delete(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       await (prisma as any).emailTemplate.delete({
@@ -259,7 +259,7 @@ router.delete(
       res.json({ success: true });
     } catch (error) {
       console.error("Failed to delete email template:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error", code: "INTERNAL_ERROR" });
     }
   }
 );
@@ -278,7 +278,7 @@ router.post(
     try {
       const { tenantSlug } = req;
       if (!tenantSlug) {
-        return res.status(400).json({ error: "Tenant slug required" });
+        return res.status(400).json({ message: "Tenant slug required", code: "TENANT_SLUG_REQUIRED" });
       }
 
       const tenant = await prisma.tenant.findUnique({
@@ -286,7 +286,7 @@ router.post(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       const { templateId, to, variables, priority, scheduledAt } = req.body;
@@ -303,7 +303,7 @@ router.post(
       res.json({ success: true, queueId });
     } catch (error) {
       console.error("Failed to send template email:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error", code: "INTERNAL_ERROR" });
     }
   }
 );
@@ -320,7 +320,7 @@ router.post(
     try {
       const { tenantSlug } = req;
       if (!tenantSlug) {
-        return res.status(400).json({ error: "Tenant slug required" });
+        return res.status(400).json({ message: "Tenant slug required", code: "TENANT_SLUG_REQUIRED" });
       }
 
       const tenant = await prisma.tenant.findUnique({
@@ -328,7 +328,7 @@ router.post(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       const data = SendEmailSchema.parse(req.body);
@@ -349,10 +349,10 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.issues });
+          .json({ message: "Validation error", details: error.issues });
       }
       console.error("Failed to send direct email:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error", code: "INTERNAL_ERROR" });
     }
   }
 );
@@ -371,7 +371,7 @@ router.post(
     try {
       const { tenantSlug } = req;
       if (!tenantSlug) {
-        return res.status(400).json({ error: "Tenant slug required" });
+        return res.status(400).json({ message: "Tenant slug required", code: "TENANT_SLUG_REQUIRED" });
       }
 
       const tenant = await prisma.tenant.findUnique({
@@ -379,7 +379,7 @@ router.post(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       const data = SendSMSSchema.parse(req.body);
@@ -406,10 +406,10 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.issues });
+            .json({ message: "Validation error", details: error.issues });
       }
       console.error("Failed to send SMS:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error", code: "INTERNAL_ERROR" });
     }
   }
 );
@@ -428,7 +428,7 @@ router.post(
     try {
       const { tenantSlug } = req;
       if (!tenantSlug) {
-        return res.status(400).json({ error: "Tenant slug required" });
+        return res.status(400).json({ message: "Tenant slug required", code: "TENANT_SLUG_REQUIRED" });
       }
 
       const tenant = await prisma.tenant.findUnique({
@@ -436,7 +436,7 @@ router.post(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       const data = SendWhatsAppSchema.parse(req.body);
@@ -479,10 +479,10 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.issues });
+          .json({ message: "Validation error", details: error.issues });
       }
       console.error("Failed to send WhatsApp message:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error", code: "INTERNAL_ERROR" });
     }
   }
 );
@@ -501,7 +501,7 @@ router.post(
     try {
       const { tenantSlug } = req;
       if (!tenantSlug) {
-        return res.status(400).json({ error: "Tenant slug required" });
+        return res.status(400).json({ message: "Tenant slug required", code: "TENANT_SLUG_REQUIRED" });
       }
 
       const tenant = await prisma.tenant.findUnique({
@@ -509,7 +509,7 @@ router.post(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       const data = SendNotificationSchema.parse(req.body);
@@ -548,7 +548,7 @@ router.post(
       } else {
         return res
           .status(400)
-          .json({ error: "Must specify users, roles, or allUsers" });
+          .json({ message: "Must specify users, roles, or allUsers", code: "MUST_SPECIFY_USERS_ROLES_OR_ALL_USERS" });
       }
 
       res.json({ success: true, notificationIds });
@@ -556,10 +556,10 @@ router.post(
       if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: error.issues });
+          .json({ message: "Validation error", details: error.issues });
       }
       console.error("Failed to send notification:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error", code: "INTERNAL_ERROR" });
     }
   }
 );
@@ -578,7 +578,7 @@ router.get(
     try {
       const { tenantSlug } = req;
       if (!tenantSlug) {
-        return res.status(400).json({ error: "Tenant slug required" });
+        return res.status(400).json({ message: "Tenant slug required", code: "TENANT_SLUG_REQUIRED" });
       }
 
       const tenant = await prisma.tenant.findUnique({
@@ -586,7 +586,7 @@ router.get(
       });
 
       if (!tenant) {
-        return res.status(404).json({ error: "Tenant not found" });
+        return res.status(404).json({ message: "Tenant not found", code: "TENANT_NOT_FOUND" });
       }
 
       const [emailStats, smsStats, whatsappStats, notificationStats] =
@@ -605,7 +605,7 @@ router.get(
       });
     } catch (error) {
       console.error("Failed to get communication stats:", error);
-      res.status(500).json({ error: "Internal server error" });
+        res.status(500).json({ message: "Internal server error", code: "INTERNAL_ERROR" });
     }
   }
 );

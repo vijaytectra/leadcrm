@@ -18,6 +18,7 @@ import {
   createSSEConnection,
 } from "@/lib/api/notifications";
 import { getClientToken } from "@/lib/client-token";
+import { ApiException } from "@/lib/utils";
 
 export function useNotifications() {
   const [isClient, setIsClient] = useState(false);
@@ -71,9 +72,14 @@ export function useNotifications() {
       setNotifications(response.notifications);
       setPagination(response.pagination);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to fetch notifications"
-      );
+      console.error("Failed to fetch notifications:", err);
+      if (err instanceof ApiException) {
+        console.error("Error fetching preferences:", err.message);
+        setError(err.message);
+      } else {
+        console.error("Error fetching preferences:", err);
+        setError("Failed to fetch notifications");
+      }
     } finally {
       setLoading(false);
     }
@@ -90,6 +96,13 @@ export function useNotifications() {
       setStats(statsData);
     } catch (err) {
       console.error("Failed to fetch notification stats:", err);
+      if (err instanceof ApiException) {
+        console.error("Error fetching preferences:", err.message);
+        setError(err.message);
+      } else {
+        console.error("Error fetching preferences:", err);
+        setError("Failed to fetch notification stats");
+      }
     }
   }, [isClient, currentTenantSlug]);
 
@@ -106,7 +119,14 @@ export function useNotifications() {
         await fetchStats();
       } catch (err) {
         console.error("Polling error:", err);
-      }
+        if (err instanceof ApiException) {
+          console.error("Error fetching preferences:", err.message);
+          setError(err.message);
+        } else {
+          console.error("Error fetching preferences:", err);
+          setError("Failed to fetch notifications");
+        }
+        }
     }, 30000); // Poll every 30 seconds
   }, [fetchNotifications, fetchStats]);
 
@@ -184,7 +204,14 @@ export function useNotifications() {
           }
         } catch (err) {
           console.error("Failed to parse SSE event:", err);
-        }
+          if (err instanceof ApiException) {
+            console.error("Error fetching preferences:", err.message);
+            setError(err.message);
+          } else {
+            console.error("Error fetching preferences:", err);
+            setError("Failed to parse SSE event");
+          }
+          }
       };
 
       eventSource.onerror = (error) => {
@@ -227,6 +254,13 @@ export function useNotifications() {
       };
     } catch (err) {
       console.error("Failed to initialize SSE connection:", err);
+      if (err instanceof ApiException) {
+        console.error("Error fetching preferences:", err.message);
+        setError(err.message);
+      } else {
+        console.error("Error fetching preferences:", err);
+        setError("Failed to initialize connection");
+      }
       setConnectionError("Failed to initialize connection");
     }
   }, [isClient, currentTenantSlug, startPolling]);
@@ -281,6 +315,13 @@ export function useNotifications() {
         );
       } catch (err) {
         console.error("Failed to mark notification as read:", err);
+        if (err instanceof ApiException) {
+          console.error("Error fetching preferences:", err.message);
+          setError(err.message);
+        } else {
+          console.error("Error fetching preferences:", err);
+          setError("Failed to mark notification as read");
+        }
       }
     },
     [currentTenantSlug]
@@ -307,6 +348,13 @@ export function useNotifications() {
       setStats((prev) => (prev ? { ...prev, unread: 0 } : null));
     } catch (err) {
       console.error("Failed to mark all notifications as read:", err);
+      if (err instanceof ApiException) {
+        console.error("Error fetching preferences:", err.message);
+        setError(err.message);
+      } else {
+        console.error("Error fetching preferences:", err);
+        setError("Failed to mark all notifications as read");
+      }
     }
   }, [currentTenantSlug]);
 
@@ -334,6 +382,13 @@ export function useNotifications() {
         );
       } catch (err) {
         console.error("Failed to delete notification:", err);
+        if (err instanceof ApiException) {
+          console.error("Error fetching preferences:", err.message);
+          setError(err.message);
+        } else {
+          console.error("Error fetching preferences:", err);
+          setError("Failed to delete notification");
+        }
       }
     },
     [currentTenantSlug]
@@ -352,7 +407,14 @@ export function useNotifications() {
       setStats((prev) => (prev ? { ...prev, total: 0, unread: 0 } : null));
     } catch (err) {
       console.error("Failed to delete all notifications:", err);
-    }
+      if (err instanceof ApiException) {
+        console.error("Error fetching preferences:", err.message);
+        setError(err.message);
+      } else {
+        console.error("Error fetching preferences:", err);
+        setError("Failed to delete all notifications");
+      }
+      }
   }, [currentTenantSlug]);
 
   // Update filters

@@ -16,6 +16,7 @@ import { formBuilderUtils, formsApi } from "@/lib/api/forms";
 import { useAuthStore } from "@/stores/auth";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { ApiException } from "@/lib/utils";
 
 
 // Initial state
@@ -708,9 +709,9 @@ export function FormBuilderProvider({
     }, [addField, state.fields]);
 
     const saveForm = useCallback(async () => {
-       
+
         if (!state.currentForm || !currentTenantSlug) {
-           
+
             return;
         }
 
@@ -764,7 +765,7 @@ export function FormBuilderProvider({
                 }
             } else {
                 // Create new form
-            
+
 
                 const response = await formsApi.createForm(
                     currentTenantSlug,
@@ -787,9 +788,9 @@ export function FormBuilderProvider({
                 setCurrentForm({ ...state.currentForm, id: response.data.id });
 
                 // Create fields with conditional logic
-                
+
                 for (const field of state.fields) {
-                  
+
                     await formsApi.createField(currentTenantSlug, response.data.id, {
                         type: field.type,
                         label: field.label,
@@ -806,11 +807,19 @@ export function FormBuilderProvider({
                     });
                 }
             }
-          
+
             setDirty(false);
         } catch (error) {
-            setError("Failed to save form");
-            throw error; // Re-throw to let the caller handle it
+
+            if (error instanceof ApiException) {
+                console.error("Error fetching preferences:", error.message);
+                setError(error.message);
+                toast.error(error.message);
+            } else {
+                console.error("Error fetching preferences:", error);
+                setError("Failed to save form");
+                toast.error("Failed to save form");
+            }
         } finally {
             setLoading(false);
         }
@@ -833,7 +842,15 @@ export function FormBuilderProvider({
             setDraftMode(false);
             setDirty(false);
         } catch (error) {
-            setError("Failed to publish form");
+            if (error instanceof ApiException) {
+                console.error("Error fetching preferences:", error.message);
+                setError(error.message);
+                toast.error(error.message);
+            } else {
+                console.error("Error fetching preferences:", error);
+                setError("Failed to save form");
+                toast.error("Failed to save form");
+            }
         } finally {
             setLoading(false);
         }
@@ -865,7 +882,15 @@ export function FormBuilderProvider({
             }
             setDirty(false);
         } catch (error) {
-            setError("Failed to load form");
+            if (error instanceof ApiException) {
+                console.error("Error fetching preferences:", error.message);
+                setError(error.message);
+                toast.error(error.message);
+            } else {
+                console.error("Error fetching preferences:", error);
+                setError("Failed to save form");
+                toast.error("Failed to save form");
+            }
         } finally {
             setLoading(false);
         }
@@ -879,7 +904,15 @@ export function FormBuilderProvider({
             await formsApi.deleteForm(currentTenantSlug, formId);
             reset();
         } catch (error) {
-            setError("Failed to delete form");
+            if (error instanceof ApiException) {
+                console.error("Error fetching preferences:", error.message);
+                setError(error.message);
+                toast.error(error.message);
+            } else {
+                console.error("Error fetching preferences:", error);
+                setError("Failed to save form");
+                toast.error("Failed to save form");
+            }
         } finally {
             setLoading(false);
         }
@@ -1045,7 +1078,15 @@ export function FormBuilderProvider({
                 actions.setPublished(false);
                 toast.success("Form saved as draft");
             } catch (error) {
-                actions.setError("Failed to save form");
+                if (error instanceof ApiException) {
+                    console.error("Error fetching preferences:", error.message);
+                    actions.setError(error.message);
+                    toast.error(error.message);
+                } else {
+                    console.error("Error fetching preferences:", error);
+                    actions.setError("Failed to save form");
+                    toast.error("Failed to save form");
+                }
                 toast.error("Failed to save form");
             } finally {
                 actions.setLoading(false);
@@ -1096,7 +1137,15 @@ export function FormBuilderProvider({
                 // Redirect to forms list after successful publish
                 router.push('/institution-admin/forms');
             } catch (error) {
-                actions.setError("Failed to publish form");
+                if (error instanceof ApiException) {
+                    console.error("Error fetching preferences:", error.message);
+                    actions.setError(error.message);
+                    toast.error(error.message);
+                } else {
+                    console.error("Error fetching preferences:", error);
+                    actions.setError("Failed to publish form");
+                    toast.error("Failed to publish form");
+                }
                 toast.error("Failed to publish form");
             } finally {
                 actions.setLoading(false);
@@ -1134,7 +1183,15 @@ export function FormBuilderProvider({
                 }
                 actions.setDirty(false);
             } catch (error) {
-                actions.setError("Failed to load form");
+                if (error instanceof ApiException) {
+                    console.error("Error fetching preferences:", error.message);
+                    actions.setError(error.message);
+                    toast.error(error.message);
+                } else {
+                    console.error("Error fetching preferences:", error);
+                    actions.setError("Failed to load form");
+                    toast.error("Failed to load form");
+                }
                 toast.error("Failed to load form");
             } finally {
                 actions.setLoading(false);
@@ -1158,7 +1215,15 @@ export function FormBuilderProvider({
                 // Redirect to forms list after successful deletion
                 router.push('/institution-admin/forms');
             } catch (error) {
-                actions.setError("Failed to delete form");
+                if (error instanceof ApiException) {
+                    console.error("Error fetching preferences:", error.message);
+                    actions.setError(error.message);
+                    toast.error(error.message);
+                } else {
+                    console.error("Error fetching preferences:", error);
+                    actions.setError("Failed to delete form");
+                    toast.error("Failed to delete form");
+                }
                 toast.error("Failed to delete form");
             } finally {
                 actions.setLoading(false);

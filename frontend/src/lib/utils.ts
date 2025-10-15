@@ -12,7 +12,8 @@ export const API_BASE_URL =
 
 // API Error types
 export interface ApiError {
-  error: string;
+  error?: string;
+  message?: string;
   code: string;
   details?: unknown;
 }
@@ -122,7 +123,11 @@ export async function apiPost<TResponse>(
         code: "UNKNOWN_ERROR",
       })
     );
-    throw new ApiException("API Error", res.status, errorData);
+    throw new ApiException(
+      errorData.message || errorData.error || "Unknown error",
+      res.status,
+      errorData
+    );
   }
 
   return res.json();
@@ -162,7 +167,11 @@ export async function apiPut<TResponse>(
         code: "UNKNOWN_ERROR",
       })
     );
-    throw new ApiException("API Error", res.status, errorData);
+    throw new ApiException(
+      errorData.message || errorData.error || "Unknown error",
+      res.status,
+      errorData
+    );
   }
 
   return res.json();
@@ -184,7 +193,6 @@ export async function apiGet<TResponse>(
   }
 
   const fullUrl = `${API_BASE_URL}/api${path}`;
- 
 
   const res = await fetch(fullUrl, {
     credentials: "include", // Include cookies in requests
@@ -194,8 +202,6 @@ export async function apiGet<TResponse>(
     cache: "no-store",
   });
 
-  
-
   if (!res.ok) {
     const errorData = await res.json().catch(
       (): ApiError => ({
@@ -203,8 +209,12 @@ export async function apiGet<TResponse>(
         code: "UNKNOWN_ERROR",
       })
     );
- 
-    throw new ApiException("API Error", res.status, errorData);
+
+    throw new ApiException(
+      errorData.message || errorData.error || "Unknown error",
+      res.status,
+      errorData
+    );
   }
 
   const responseData = await res.json();
@@ -235,7 +245,11 @@ export async function apiGetClient<TResponse>(
         code: "UNKNOWN_ERROR",
       })
     );
-    throw new ApiException("API Error", res.status, errorData);
+    throw new ApiException(
+      errorData.message || errorData.error || "Unknown error",
+      res.status,
+      errorData
+    );
   }
 
   return res.json();
@@ -255,6 +269,7 @@ export async function apiPostClient<TResponse>(
     },
     body: JSON.stringify(body),
   });
+  console.log("RESPONSE", res);
 
   if (!res.ok) {
     const errorData = await res.json().catch(
@@ -263,7 +278,11 @@ export async function apiPostClient<TResponse>(
         code: "UNKNOWN_ERROR",
       })
     );
-    throw new ApiException("API Error", res.status, errorData);
+    throw new ApiException(
+      errorData.message || errorData.error || "Unknown error",
+      res.status,
+      errorData
+    );
   }
 
   return res.json();
@@ -302,7 +321,11 @@ export async function apiGetClientNew<TResponse>(
         code: "UNKNOWN_ERROR",
       })
     );
-    throw new ApiException("API Error", res.status, errorData);
+    throw new ApiException(
+      errorData.message || errorData.error || "Unknown error",
+      res.status,
+      errorData
+    );
   }
 
   return res.json();
@@ -339,7 +362,7 @@ export async function apiPostClientNew<TResponse>(
   if (!res.ok) {
     const errorData = await res.json().catch(
       (): ApiError => ({
-        error: "Unknown error",
+        error: errorData.message || "Unknown error",
         code: "UNKNOWN_ERROR",
       })
     );
@@ -380,11 +403,15 @@ export async function apiPutClient<TResponse>(
   if (!res.ok) {
     const errorData = await res.json().catch(
       (): ApiError => ({
-        error: "Unknown error",
+        error: errorData.message || "Unknown error",
         code: "UNKNOWN_ERROR",
       })
     );
-    throw new ApiException("API Error", res.status, errorData);
+    throw new ApiException(
+      errorData.message || errorData.message || "Unknown error",
+      res.status,
+      errorData
+    );
   }
 
   return res.json();
@@ -419,11 +446,15 @@ export async function apiDeleteClient<TResponse>(
   if (!res.ok) {
     const errorData = await res.json().catch(
       (): ApiError => ({
-        error: "Unknown error",
+        error: errorData.message || "Unknown error",
         code: "UNKNOWN_ERROR",
       })
     );
-    throw new ApiException("API Error", res.status, errorData);
+    throw new ApiException(
+      errorData.message || errorData.message || "Unknown error",
+      res.status,
+      errorData
+    );
   }
 
   return res.json();
