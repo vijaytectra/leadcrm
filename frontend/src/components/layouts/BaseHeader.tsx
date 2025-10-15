@@ -98,10 +98,10 @@ export function BaseHeader({
             console.error("Failed to mark notification as read:", error);
         }
     };
-    console.log("Notifications", realTimeNotifications);
+
 
     const handleToastNavigate = (notification: Notification) => {
-        console.log("handleToastNavigate called with notification:", notification);
+
         if (notification.data?.actionUrl && typeof notification.data.actionUrl === 'string') {
             router.push(`${notification.data.actionUrl}?tenant=${currentTenantSlug}`);
         } else if (notification.leadId) {

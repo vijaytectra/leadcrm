@@ -42,14 +42,14 @@ const roleCredentials = [
     {
         role: "Telecaller",
         tenant: "demo-school",
-        email: "yixas41914@gta5hx.com",
-        password: "Uef0.0K_f3*U",
+        email: "telecaller1@demoschool.com",
+        password: "Vijay@123",
         description: "Lead contact specialist"
     },
     {
         role: "Document Verifier",
         tenant: "demo-school",
-        email: "ricojo2704@lorkex.com",
+        email: "yixas41914@gta5hx.com",
         password: "Vijay@123",
         description: "Document validation specialist"
     },
