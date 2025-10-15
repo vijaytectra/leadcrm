@@ -97,7 +97,7 @@ export function useNotifications() {
   const startPolling = useCallback(() => {
     if (pollingIntervalRef.current) return; // Already polling
 
-    console.log("Starting polling for notifications...");
+    
     setIsPolling(true);
 
     pollingIntervalRef.current = setInterval(async () => {
@@ -116,7 +116,7 @@ export function useNotifications() {
       clearInterval(pollingIntervalRef.current);
       pollingIntervalRef.current = null;
       setIsPolling(false);
-      console.log("Stopped polling for notifications");
+    
     }
   }, []);
 
@@ -150,7 +150,7 @@ export function useNotifications() {
         setIsConnected(true);
         setConnectionError(null);
         reconnectAttemptsRef.current = 0; // Reset attempts on successful connection
-        console.log("SSE connection opened for tenant:", currentTenantSlug);
+       
       };
 
       eventSource.onmessage = (event) => {

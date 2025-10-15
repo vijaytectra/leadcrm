@@ -38,9 +38,6 @@ router.get(
   async (req: AuthedRequest, res) => {
     try {
       const userId = req.auth?.sub;
-      console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-      console.log("User ID:", userId);
-      console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
 
       if (!userId) {
         return res.status(401).json({ error: "User ID required" });
@@ -56,15 +53,6 @@ router.get(
       const sortBy = (req.query.sortBy as string) || "createdAt";
       const sortOrder = (req.query.sortOrder as string) || "desc";
 
-      console.log("Query params:", {
-        page,
-        limit,
-        offset,
-        unreadOnly,
-        sortBy,
-        sortOrder,
-      });
-
       const notifications = await notificationService.getUserNotifications(
         userId,
         limit,
@@ -73,7 +61,6 @@ router.get(
         sortBy,
         sortOrder
       );
-      console.log("Notifications:", notifications);
 
       // Get total count for pagination
       const totalCount = await notificationService.getUserNotificationCount(

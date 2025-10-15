@@ -10,7 +10,7 @@ interface LeadsStatsProps {
 }
 
 export const LeadsStats = memo(function LeadsStats({ stats, loading }: LeadsStatsProps) {
-  console.log("stats", stats);
+
   const statsConfig = [
     {
       key: "NEW",

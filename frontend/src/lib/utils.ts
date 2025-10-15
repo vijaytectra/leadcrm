@@ -183,13 +183,18 @@ export async function apiGet<TResponse>(
     }
   }
 
-  const res = await fetch(`${API_BASE_URL}/api${path}`, {
+  const fullUrl = `${API_BASE_URL}/api${path}`;
+ 
+
+  const res = await fetch(fullUrl, {
     credentials: "include", // Include cookies in requests
     headers: {
       ...(opts?.token ? { Authorization: `Bearer ${token}` } : {}),
     },
     cache: "no-store",
   });
+
+  
 
   if (!res.ok) {
     const errorData = await res.json().catch(
@@ -198,10 +203,13 @@ export async function apiGet<TResponse>(
         code: "UNKNOWN_ERROR",
       })
     );
+ 
     throw new ApiException("API Error", res.status, errorData);
   }
 
-  return res.json();
+  const responseData = await res.json();
+
+  return responseData;
 }
 
 // Client-side API functions that don't use server actions

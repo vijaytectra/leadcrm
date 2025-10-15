@@ -14,6 +14,7 @@ import { AnnouncementModal } from "@/components/notifications/AnnouncementModal"
 import { DeleteDialog } from "@/components/ui/confirmation-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { NotificationFiltersComponent } from "@/components/notifications/NotificationFilters";
+import { useAuthStore } from "@/stores/auth";
 
 export default function NotificationsPage() {
     const router = useRouter();
@@ -142,7 +143,8 @@ export default function NotificationsPage() {
 
     const handleNavigate = useCallback((notification: Notification) => {
         if (notification.leadId) {
-            router.push(`/institution-admin/leads?leadId=${notification.leadId}`);
+            const { currentTenantSlug } = useAuthStore.getState();
+            router.push(`/institution-admin/leads/${notification.leadId}?tenant=${currentTenantSlug}`);
         } else {
             // Navigate to notification details or relevant page
             console.log("Navigate to notification:", notification);

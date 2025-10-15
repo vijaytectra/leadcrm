@@ -19,17 +19,19 @@ export async function getLeadDetails(
   userRole: "TELECALLER" | "INSTITUTION_ADMIN"
 ): Promise<LeadDetailsData> {
   try {
+  
     const token = await getToken();
     if (!token) {
       throw new Error("No token found");
     }
+   
 
     // Fetch lead details
     const leadResponse = await apiGet<{ data: Lead }>(
       `/${tenantSlug}/leads/${leadId}`,
       { token: token }
     );
-    console.log("leadResponse", leadResponse);
+   
 
     // Fetch lead notes
     const notesResponse = await apiGet<{ data: LeadNote[] }>(

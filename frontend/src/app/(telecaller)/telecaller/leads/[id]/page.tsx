@@ -30,10 +30,13 @@ export default async function TelecallerLeadDetailsPage({
 
     const leadId = resolvedParams.id;
     const tenantSlug = resolvedSearchParams.tenant || "demo-tenant";
+    console.log("tenantSlug", tenantSlug);
+    console.log("leadId", leadId);
 
     const leadDetailsData = await getTelecallerLeadDetailsData(tenantSlug, leadId);
 
     if (!leadDetailsData) {
+        console.log("Lead details data not found");
         notFound();
     }
 

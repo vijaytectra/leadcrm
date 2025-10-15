@@ -52,7 +52,7 @@ export function BaseHeader({
     const [searchQuery, setSearchQuery] = useState("");
     const [toastNotifications, setToastNotifications] = useState<Notification[]>([]);
     const [isClient, setIsClient] = useState(false);
-    const { logout, user } = useAuthStore();
+    const { logout, user, currentTenantSlug } = useAuthStore();
     const router = useRouter();
 
     // Use real-time notifications (always call the hook, but conditionally use the data)
@@ -98,16 +98,22 @@ export function BaseHeader({
             console.error("Failed to mark notification as read:", error);
         }
     };
+    console.log("Notifications", realTimeNotifications);
 
     const handleToastNavigate = (notification: Notification) => {
+        console.log("handleToastNavigate called with notification:", notification);
         if (notification.data?.actionUrl && typeof notification.data.actionUrl === 'string') {
-            router.push(notification.data.actionUrl);
+            router.push(`${notification.data.actionUrl}?tenant=${currentTenantSlug}`);
         } else if (notification.leadId) {
             const basePath = user?.role === "TELECALLER" ? "/telecaller" : "/institution-admin";
-            router.push(`${basePath}/leads?leadId=${notification.leadId}`);
+            const { currentTenantSlug } = useAuthStore.getState();
+            const targetUrl = `${basePath}/leads/${notification.leadId}?tenant=${currentTenantSlug}`;
+            router.push(targetUrl);
         } else {
             const basePath = user?.role === "TELECALLER" ? "/telecaller" : "/institution-admin";
-            router.push(`${basePath}/notifications`);
+            const { currentTenantSlug } = useAuthStore.getState();
+            const targetUrl = `${basePath}/notifications?tenant=${currentTenantSlug}`;
+            router.push(targetUrl);
         }
     };
 

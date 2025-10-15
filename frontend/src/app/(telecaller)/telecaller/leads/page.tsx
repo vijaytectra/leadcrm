@@ -29,6 +29,8 @@ export default async function TelecallerLeadsPage({ searchParams }: TelecallerLe
     const resolvedSearchParams = await searchParams;
     const tenant = resolvedSearchParams.tenant || "demo-tenant";
 
+    console.log("tenant", tenant);
+
 
     const leadsData = await getTelecallerLeadsData(tenant);
 
