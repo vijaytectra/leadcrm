@@ -9,7 +9,7 @@ export interface Notification {
   actionType?: string;
   priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
   leadId?: string;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
   read: boolean;
   readAt?: Date;
   createdAt: Date;

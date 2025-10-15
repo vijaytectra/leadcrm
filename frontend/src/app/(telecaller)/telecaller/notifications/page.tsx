@@ -139,8 +139,8 @@ export default function TelecallerNotificationsPage() {
     }, [deleteAll, toast]);
 
     const handleNavigate = useCallback((notification: Notification) => {
-        if (notification.leadId) {
-            router.push(`/telecaller/leads?leadId=${notification.leadId}`);
+        if (notification.data?.actionUrl) {
+            router.push(`${notification.data.actionUrl}`);
         } else {
             // Navigate to notification details or relevant page
             console.log("Navigate to notification:", notification);

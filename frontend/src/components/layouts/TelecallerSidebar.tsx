@@ -63,7 +63,7 @@ const secondaryNavigation: NavigationItem[] = [
         name: "Notifications",
         href: "/telecaller/notifications",
         icon: Bell,
-        badge: "5",
+        
     },
     {
         name: "Help & Support",

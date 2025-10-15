@@ -110,12 +110,12 @@ export function NotificationList({
                 <CardContent className="p-8 text-center">
                     <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">No notifications</h3>
-                    <p className="text-gray-500">You're all caught up! No new notifications.</p>
+                    <p className="text-gray-500">You&apos;re all caught up! No new notifications.</p>
                 </CardContent>
             </Card>
         );
     }
-
+    console.log(notifications);
     return (
         <div className="space-y-3">
             {showSelection && onSelectAll && (
@@ -220,7 +220,7 @@ export function NotificationList({
                                                         Mark as read
                                                     </Button>
                                                 )}
-                                                {onNavigate && (
+                                                {onNavigate && notification.data?.actionUrl && (
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
