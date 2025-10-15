@@ -17,7 +17,7 @@ import {
     Eye
 } from "lucide-react";
 import { getTelecallerLeads } from "@/lib/api/telecaller";
-import { TelecallerLeadDetailsModal } from "./TelecallerLeadDetailsModal";
+import { useRouter } from "next/navigation";
 
 interface Lead {
     id: string;
@@ -67,13 +67,13 @@ export const LeadQueue = memo(function LeadQueue({
     onFollowUp,
     onStatusUpdate
 }: LeadQueueProps) {
+    const router = useRouter();
     const [leads, setLeads] = useState<Lead[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState<string>("all");
     const [sortBy, setSortBy] = useState<string>("updatedAt");
     const [sortOrder] = useState<"asc" | "desc">("desc");
-    const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
@@ -296,7 +296,7 @@ export const LeadQueue = memo(function LeadQueue({
                                     <div className="flex flex-col gap-2 ml-4">
                                         <Button
                                             size="sm"
-                                            onClick={() => setSelectedLeadId(lead.id)}
+                                            onClick={() => router.push(`/telecaller/leads/${lead.id}?tenant=${tenantSlug}`)}
                                             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
                                         >
                                             <Eye className="h-4 w-4" />
@@ -376,27 +376,6 @@ export const LeadQueue = memo(function LeadQueue({
                 </Card>
             )}
 
-            {/* Lead Details Modal */}
-            <TelecallerLeadDetailsModal
-                leadId={selectedLeadId}
-                tenantSlug={tenantSlug}
-                onClose={() => setSelectedLeadId(null)}
-                onLeadUpdated={(updatedLead) => {
-                    // Update the lead in the local state
-                    setLeads(prev => prev.map(lead =>
-                        lead.id === updatedLead.id ? {
-                            ...lead,
-                            name: updatedLead.name,
-                            email: updatedLead.email,
-                            phone: updatedLead.phone,
-                            source: updatedLead.source,
-                            status: updatedLead.status,
-                            score: updatedLead.score,
-                            assignee: updatedLead.assignee
-                        } : lead
-                    ));
-                }}
-            />
         </div>
     );
 });

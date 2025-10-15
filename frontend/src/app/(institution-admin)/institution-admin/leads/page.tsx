@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 import {
     Lead,
     CreateLeadRequest,
@@ -24,8 +25,10 @@ import { LeadsTable } from "@/components/leads/LeadsTable";
 import { LeadModals } from "@/components/leads/LeadModals";
 import { DeleteDialog } from "@/components/ui/confirmation-dialog";
 import { useAuthStore } from "@/stores/auth";
+import { getClientToken } from "@/lib/client-token";
 
 export default function LeadsPage() {
+    const router = useRouter();
     const [leads, setLeads] = useState<Lead[]>([]);
     const [users, setUsers] = useState<Array<{ id: string; firstName: string; lastName: string; email: string; role: string }>>([]);
     const [loading, setLoading] = useState(true);
@@ -42,6 +45,9 @@ export default function LeadsPage() {
         sortBy: "createdAt",
         sortOrder: "desc" as "asc" | "desc"
     });
+
+    const [clientToken, setClientToken] = useState<string | null>(null);
+
 
     // Debounced search state
     const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -97,15 +103,15 @@ export default function LeadsPage() {
     }, [currentTenantSlug]);
 
     const loadAssignmentStats = useCallback(async () => {
-        if (!currentTenantSlug) return;
+        if (!currentTenantSlug || !clientToken) return;
 
         try {
-            const stats = await getAssignmentStats(currentTenantSlug);
+            const stats = await getAssignmentStats(currentTenantSlug, clientToken);
             setAssignmentStats(stats);
         } catch (error) {
             console.error("Error loading assignment stats:", error);
         }
-    }, [currentTenantSlug]);
+    }, [currentTenantSlug, clientToken]);
 
     // Load leads only when filters or tenant changes
     useEffect(() => {
@@ -156,26 +162,32 @@ export default function LeadsPage() {
         }
     }, [currentTenantSlug, loadUsers, loadAssignmentStats]);
 
+    // Set client token on mount
+    useEffect(() => {
+        const token = getClientToken();
+        if (token) {
+            setClientToken(token);
+        }
+    }, []);
+
     const handleCreateLead = useCallback(async (leadData: CreateLeadRequest) => {
-        if (!currentTenantSlug) {
+        if (!currentTenantSlug || !clientToken) {
             toast({
                 title: "Error",
-                description: "No tenant selected",
+                description: "No tenant selected or authentication token missing",
                 variant: "destructive",
             });
             return;
         }
 
         try {
-            const newLead = await createLead(currentTenantSlug, leadData);
+            const newLead = await createLead(currentTenantSlug, leadData, clientToken);
             setLeads(prev => [newLead, ...prev]);
             setShowLeadForm(false);
             toast({
                 title: "Success",
                 description: "Lead created successfully",
             });
-            // Trigger a reload by updating filters to force useEffect to run
-            setFilters(prev => ({ ...prev }));
         } catch (error) {
             console.error("Error creating lead:", error);
             toast({
@@ -184,20 +196,20 @@ export default function LeadsPage() {
                 variant: "destructive",
             });
         }
-    }, [currentTenantSlug, toast]);
+    }, [currentTenantSlug, clientToken, toast]);
 
     const handleUpdateLead = useCallback(async (leadId: string, leadData: CreateLeadRequest) => {
-        if (!currentTenantSlug) {
+        if (!currentTenantSlug || !clientToken) {
             toast({
                 title: "Error",
-                description: "No tenant selected",
+                description: "No tenant selected or authentication token missing",
                 variant: "destructive",
             });
             return;
         }
 
         try {
-            const updatedLead = await updateLead(currentTenantSlug, leadId, leadData);
+            const updatedLead = await updateLead(currentTenantSlug, leadId, leadData, clientToken);
             setLeads(prev => prev.map(lead => lead.id === leadId ? updatedLead : lead));
             setEditingLead(null);
             setShowLeadForm(false);
@@ -213,7 +225,7 @@ export default function LeadsPage() {
                 variant: "destructive",
             });
         }
-    }, [currentTenantSlug, toast]);
+    }, [currentTenantSlug, clientToken,]);
 
     const handleDeleteLead = useCallback((leadId: string) => {
         const lead = leads.find(l => l.id === leadId);
@@ -224,13 +236,13 @@ export default function LeadsPage() {
     }, [leads]);
 
     const confirmDeleteLead = useCallback(async () => {
-        if (!leadToDelete || !currentTenantSlug) {
+        if (!leadToDelete || !currentTenantSlug || !clientToken) {
             return;
         }
 
         setIsDeleting(true);
         try {
-            await deleteLead(currentTenantSlug, leadToDelete.id);
+            await deleteLead(currentTenantSlug, leadToDelete.id, clientToken);
             setLeads(prev => prev.filter(lead => lead.id !== leadToDelete.id));
             toast({
                 title: "Success",
@@ -248,7 +260,7 @@ export default function LeadsPage() {
         } finally {
             setIsDeleting(false);
         }
-    }, [leadToDelete, currentTenantSlug, toast]);
+    }, [leadToDelete, currentTenantSlug, clientToken,]);
 
     const cancelDeleteLead = useCallback(() => {
         setShowDeleteDialog(false);
@@ -256,24 +268,36 @@ export default function LeadsPage() {
     }, []);
 
     const handleImportLeads = useCallback(async (file: File) => {
-        if (!currentTenantSlug) {
+        if (!currentTenantSlug || !clientToken) {
             toast({
                 title: "Error",
-                description: "No tenant selected",
+                description: "No tenant selected or authentication token missing",
                 variant: "destructive",
             });
             return;
         }
 
         try {
-            const result = await importLeads(currentTenantSlug, file);
+            const result = await importLeads(currentTenantSlug, file, clientToken);
             setShowImportModal(false);
             toast({
                 title: "Success",
                 description: `${result.imported} leads imported successfully`,
             });
-            // Trigger a reload by updating filters to force useEffect to run
-            setFilters(prev => ({ ...prev }));
+            // Reload leads by fetching them again
+            const response = await getLeads(currentTenantSlug, {
+                search: debouncedSearch,
+                status: filters.status,
+                source: filters.source,
+                assigneeId: filters.assigneeId,
+                page: filters.page,
+                limit: filters.limit,
+                sortBy: filters.sortBy,
+                sortOrder: filters.sortOrder
+            });
+            setLeads(response.leads);
+            setPagination(response.pagination);
+            setStats(response.stats);
         } catch (error) {
             console.error("Error importing leads:", error);
             toast({
@@ -282,27 +306,39 @@ export default function LeadsPage() {
                 variant: "destructive",
             });
         }
-    }, [currentTenantSlug, toast]);
+    }, [currentTenantSlug, clientToken, debouncedSearch, filters]);
 
     const handleAssignLeads = useCallback(async (config: AssignmentConfig) => {
-        if (!currentTenantSlug) {
+        if (!currentTenantSlug || !clientToken) {
             toast({
                 title: "Error",
-                description: "No tenant selected",
+                description: "No tenant selected or authentication token missing",
                 variant: "destructive",
             });
             return;
         }
 
         try {
-            const result = await assignLeads(currentTenantSlug, config);
+            const result = await assignLeads(currentTenantSlug, config, clientToken);
             setShowAssignmentModal(false);
             toast({
                 title: "Success",
                 description: `${result.assigned} leads assigned successfully`,
             });
-            // Trigger a reload by updating filters to force useEffect to run
-            setFilters(prev => ({ ...prev }));
+            // Reload leads by fetching them again
+            const response = await getLeads(currentTenantSlug, {
+                search: debouncedSearch,
+                status: filters.status,
+                source: filters.source,
+                assigneeId: filters.assigneeId,
+                page: filters.page,
+                limit: filters.limit,
+                sortBy: filters.sortBy,
+                sortOrder: filters.sortOrder
+            });
+            setLeads(response.leads);
+            setPagination(response.pagination);
+            setStats(response.stats);
             loadAssignmentStats();
         } catch (error) {
             console.error("Error assigning leads:", error);
@@ -312,7 +348,7 @@ export default function LeadsPage() {
                 variant: "destructive",
             });
         }
-    }, [currentTenantSlug, toast, loadAssignmentStats]);
+    }, [currentTenantSlug, clientToken, toast, loadAssignmentStats, debouncedSearch, filters]);
 
     // Modal handlers
     const handleShowLeadForm = useCallback(() => {
@@ -326,9 +362,8 @@ export default function LeadsPage() {
     }, []);
 
     const handleViewLead = useCallback((lead: Lead) => {
-        setSelectedLead(lead);
-        setShowLeadDetails(true);
-    }, []);
+        router.push(`/institution-admin/leads/${lead.id}?tenant=${currentTenantSlug}`);
+    }, [router, currentTenantSlug]);
 
     const handleCloseLeadForm = useCallback(() => {
         setShowLeadForm(false);

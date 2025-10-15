@@ -29,6 +29,7 @@ import { Lead } from "@/lib/api/leads";
 import { getLead, updateLead, addLeadNote, getLeadNotes } from "@/lib/api/leads";
 import { getLeadActivities, LeadActivity } from "@/lib/api/telecaller";
 import { toast } from "sonner";
+import { getClientToken } from "@/lib/client-token";
 
 interface TelecallerLeadDetailsModalProps {
     leadId: string | null;
@@ -80,13 +81,14 @@ export const TelecallerLeadDetailsModal = memo(function TelecallerLeadDetailsMod
 
     const fetchLeadDetails = useCallback(async () => {
         if (!leadId) return;
-
+        const token = getClientToken()
+        if (!token) return;
         setLoading(true);
         try {
             const [leadData, notesData, activitiesData] = await Promise.all([
-                getLead(tenantSlug, leadId),
-                getLeadNotes(tenantSlug, leadId),
-                getLeadActivities(tenantSlug, leadId)
+                getLead(tenantSlug, leadId, token),
+                getLeadNotes(tenantSlug, leadId, token),
+                getLeadActivities(tenantSlug, leadId, token)
             ]);
 
             setLead(leadData);
@@ -123,10 +125,11 @@ export const TelecallerLeadDetailsModal = memo(function TelecallerLeadDetailsMod
 
     const handleSaveLead = async () => {
         if (!lead || !leadId) return;
-
+        const token = getClientToken()
+        if (!token) return;
         setLoading(true);
         try {
-            const updatedLead = await updateLead(tenantSlug, leadId, editForm);
+            const updatedLead = await updateLead(tenantSlug, leadId, editForm, token);
             setLead(updatedLead);
             setIsEditing(false);
             onLeadUpdated?.(updatedLead);
@@ -141,10 +144,12 @@ export const TelecallerLeadDetailsModal = memo(function TelecallerLeadDetailsMod
 
     const handleAddNote = async () => {
         if (!newNote.trim() || !leadId) return;
+        const token = getClientToken()
+        if (!token) return;
 
         setLoading(true);
         try {
-            const newNoteData = await addLeadNote(tenantSlug, leadId, { note: newNote });
+            const newNoteData = await addLeadNote(tenantSlug, leadId, { note: newNote }, token);
             setNotes(prev => [newNoteData, ...prev]);
             setNewNote("");
             toast.success("Note added successfully");

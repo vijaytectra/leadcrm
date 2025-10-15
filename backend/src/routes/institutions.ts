@@ -656,6 +656,27 @@ router.post(
           },
         });
 
+        // Delete lead-related records first
+        await prisma.leadNote.deleteMany({
+          where: {
+            lead: {
+              tenantId: institutionId,
+            },
+          },
+        });
+
+        await prisma.callLog.deleteMany({
+          where: {
+            tenantId: institutionId,
+          },
+        });
+
+        await prisma.followUpReminder.deleteMany({
+          where: {
+            tenantId: institutionId,
+          },
+        });
+
         await prisma.lead.deleteMany({
           where: {
             tenantId: institutionId,

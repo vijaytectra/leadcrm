@@ -100,7 +100,9 @@ export function BaseHeader({
     };
 
     const handleToastNavigate = (notification: Notification) => {
-        if (notification.leadId) {
+        if (notification.data?.actionUrl && typeof notification.data.actionUrl === 'string') {
+            router.push(notification.data.actionUrl);
+        } else if (notification.leadId) {
             const basePath = user?.role === "TELECALLER" ? "/telecaller" : "/institution-admin";
             router.push(`${basePath}/leads?leadId=${notification.leadId}`);
         } else {
@@ -169,7 +171,7 @@ export function BaseHeader({
                                 </DropdownMenuLabel>
                                 <div className="max-h-80 overflow-y-auto">
                                     {realTimeNotifications.slice(0, 5).map((notification) => (
-                                        <DropdownMenuItem key={notification.id} className="p-0">
+                                        <DropdownMenuItem key={notification.id} className="p-0" onClick={() => handleToastNavigate(notification)}>
                                             <div className="w-full p-4 hover:bg-gray-50 transition-colors">
                                                 <div className="flex items-start space-x-3">
                                                     <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 ${!notification.read ? 'bg-blue-500' : 'bg-gray-300'

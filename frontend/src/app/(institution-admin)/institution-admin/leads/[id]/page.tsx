@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import { LeadDetailsPage } from "@/components/lead-details/LeadDetailsPage";
-import { getTelecallerLeadDetails } from "@/lib/api/lead-details";
+import { getAdminLeadDetails } from "@/lib/api/lead-details";
 
-interface TelecallerLeadDetailsPageProps {
+interface InstitutionAdminLeadDetailsPageProps {
     params: Promise<{
         id: string;
     }>;
@@ -11,27 +11,27 @@ interface TelecallerLeadDetailsPageProps {
     }>;
 }
 
-async function getTelecallerLeadDetailsData(tenantSlug: string, leadId: string) {
+async function getInstitutionAdminLeadDetailsData(tenantSlug: string, leadId: string) {
     try {
-        const data = await getTelecallerLeadDetails(tenantSlug, leadId);
+        const data = await getAdminLeadDetails(tenantSlug, leadId);
         return data;
     } catch (error) {
-        console.error("Failed to fetch telecaller lead details:", error);
+        console.error("Failed to fetch institution admin lead details:", error);
         return null;
     }
 }
 
-export default async function TelecallerLeadDetailsPage({
+export default async function InstitutionAdminLeadDetailsPage({
     params,
     searchParams
-}: TelecallerLeadDetailsPageProps) {
+}: InstitutionAdminLeadDetailsPageProps) {
     const resolvedParams = await params;
     const resolvedSearchParams = await searchParams;
 
     const leadId = resolvedParams.id;
     const tenantSlug = resolvedSearchParams.tenant || "demo-tenant";
 
-    const leadDetailsData = await getTelecallerLeadDetailsData(tenantSlug, leadId);
+    const leadDetailsData = await getInstitutionAdminLeadDetailsData(tenantSlug, leadId);
 
     if (!leadDetailsData) {
         notFound();
@@ -43,8 +43,8 @@ export default async function TelecallerLeadDetailsPage({
             notes={leadDetailsData.notes}
             activities={leadDetailsData.activities}
             tenantSlug={tenantSlug}
-            userRole="TELECALLER"
-            backUrl={`/telecaller/leads?tenant=${tenantSlug}`}
+            userRole="INSTITUTION_ADMIN"
+            backUrl={`/institution-admin/leads?tenant=${tenantSlug}`}
         />
     );
 }

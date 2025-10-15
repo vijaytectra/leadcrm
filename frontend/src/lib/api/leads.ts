@@ -1,9 +1,11 @@
 import { getClientToken } from "../client-token";
+import { getToken } from "../getToken";
 import {
   apiGetClientNew,
   apiPostClientNew,
   apiPutClient,
   apiDeleteClient,
+  apiGet,
 } from "../utils";
 
 export interface Lead {
@@ -157,14 +159,10 @@ export async function getLeads(
     search?: string;
     sortBy?: string;
     sortOrder?: "asc" | "desc";
-  }
+  },
+  token?: string
 ): Promise<LeadsResponse> {
   try {
-    const token = getClientToken();
-    if (!token) {
-      throw new Error("No token found");
-    }
-
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append("page", params.page.toString());
     if (params?.limit) queryParams.append("limit", params.limit.toString());
@@ -194,10 +192,10 @@ export async function getLeads(
  */
 export async function getLead(
   tenantSlug: string,
-  leadId: string
+  leadId: string,
+  token: string
 ): Promise<Lead> {
   try {
-    const token = getClientToken();
     if (!token) {
       throw new Error("No token found");
     }
@@ -221,10 +219,10 @@ export async function getLead(
  */
 export async function createLead(
   tenantSlug: string,
-  leadData: CreateLeadRequest
+  leadData: CreateLeadRequest,
+  token: string
 ): Promise<Lead> {
   try {
-    const token = getClientToken();
     if (!token) {
       throw new Error("No token found");
     }
@@ -250,10 +248,10 @@ export async function createLead(
 export async function updateLead(
   tenantSlug: string,
   leadId: string,
-  leadData: UpdateLeadRequest
+  leadData: UpdateLeadRequest,
+  token: string
 ): Promise<Lead> {
   try {
-    const token = getClientToken();
     if (!token) {
       throw new Error("No token found");
     }
@@ -278,10 +276,10 @@ export async function updateLead(
  */
 export async function deleteLead(
   tenantSlug: string,
-  leadId: string
+  leadId: string,
+  token: string
 ): Promise<void> {
   try {
-    const token = getClientToken();
     if (!token) {
       throw new Error("No token found");
     }
@@ -300,10 +298,10 @@ export async function deleteLead(
 export async function addLeadNote(
   tenantSlug: string,
   leadId: string,
-  noteData: AddNoteRequest
+  noteData: AddNoteRequest,
+  token: string
 ): Promise<LeadNote> {
   try {
-    const token = getClientToken();
     if (!token) {
       throw new Error("No token found");
     }
@@ -329,10 +327,10 @@ export async function addLeadNote(
  */
 export async function getLeadNotes(
   tenantSlug: string,
-  leadId: string
+  leadId: string,
+  token: string
 ): Promise<LeadNote[]> {
   try {
-    const token = getClientToken();
     if (!token) {
       throw new Error("No token found");
     }
@@ -356,10 +354,10 @@ export async function getLeadNotes(
  */
 export async function importLeads(
   tenantSlug: string,
-  file: File
+  file: File,
+  token: string
 ): Promise<{ imported: number; leads: Lead[] }> {
   try {
-    const token = getClientToken();
     if (!token) {
       throw new Error("No token found");
     }
@@ -405,10 +403,10 @@ export async function importLeads(
  */
 export async function assignLeads(
   tenantSlug: string,
-  config: AssignmentConfig
+  config: AssignmentConfig,
+  token: string
 ): Promise<{ assigned: number; algorithm: string; assignments: Lead[] }> {
   try {
-    const token = getClientToken();
     if (!token) {
       throw new Error("No token found");
     }
@@ -432,10 +430,10 @@ export async function assignLeads(
 export async function reassignLead(
   tenantSlug: string,
   leadId: string,
-  reassignData: ReassignLeadRequest
+  reassignData: ReassignLeadRequest,
+  token: string
 ): Promise<Lead> {
   try {
-    const token = getClientToken();
     if (!token) {
       throw new Error("No token found");
     }
@@ -457,10 +455,10 @@ export async function reassignLead(
  * Get assignment statistics and telecaller workload
  */
 export async function getAssignmentStats(
-  tenantSlug: string
+  tenantSlug: string,
+  token: string
 ): Promise<AssignmentStats> {
   try {
-    const token = getClientToken();
     if (!token) {
       throw new Error("No token found");
     }
@@ -515,10 +513,10 @@ export interface LeadActivity {
  */
 export async function getAdminLeadActivities(
   tenantSlug: string,
-  leadId: string
+  leadId: string,
+  token: string
 ): Promise<LeadActivity[]> {
   try {
-    const token = getClientToken();
     if (!token) {
       throw new Error("No token found");
     }

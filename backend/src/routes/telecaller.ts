@@ -442,6 +442,42 @@ router.get(
     }
   }
 );
+router.get(
+  "/:tenant/telecaller/leads/:id",
+  requireAuth,
+  requireActiveUser,
+  requireRole(["TELECALLER"]),
+  async (req: AuthedRequest, res) => {
+    try {
+      const tenantSlug = req.params.tenant;
+      const leadId = req.params.id;
+      const userId = req.auth!.sub;
+
+      const lead = await prisma.lead.findFirst({
+        where: {
+          id: leadId,
+          tenantId: req.auth?.ten,
+        },
+      });
+
+      if (!lead) {
+        return res.status(404).json({
+          error: "Lead not found",
+          code: "LEAD_NOT_FOUND",
+        });
+      }
+      res.json({
+        success: true,
+        data: lead,
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: "Failed to fetch lead",
+        code: "LEAD_ERROR",
+      });
+    }
+  }
+);
 
 /**
  * GET /api/:tenant/telecaller/call-logs

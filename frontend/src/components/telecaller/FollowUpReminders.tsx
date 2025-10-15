@@ -140,7 +140,7 @@ export const FollowUpReminders = memo(function FollowUpReminders({
         try {
             // This would be replaced with actual API call
             // await completeFollowUpReminder(tenantSlug, reminderId);
-            ("Completing reminder:", reminderId);
+          
             // Refresh the list
             fetchReminders();
         } catch (error) {
@@ -151,7 +151,7 @@ export const FollowUpReminders = memo(function FollowUpReminders({
         try {
             // This would be replaced with actual API call
             // await cancelFollowUpReminder(tenantSlug, reminderId);
-            ("Cancelling reminder:", reminderId);
+          
             // Refresh the list
             fetchReminders();
         } catch (error) {
@@ -299,7 +299,7 @@ export const FollowUpReminders = memo(function FollowUpReminders({
                                             <>
                                                 <Button
                                                     size="sm"
-                                                    onClick={() => ('Follow up for lead:', reminder.lead.id)}
+                                                    onClick={()=>{}}
                                                     className="flex items-center gap-2"
                                                 >
                                                     {getTypeIcon(reminder.type)}

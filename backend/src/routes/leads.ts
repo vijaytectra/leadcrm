@@ -1435,7 +1435,20 @@ router.delete(
         });
       }
 
-      // Delete lead (cascade will handle related records)
+      // Delete related records first (due to foreign key constraints)
+      await prisma.leadNote.deleteMany({
+        where: { leadId: id },
+      });
+
+      await prisma.callLog.deleteMany({
+        where: { leadId: id },
+      });
+
+      await prisma.followUpReminder.deleteMany({
+        where: { leadId: id },
+      });
+
+      // Delete the lead
       await prisma.lead.delete({
         where: { id },
       });

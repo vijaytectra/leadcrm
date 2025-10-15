@@ -585,7 +585,8 @@ export interface LeadActivity {
 
 export async function getLeadActivities(
   tenantSlug: string,
-  leadId: string
+  leadId: string,
+  token: string
 ): Promise<{
   success: boolean;
   data: LeadActivity[];
