@@ -43,7 +43,6 @@ export function WidgetEmbedCodeModal({
 }: WidgetEmbedCodeModalProps) {
     const [copied, setCopied] = useState(false);
     const [selectedSize, setSelectedSize] = useState<'responsive' | 'fixed'>('responsive');
-
     const handleCopyCode = async () => {
         try {
             await navigator.clipboard.writeText(widget.embedCode);

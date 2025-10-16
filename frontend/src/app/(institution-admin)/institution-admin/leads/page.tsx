@@ -133,7 +133,7 @@ export default function LeadsPage() {
                 };
                 const response = await getLeads(currentTenantSlug, filtersWithDebouncedSearch);
 
-                console.log("response", response);
+  
                 setLeads(response.leads);
                 setPagination(response.pagination);
                 setStats(response.stats);

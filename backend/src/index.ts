@@ -25,6 +25,7 @@ import studentRoutes from "./routes/student";
 import integrationRoutes from "./routes/integrations";
 import whatsappRoutes from "./routes/whatsapp";
 import widgetRoutes from "./routes/widgets";
+import studentPortalRoutes from "./routes/student-portal";
 
 const app = express();
 app.use(helmet());
@@ -72,6 +73,7 @@ app.use("/api", studentRoutes);
 app.use("/api", integrationRoutes);
 app.use("/api", whatsappRoutes);
 app.use("/api", widgetRoutes);
+app.use("/api/student", studentPortalRoutes);
 
 // Debug middleware to log all requests
 app.use((req, res, next) => {

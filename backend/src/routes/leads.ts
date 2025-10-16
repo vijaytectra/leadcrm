@@ -897,7 +897,7 @@ router.get(
         where: { id: userId },
         select: { role: true },
       });
-      console.log("user", user);
+ 
       if (!tenantSlug) {
         return res.status(400).json({
           error: "Tenant slug is required",
@@ -917,7 +917,7 @@ router.get(
           code: "TENANT_NOT_FOUND",
         });
       }
-      console.log("tenantRecord", tenantRecord);
+      
 
       // Check if lead exists and belongs to the same tenant
       const lead = await prisma.lead.findFirst({
@@ -926,7 +926,7 @@ router.get(
           tenantId: tenantRecord.id,
         },
       });
-      console.log("lead", lead);
+    
       if (!lead) {
         return res.status(404).json({
           error: "Lead not found",
@@ -948,7 +948,7 @@ router.get(
         },
         orderBy: { createdAt: "desc" },
       });
-      console.log("notes", notes);
+   
 
       res.json({
         success: true,
@@ -1100,7 +1100,7 @@ router.post(
       }
 
       const validation = createLeadSchema.safeParse(req.body);
-      console.log("validation", validation);
+
       if (!validation.success) {
         return res.status(400).json({
           message: "Validation failed",
@@ -1111,8 +1111,7 @@ router.post(
 
       const leadData = validation.data;
 
-      console.log("leadData", leadData);
-
+    
       // Check if assignee exists and belongs to the same tenant
       if (leadData.assigneeId) {
         const assignee = await prisma.user.findFirst({
@@ -1222,9 +1221,7 @@ router.post(
             }
           );
 
-          console.log(
-            `Lead assignment notification sent to telecaller: ${leadData.assigneeId}`
-          );
+          
         } catch (notificationError) {
           console.error(
             "Failed to send lead assignment notification:",
@@ -1283,11 +1280,11 @@ router.put(
           code: "TENANT_NOT_FOUND",
         });
       }
-      console.log("req.body", req.body);
+
 
       const validation = updateLeadSchema.safeParse(req.body);
 
-      console.log("validation", validation);
+ 
 
       if (!validation.success) {
         return res.status(400).json({
@@ -1495,7 +1492,7 @@ router.post(
         where: { id: userId },
         select: { role: true },
       });
-      console.log("user", user);
+  
       const { id, tenant } = req.params;
       const tenantSlug = tenant;
 
@@ -1511,7 +1508,7 @@ router.post(
         where: { slug: tenantSlug },
         select: { id: true },
       });
-      console.log("tenantRecord", tenantRecord);
+    
       if (!tenantRecord) {
         return res.status(404).json({
           message: "Tenant not found",
@@ -1520,7 +1517,7 @@ router.post(
       }
 
       const validation = addNoteSchema.safeParse(req.body);
-      console.log("validation", validation);
+  
       if (!validation.success) {
         return res.status(400).json({
           error: "Validation failed",
@@ -1528,7 +1525,7 @@ router.post(
           code: "VALIDATION_ERROR",
         });
       }
-      console.log("validation.data", validation.data);
+ 
       const { note } = validation.data;
 
       // Check if lead exists and belongs to the same tenant
@@ -1538,7 +1535,7 @@ router.post(
           tenantId: tenantRecord.id,
         },
       });
-      console.log("lead", lead);
+ 
       if (!lead) {
         return res.status(404).json({
           message: "Lead not found",
@@ -1882,11 +1879,7 @@ router.post(
           );
         }
 
-        console.log(
-          `Bulk assignment notifications sent to ${
-            Object.keys(assignmentsByTelecaller).length
-          } telecallers`
-        );
+    
       } catch (notificationError) {
         console.error(
           "Failed to send bulk assignment notifications:",
@@ -2032,7 +2025,7 @@ router.post(
           );
         }
 
-        console.log(`Lead reassignment notifications sent for lead: ${id}`);
+        
       } catch (notificationError) {
         console.error(
           "Failed to send lead reassignment notifications:",
@@ -2166,7 +2159,6 @@ router.post(
           );
         }
 
-        console.log(`Lead reassignment notifications sent for lead: ${id}`);
       } catch (notificationError) {
         console.error(
           "Failed to send lead reassignment notifications:",

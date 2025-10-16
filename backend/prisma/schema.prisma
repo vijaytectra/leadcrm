@@ -57,6 +57,7 @@ model Tenant {
     generatedReports        GeneratedReport[]
     whatsappTemplates       WhatsAppTemplate[]
     bulkMessageJobs         BulkMessageJob[]
+    studentFormAccesses     StudentFormAccess[]
 }
 
 enum SubscriptionTier {
@@ -170,6 +171,7 @@ model Lead {
     followUpReminders          FollowUpReminder[]
     sourceTracking             LeadSourceTracking?
     notifications              Notification[]
+    studentFormAccess          StudentFormAccess?
 }
 
 enum LeadStatus {
@@ -213,12 +215,14 @@ model Form {
     createdAt                DateTime  @default(now())
     updatedAt                DateTime  @updatedAt
 
-    tenant      Tenant           @relation(fields: [tenantId], references: [id])
-    fields      FormField[]
-    steps       FormStep[]
-    submissions FormSubmission[]
-    widgets     FormWidget[]
-    analytics   FormAnalytics[]
+    tenant                 Tenant              @relation(fields: [tenantId], references: [id])
+    fields                 FormField[]
+    steps                  FormStep[]
+    submissions            FormSubmission[]
+    widgets                FormWidget[]
+    analytics              FormAnalytics[]
+    widgetsAsAdmissionForm FormWidget[]        @relation("WidgetAdmissionForm")
+    studentFormAccesses    StudentFormAccess[] @relation("StudentAdmissionForm")
 }
 
 model FormField {
@@ -276,18 +280,20 @@ model FormSubmission {
 }
 
 model FormWidget {
-    id        String   @id @default(cuid())
-    formId    String
-    name      String
-    type      String // WidgetType enum
-    settings  Json // WidgetSettings
-    embedCode String
-    isActive  Boolean  @default(true)
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    id              String   @id @default(cuid())
+    formId          String
+    name            String
+    type            String // WidgetType enum
+    settings        Json // WidgetSettings
+    embedCode       String
+    isActive        Boolean  @default(true)
+    admissionFormId String? // NEW: Optional admission form to send
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
 
-    form      Form                  @relation(fields: [formId], references: [id], onDelete: Cascade)
-    analytics FormWidgetAnalytics[]
+    form          Form                  @relation(fields: [formId], references: [id], onDelete: Cascade)
+    admissionForm Form?                 @relation("WidgetAdmissionForm", fields: [admissionFormId], references: [id])
+    analytics     FormWidgetAnalytics[]
 }
 
 model FormWidgetAnalytics {
@@ -304,6 +310,43 @@ model FormWidgetAnalytics {
     @@unique([widgetId, date])
     @@index([widgetId])
     @@index([date])
+}
+
+model StudentFormAccess {
+    id              String    @id @default(cuid())
+    leadId          String    @unique
+    admissionFormId String
+    accessToken     String    @unique
+    email           String
+    tenantId        String
+    status          String    @default("NOT_STARTED") // NOT_STARTED, IN_PROGRESS, SUBMITTED
+    progressData    Json? // Saved form data
+    lastAccessedAt  DateTime?
+    submittedAt     DateTime?
+    createdAt       DateTime  @default(now())
+    updatedAt       DateTime  @updatedAt
+
+    lead          Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+    admissionForm Form   @relation("StudentAdmissionForm", fields: [admissionFormId], references: [id])
+    tenant        Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+    @@index([accessToken])
+    @@index([leadId])
+    @@index([email])
+    @@index([status])
+    @@index([tenantId])
+}
+
+model FormReminderLog {
+    id             String    @id @default(cuid())
+    accessId       String
+    reminderCount  Int       @default(0)
+    lastReminderAt DateTime
+    nextReminderAt DateTime?
+    createdAt      DateTime  @default(now())
+
+    @@index([accessId])
+    @@index([nextReminderAt])
 }
 
 model FormTemplate {

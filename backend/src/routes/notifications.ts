@@ -278,7 +278,6 @@ router.get(
       if (!userId) {
         return res.status(401).json({ message: "User ID required",code: "USER_ID_REQUIRED" });
       }
-      console.log("Getting notification stats for user:", userId);
 
       const { startDate, endDate } = req.query;
 
@@ -601,9 +600,7 @@ router.post(
  */
 router.get("/:tenant/notifications/stream", async (req: AuthedRequest, res) => {
   try {
-    console.log(
-      `SSE route hit: ${req.method} ${req.path} for tenant: ${req.params.tenant}`
-    );
+  
 
     // For SSE, we need to handle authentication differently since EventSource doesn't support custom headers
     let token = req.cookies.accessToken;

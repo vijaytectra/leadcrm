@@ -155,10 +155,9 @@ export function WidgetPreview({
                             >
                                 <iframe
                                     key={refreshKey}
-                                    src={widget.publicUrl}
+                                    src={`${window.location.origin}/widgets/${widget.id}`}
                                     width="100%"
                                     height="100%"
-                                    frameBorder="0"
                                     className="border-0"
                                     title={`Widget Preview - ${widget.name}`}
                                     style={{

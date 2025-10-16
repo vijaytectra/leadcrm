@@ -1043,9 +1043,15 @@ export function FormBuilderProvider({
 
                 // Save form as draft (isActive: false, isPublished: false)
                 const formData = {
-                    ...state.currentForm,
+                    title: state.currentForm.title,
+                    description: state.currentForm.description || "",
                     isActive: false,
                     isPublished: false,
+                    requiresPayment: state.currentForm.requiresPayment,
+                    paymentAmount: state.currentForm.paymentAmount,
+                    allowMultipleSubmissions: state.currentForm.allowMultipleSubmissions,
+                    maxSubmissions: state.currentForm.maxSubmissions || undefined,
+                    submissionDeadline: state.currentForm.submissionDeadline || undefined,
                     settings: {
                         ...state.currentForm.settings,
                         steps: state.steps
@@ -1105,9 +1111,15 @@ export function FormBuilderProvider({
 
                 // Publish form (isActive: true, isPublished: true)
                 const formData = {
-                    ...state.currentForm,
+                    title: state.currentForm.title,
+                    description: state.currentForm.description || "",
                     isActive: true,
                     isPublished: true,
+                    requiresPayment: state.currentForm.requiresPayment,
+                    paymentAmount: state.currentForm.paymentAmount,
+                    allowMultipleSubmissions: state.currentForm.allowMultipleSubmissions,
+                    maxSubmissions: state.currentForm.maxSubmissions || undefined,
+                    submissionDeadline: state.currentForm.submissionDeadline || undefined,
                     settings: {
                         ...state.currentForm.settings,
                         steps: state.steps

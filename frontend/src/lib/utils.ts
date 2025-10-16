@@ -269,7 +269,66 @@ export async function apiPostClient<TResponse>(
     },
     body: JSON.stringify(body),
   });
-  console.log("RESPONSE", res);
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(
+      (): ApiError => ({
+        error: "Unknown error",
+        code: "UNKNOWN_ERROR",
+      })
+    );
+    throw new ApiException(
+      errorData.message || errorData.error || "Unknown error",
+      res.status,
+      errorData
+    );
+  }
+
+  return res.json();
+}
+
+// Public API function for routes that don't require authentication
+export async function apiGetPublic<TResponse>(
+  path: string
+): Promise<TResponse> {
+  const res = await fetch(`${API_BASE_URL}/api${path}`, {
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(
+      (): ApiError => ({
+        error: "Unknown error",
+        code: "UNKNOWN_ERROR",
+      })
+    );
+    throw new ApiException(
+      errorData.message || errorData.error || "Unknown error",
+      res.status,
+      errorData
+    );
+  }
+
+  return res.json();
+}
+
+// Public API function for POST requests that don't require authentication
+export async function apiPostPublic<TResponse>(
+  path: string,
+  body: unknown
+): Promise<TResponse> {
+  const res = await fetch(`${API_BASE_URL}/api${path}`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
 
   if (!res.ok) {
     const errorData = await res.json().catch(
@@ -306,11 +365,18 @@ export async function apiGetClientNew<TResponse>(
       });
     }
   }
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (opts?.token && token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   const res = await fetch(`${API_BASE_URL}/api${path}`, {
     credentials: "include", // Include cookies in requests
-    headers: {
-      ...(opts?.token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers,
     cache: "no-store",
   });
 
@@ -349,24 +415,33 @@ export async function apiPostClientNew<TResponse>(
     }
   }
 
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (opts?.token && token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   const res = await fetch(`${API_BASE_URL}/api${path}`, {
     method: "POST",
     credentials: "include", // Include cookies in requests
-    headers: {
-      "Content-Type": "application/json",
-      ...(opts?.token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers,
     body: JSON.stringify(body),
   });
 
   if (!res.ok) {
     const errorData = await res.json().catch(
       (): ApiError => ({
-        error: errorData.message || "Unknown error",
+        error: "Unknown error",
         code: "UNKNOWN_ERROR",
       })
     );
-    throw new ApiException("API Error", res.status, errorData);
+    throw new ApiException(
+      errorData.message || errorData.error || "Unknown error",
+      res.status,
+      errorData
+    );
   }
 
   return res.json();

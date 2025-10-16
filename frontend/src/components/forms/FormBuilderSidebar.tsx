@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useFormBuilder } from "./FormBuilderProvider";
 import {
     Search,
     Type,
@@ -34,12 +33,10 @@ import {
     Settings,
     BarChart3
 } from "lucide-react";
-import { useFormBuilder } from "./FormBuilderProvider";
 import { FIELD_TYPES } from "@/types/form-builder";
-import { formBuilderUtils } from "@/lib/api/forms";
 
 export function FormBuilderSidebar() {
-    const { actions, dragDropActions } = useFormBuilder();
+    const { state, actions, dragDropActions } = useFormBuilder();
     const [searchTerm, setSearchTerm] = useState("");
     const [activeTab, setActiveTab] = useState("fields");
 
@@ -157,6 +154,15 @@ export function FormBuilderSidebar() {
                                         Form Title
                                     </label>
                                     <Input
+                                        value={state.currentForm?.title || ""}
+                                        onChange={(e) => {
+                                            if (state.currentForm) {
+                                                actions.setCurrentForm({
+                                                    ...state.currentForm,
+                                                    title: e.target.value
+                                                });
+                                            }
+                                        }}
                                         placeholder="Enter form title"
                                         className="text-sm text-black"
                                     />
@@ -166,6 +172,15 @@ export function FormBuilderSidebar() {
                                         Description
                                     </label>
                                     <textarea
+                                        value={state.currentForm?.description || ""}
+                                        onChange={(e) => {
+                                            if (state.currentForm) {
+                                                actions.setCurrentForm({
+                                                    ...state.currentForm,
+                                                    description: e.target.value
+                                                });
+                                            }
+                                        }}
                                         placeholder="Enter form description"
                                         className="w-full text-black p-2 text-sm border border-slate-200 rounded-lg resize-none"
                                         rows={3}

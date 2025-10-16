@@ -381,7 +381,7 @@ export async function importLeads(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({
-        error: "Unknown error",
+        message: "Unknown error",
         code: "UNKNOWN_ERROR",
       }));
       throw new Error(errorData.error || "Failed to import leads");

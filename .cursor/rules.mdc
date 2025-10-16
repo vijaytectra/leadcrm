@@ -1,0 +1,544 @@
+---
+alwaysApply: true
+---
+
+# LEAD101 CRM - Development Rules & Standards
+
+## Project Overview
+
+LEAD101 is a multi-tenant SaaS CRM platform for educational institutions managing student acquisition and admission lifecycle. Built with Next.js 15, TypeScript, Express.js, Prisma, and SQLite (dev) / PostgreSQL (prod).
+
+## Core Architecture Principles
+
+### Multi-Tenancy
+
+- All database operations MUST include tenant isolation
+- Use `tenantId` or `tenantSlug` in all queries
+- Never allow cross-tenant data access except for SUPER_ADMIN role
+- Validate tenant ownership before any CRUD operation
+- Use Prisma's `where` clause with tenantId for all tenant-scoped queries
+
+### Role-Based Access Control (RBAC)
+
+- Enforce role-based permissions on ALL routes
+- Available roles: SUPER_ADMIN, INSTITUTION_ADMIN, TELECALLER, DOCUMENT_VERIFIER, FINANCE_MEMBER, ADMISSION_TEAM, ADMISSION_HEAD, PARENT_STUDENT
+- Use middleware: `requireAuth`, `requireRole`, `requireSuperAdmin`, `requireInstitutionAdmin`
+- Never bypass permission checks
+- Always validate user's role matches required permissions
+
+## Backend Development Standards
+
+### API Route Structure
+
+- Use Express Router for all routes
+- Group routes by feature module (auth, leads, forms, etc.)
+- Always use TypeScript with strict typing
+- Route pattern: `/api/{module}/{resource}/{action}`
+- Tenant-aware routes: `/api/{tenantSlug}/{resource}`
+
+### Request Validation
+
+- Use Zod schemas for ALL request validation
+- Validate at the route handler level before processing
+- Return 400 Bad Request with descriptive errors for validation failures
+- Never trust client input - always sanitize and validate
+
+### Error Handling
+
+- Use try-catch blocks for all async operations
+- Return consistent error response format:
+  ```typescript
+  {
+    message: "Error message",
+    code: "ERROR_CODE",
+    details?: any
+  }
+  ```
+- HTTP status codes:
+  - 200: Success
+  - 201: Created
+  - 400: Bad Request (validation errors)
+  - 401: Unauthorized (missing/invalid auth)
+  - 403: Forbidden (insufficient permissions)
+  - 404: Not Found
+  - 500: Internal Server Error
+- Log errors with context for debugging
+- Never expose sensitive information in error messages
+
+### Database Operations (Prisma)
+
+- Always use Prisma Client for database operations
+- Use transactions for multiple related operations
+- Implement proper error handling for database errors
+- Use `select` to fetch only required fields (avoid over-fetching)
+- Use `include` for relations only when necessary
+- Implement pagination for list endpoints (default: page=1, limit=10)
+- Use proper indexing for frequently queried fields
+- Never use raw SQL unless absolutely necessary
+
+### Authentication & Authorization
+
+- JWT-based authentication with access and refresh tokens
+- Access token: 15 minutes expiry
+- Refresh token: 7 days expiry
+- Store tokens in httpOnly cookies for web clients
+- Support Bearer token in Authorization header for API clients
+- Always validate token type (access vs refresh)
+- Implement token refresh mechanism
+- Hash passwords with bcrypt (minimum 10 rounds)
+- Validate password strength (min 8 characters, complexity requirements)
+
+### API Response Format
+
+- Consistent success response:
+  ```typescript
+  {
+    success: true,
+    data: any,
+    message?: string,
+    pagination?: {
+      page: number,
+      limit: number,
+      total: number,
+      totalPages: number
+    }
+  }
+  ```
+- Always include pagination metadata for list endpoints
+- Use camelCase for JSON keys
+
+## Frontend Development Standards
+
+### Next.js 15 Architecture
+
+- Use App Router (not Pages Router)
+- Server Components by default
+- Client Components only when necessary (user interaction, hooks, browser APIs)
+- Use "use client" directive explicitly for client components
+- ALL data fetching in Server Components or Server Actions
+- Never use useEffect for data fetching
+- Pass data from Server Components to Client Components via props
+
+### Component Organization
+
+- Feature-based folder structure: `components/{feature}/{Component}.tsx`
+- Shared UI components: `components/ui/{Component}.tsx`
+- One component per file
+- Maximum 150 lines per component (extract if larger)
+- Use TypeScript interfaces for all props
+- Export component as default, types as named exports
+
+### State Management
+
+- Use React hooks (useState, useReducer) for local state
+- Use Zustand for global state (already in `stores/`)
+- Server state managed by Server Components
+- Form state with controlled components
+- Avoid prop drilling - use context or global state
+
+### Styling
+
+- Use Tailwind CSS exclusively (no inline styles, no CSS modules)
+- Use Shadcn UI components from `components/ui/`
+- Maintain consistent design system
+- Responsive design: mobile-first approach
+- Use Tailwind's responsive prefixes (sm:, md:, lg:, xl:)
+- Dark mode support where applicable
+
+### Form Handling
+
+- Use controlled components for forms
+- Validate on client-side with Zod schemas
+- Always validate on server-side (never trust client)
+- Implement proper loading states during submission
+- Show clear error messages
+- Disable submit button during loading
+- Use Server Actions for form submissions
+- Handle success/error states with toast notifications
+
+### API Integration
+
+- Use utility functions from `lib/api/{module}.ts`
+- Centralize API calls - never use fetch directly in components
+- Handle loading, error, and success states
+- Implement proper error handling with user-friendly messages
+- Use TypeScript types for request/response
+- Include authentication tokens in requests
+
+### Performance Optimization
+
+- Use React.memo() for expensive components
+- Implement proper loading skeletons
+- Use Next.js Image component for images
+- Lazy load heavy components
+- Implement proper caching strategies
+- Optimize bundle size (code splitting)
+
+## TypeScript Standards
+
+### Strict Typing
+
+- Enable strict mode in tsconfig.json
+- Never use `any` type (use `unknown` if type is truly unknown)
+- Define explicit return types for all functions
+- Use interfaces for object shapes
+- Use type unions and discriminated unions
+- Use enums for fixed sets of values
+- Properly type all function parameters
+- Use generics for reusable type-safe functions
+
+### Type Organization
+
+- Define types in `types/{module}.ts`
+- Export types alongside components
+- Share types between frontend and backend where applicable
+- Use Prisma-generated types for database models
+- Extend Prisma types for API responses
+
+## Security Best Practices
+
+### Input Validation & Sanitization
+
+- Validate ALL user inputs on server-side
+- Sanitize inputs to prevent XSS attacks
+- Use parameterized queries (Prisma handles this)
+- Validate file uploads (type, size, content)
+- Implement rate limiting on sensitive endpoints
+
+### Authentication & Authorization
+
+- Never store passwords in plain text
+- Use secure password hashing (bcrypt)
+- Implement JWT with short expiry times
+- Validate tokens on every protected route
+- Check user permissions before data access
+- Implement CSRF protection
+- Use httpOnly cookies for token storage
+
+### Data Protection
+
+- Never expose sensitive data in API responses
+- Implement tenant isolation at database level
+- Use environment variables for secrets
+- Never commit secrets to version control
+- Implement audit logs for sensitive operations
+- GDPR compliance: data export and deletion
+
+## Testing Standards
+
+### Unit Tests
+
+- Write tests for utility functions
+- Test business logic in isolation
+- Use Jest for testing framework
+- Mock external dependencies
+- Aim for 80%+ code coverage on critical paths
+
+### Integration Tests
+
+- Test API endpoints
+- Test database operations
+- Test authentication flows
+- Test permission checks
+
+### E2E Tests
+
+- Test critical user flows
+- Test form submissions
+- Test multi-step workflows
+- Use Playwright for E2E testing
+
+## Code Quality Standards
+
+### Code Style
+
+- Use ESLint and Prettier (already configured)
+- Follow consistent naming conventions:
+  - camelCase: variables, functions
+  - PascalCase: components, classes, types
+  - UPPER_SNAKE_CASE: constants, enums
+  - kebab-case: file names (except components)
+- Write self-documenting code
+- Add JSDoc comments for complex functions
+- Keep functions small and focused (single responsibility)
+
+### Import Organization
+
+```typescript
+// 1. React imports
+import React from "react";
+// 2. Next.js imports
+import { Metadata } from "next";
+// 3. Third-party imports
+import { z } from "zod";
+// 4. Internal imports - absolute paths
+import { Button } from "@/components/ui/button";
+import { prisma } from "@/lib/prisma";
+// 5. Relative imports
+import { helper } from "./utils";
+// 6. Type imports (last)
+import type { User } from "@/types";
+```
+
+### Error Handling Patterns
+
+- Always handle errors explicitly
+- Use try-catch for async operations
+- Provide meaningful error messages
+- Log errors with context
+- Implement error boundaries in React
+- Never silently fail
+
+## Feature-Specific Rules
+
+### Form Builder
+
+- Use drag-and-drop library (dnd-kit)
+- Store form schema as JSON in database
+- Implement conditional logic engine
+- Support multi-step forms
+- Validate form submissions against schema
+- Generate embeddable widgets with iframe
+- Track form analytics (views, submissions, conversion)
+
+### Lead Management
+
+- Implement lead scoring algorithm
+- Auto-assign leads using round-robin or load-based
+- Track lead status transitions
+- Log all lead activities
+- Implement lead deduplication
+- Support bulk import (CSV/Excel)
+
+### Communication System
+
+- Use SendGrid for emails
+- Implement email templates with variables
+- Use email queue with Redis
+- Support WhatsApp Business API
+- Track communication history
+- Implement notification preferences
+
+### Payment Integration
+
+- Use Cashfree payment gateway
+- Implement payment splitting (platform fee + institution)
+- Track payment status with webhooks
+- Generate payment receipts
+- Implement refund workflow
+- Maintain financial audit logs
+
+### Widget System
+
+- Generate unique widget IDs
+- Implement iframe-based embedding
+- Support theme customization
+- Track widget analytics
+- Secure widget endpoints (no auth required for public forms)
+
+### Student Portal
+
+- Separate authentication for students/parents
+- Application status tracking
+- Document upload interface
+- Payment history view
+- Refund request submission
+- Communication history
+
+## Performance Requirements
+
+### Response Times
+
+- API response: < 500ms
+- Page load: < 2 seconds
+- Database queries: < 100ms
+- Implement caching where appropriate
+
+### Scalability
+
+- Design for horizontal scaling
+- Use connection pooling
+- Implement pagination for large datasets
+- Optimize database queries
+- Use CDN for static assets
+
+## Documentation Standards
+
+### Code Documentation
+
+- Add JSDoc comments for public APIs
+- Document complex algorithms
+- Explain non-obvious code
+- Keep README files updated
+- Document environment variables
+
+### API Documentation
+
+- Document all API endpoints
+- Include request/response examples
+- Document authentication requirements
+- Document error codes
+- Keep API docs in `docs/` folder
+
+## Git & Version Control
+
+### Commit Messages
+
+- Use conventional commits format
+- Format: `type(scope): description`
+- Types: feat, fix, docs, style, refactor, test, chore
+- Example: `feat(forms): add conditional logic builder`
+
+### Branch Strategy
+
+- main: production-ready code
+- develop: development branch
+- feature/\*: new features
+- fix/\*: bug fixes
+- Never commit directly to main
+
+## Deployment & DevOps
+
+### Environment Variables
+
+- Use `.env` for local development
+- Never commit `.env` files
+- Document all required env vars
+- Use different configs for dev/staging/prod
+
+### Database Migrations
+
+- Use Prisma migrations
+- Never modify migration files after creation
+- Test migrations before deploying
+- Keep migrations reversible where possible
+
+## Forbidden Practices
+
+### Never Do These
+
+- ❌ Use `any` type in TypeScript
+- ❌ Fetch data in client components
+- ❌ Skip input validation
+- ❌ Ignore TypeScript errors
+- ❌ Bypass authentication/authorization
+- ❌ Allow cross-tenant data access
+- ❌ Store passwords in plain text
+- ❌ Expose sensitive data in APIs
+- ❌ Use inline styles (use Tailwind)
+- ❌ Commit secrets to version control
+- ❌ Skip error handling
+- ❌ Use console.log in production (use proper logging)
+- ❌ Modify Prisma-generated files
+- ❌ Use SQL injection-prone queries
+
+## AI-Assisted Development with Cursor
+
+### Model Selection
+
+- **GPT-4**: Complex architecture, algorithms, integrations
+- **Claude-3.5-Sonnet**: Code generation, components, APIs (primary)
+- **GPT-3.5**: Boilerplate, configs, simple tasks
+
+### Prompt Engineering
+
+- Provide context (feature, requirements, constraints)
+- Specify TypeScript types needed
+- Request error handling
+- Ask for comments on complex logic
+- Request tests for critical code
+
+### Code Review Checklist
+
+- [ ] TypeScript types properly defined
+- [ ] Input validation implemented
+- [ ] Error handling included
+- [ ] Authentication/authorization checked
+- [ ] Tenant isolation enforced
+- [ ] Database queries optimized
+- [ ] API response format consistent
+- [ ] Loading states implemented
+- [ ] Error messages user-friendly
+- [ ] Security best practices followed
+- [ ] Performance optimized
+- [ ] Tests written (if applicable)
+- [ ] Documentation updated
+
+## Module-Specific Patterns
+
+### Super Admin Module
+
+- Manage institutions (CRUD)
+- Subscription management
+- Platform-wide analytics
+- Payment reconciliation
+- User management across tenants
+
+### Institution Admin Module
+
+- User management within institution
+- Form builder access
+- Integration setup
+- Institution settings
+- Analytics for institution
+
+### Telecaller Module
+
+- Lead queue management
+- Call logging with recording
+- Follow-up scheduling
+- Lead status updates
+- Performance analytics
+
+### Document Verification Module
+
+- Document upload/download
+- Verification workflow
+- Checklist management
+- Batch verification
+- Status tracking
+
+### Finance Module
+
+- Fee structure configuration
+- Payment tracking
+- Scholarship management
+- Refund workflow
+- Financial reports
+
+### Admission Module
+
+- Application review
+- Counseling scheduling
+- Offer letter generation
+- Bulk communication
+- Admission reports
+
+## Success Metrics
+
+### Code Quality
+
+- TypeScript strict mode: 100%
+- Test coverage: > 40% (critical paths > 80%)
+- ESLint errors: 0
+- Build warnings: 0
+
+### Performance
+
+- Lighthouse score: > 90
+- First Contentful Paint: < 1.5s
+- Time to Interactive: < 3s
+- API p95 latency: < 500ms
+
+### Security
+
+- No exposed secrets
+- All inputs validated
+- OWASP Top 10 compliance
+- Regular security audits
+
+---
+
+**Version**: 1.0
+**Last Updated**: October 2024
+**Status**: Active Development

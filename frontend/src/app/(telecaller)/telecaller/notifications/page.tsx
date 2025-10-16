@@ -141,10 +141,7 @@ export default function TelecallerNotificationsPage() {
     const handleNavigate = useCallback((notification: Notification) => {
         if (notification.data?.actionUrl) {
             router.push(`${notification.data.actionUrl}`);
-        } else {
-            // Navigate to notification details or relevant page
-            console.log("Navigate to notification:", notification);
-        }
+        } 
     }, [router]);
 
     const handleFiltersChange = useCallback((newFilters: NotificationFilters) => {

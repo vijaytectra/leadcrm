@@ -145,10 +145,7 @@ export default function NotificationsPage() {
         if (notification.leadId) {
             const { currentTenantSlug } = useAuthStore.getState();
             router.push(`/institution-admin/leads/${notification.leadId}?tenant=${currentTenantSlug}`);
-        } else {
-            // Navigate to notification details or relevant page
-            console.log("Navigate to notification:", notification);
-        }
+        } 
     }, [router]);
 
     const handleFiltersChange = useCallback((newFilters: NotificationFilters) => {

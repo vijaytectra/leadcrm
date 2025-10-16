@@ -42,36 +42,36 @@ export function StepBasedFormPreview({ onClose }: StepBasedFormPreviewProps) {
 
     // Evaluate conditional logic for a field
     const evaluateConditionalLogic = (field: FormField): boolean => {
-     
+
 
         // Check field-level conditional logic first
         if (field.conditionalLogic?.enabled && field.conditionalLogic?.conditions?.length) {
-           
+
             return evaluateFieldConditionalLogic(field);
         }
 
         // Check step-level conditional logic
         if (currentStep?.conditions?.enabled && currentStep.conditions.conditions?.length) {
-            
+
             return evaluateStepConditionalLogic(field);
         }
 
-       
+
         return true; // Show field if no conditional logic
     };
 
     // Evaluate field-level conditional logic using utility
     const evaluateFieldConditionalLogic = (field: FormField): boolean => {
- 
+
 
         const result = evaluateConditionalLogic(field, formData, state.fields);
-       
+
         return result;
     };
 
     // Evaluate step-level conditional logic
     const evaluateStepConditionalLogic = (field: FormField): boolean => {
-     
+
 
         if (!currentStep?.conditions?.conditions?.length) {
             return true;
@@ -83,7 +83,7 @@ export function StepBasedFormPreview({ onClose }: StepBasedFormPreviewProps) {
         ) || [];
 
         if (targetRules.length === 0) {
-          
+
             return true;
         }
 
@@ -106,12 +106,12 @@ export function StepBasedFormPreview({ onClose }: StepBasedFormPreviewProps) {
             const conditionValue = condition.value;
 
             const conditionMet = evaluateCondition(triggerValue, conditionValue, condition.operator);
-           
+
 
             return conditionMet;
         });
 
-       
+
         return anyRuleMet;
     };
 
@@ -132,8 +132,7 @@ export function StepBasedFormPreview({ onClose }: StepBasedFormPreviewProps) {
                 return Number(triggerValue) < Number(conditionValue);
             case 'is_empty':
                 return !triggerValue || String(triggerValue).trim() === '';
-            case 'is_not_empty':
-                return triggerValue && String(triggerValue).trim() !== '';
+       
             default:
                 return true;
         }
@@ -143,7 +142,7 @@ export function StepBasedFormPreview({ onClose }: StepBasedFormPreviewProps) {
     const getCurrentStepFields = (): FormField[] => {
         if (!currentStep) return [];
 
-    
+
 
         // Get fields assigned to this step
         const stepFields = state.fields.filter(field => currentStep.fields.includes(field.id));
@@ -152,7 +151,7 @@ export function StepBasedFormPreview({ onClose }: StepBasedFormPreviewProps) {
         const visibleFields = getVisibleFields(stepFields, formData, state.fields);
 
         const sortedFields = visibleFields.sort((a, b) => a.order - b.order);
-        
+
         return sortedFields;
     };
 
@@ -164,7 +163,7 @@ export function StepBasedFormPreview({ onClose }: StepBasedFormPreviewProps) {
 
     // Re-evaluate conditional logic when form data changes
     useEffect(() => {
-      
+
         forceRerender();
     }, [formData]);
 
@@ -205,16 +204,14 @@ export function StepBasedFormPreview({ onClose }: StepBasedFormPreviewProps) {
             toast.success("Form submitted successfully!");
             onClose();
         } catch (error) {
-            console.error("Error fetching preferences:", error);
+            console.error("Error submitting form:", error);
             if (error instanceof ApiException) {
-                console.error("Error fetching preferences:", error.message);
+                console.error("Error submitting form:", error.message);
                 toast.error(error.message);
             } else {
-                console.error("Error fetching preferences:", error);
+                console.error("Error submitting form:", error);
                 toast.error("Failed to submit form");
             }
-        }
-            toast.error("Failed to submit form");
         } finally {
             setIsSubmitting(false);
         }
@@ -323,7 +320,7 @@ export function StepBasedFormPreview({ onClose }: StepBasedFormPreviewProps) {
                                         {/* Debug info for conditional logic */}
                                         {process.env.NODE_ENV === 'development' && field.conditionalLogic?.enabled && (
                                             <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
-                                                🔗 Conditional Logic: {field.conditionalLogic.conditions.length} condition(s)
+                                                🔗 Conditional Logic: Enabled
                                             </div>
                                         )}
                                         <FormFieldRenderer
@@ -418,7 +415,6 @@ export function StepBasedFormPreview({ onClose }: StepBasedFormPreviewProps) {
                                         label: f.label,
                                         type: f.type,
                                         hasConditionalLogic: !!f.conditionalLogic?.enabled,
-                                        conditions: f.conditionalLogic?.conditions,
                                         isInCurrentStep: currentStep?.fields.includes(f.id),
                                         isVisible: currentStep?.fields.includes(f.id) ? evaluateConditionalLogic(f) : false
                                     }))

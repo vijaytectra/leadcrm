@@ -69,7 +69,6 @@ export function WidgetCard({
 }: WidgetCardProps) {
     const [showEmbedModal, setShowEmbedModal] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
-
     const handleCopyEmbedCode = async () => {
         try {
             await navigator.clipboard.writeText(widget.embedCode);

@@ -34,6 +34,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import type { FormBuilderConfig } from "@/types/form-builder";
 import { ApiException } from "@/lib/utils";
+import { WidgetCreationModal } from "./WidgetCreationModal";
 
 interface FormsListProps {
     onEditForm?: (formId: string) => void;
@@ -54,6 +55,8 @@ export function FormsList({
     const [widgetCounts, setWidgetCounts] = useState<Record<string, number>>({});
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [formToDelete, setFormToDelete] = useState<FormBuilderConfig | null>(null);
+    const [widgetModalOpen, setWidgetModalOpen] = useState(false);
+    const [selectedFormForWidget, setSelectedFormForWidget] = useState<FormBuilderConfig | null>(null);
 
     const loadForms = useCallback(async () => {
         if (!currentTenantSlug) return;
@@ -77,7 +80,7 @@ export function FormsList({
                         widgetCounts[form.id] = 0;
                         if (error instanceof ApiException) {
                             console.error("Error fetching preferences:", error.message);
-                          
+
                         } else {
                             console.error("Error fetching preferences:", error);
 
@@ -132,6 +135,19 @@ export function FormsList({
         } else {
             router.push('/institution-admin/forms/create');
         }
+    };
+
+    const handleCreateWidget = (form: FormBuilderConfig) => {
+        setSelectedFormForWidget(form);
+        setWidgetModalOpen(true);
+    };
+
+    const handleWidgetCreated = () => {
+        toast.success("Widget created successfully");
+        setWidgetModalOpen(false);
+        setSelectedFormForWidget(null);
+        // Refresh widget counts
+        loadForms();
     };
 
     const handleDeleteForm = (form: FormBuilderConfig) => {
@@ -314,6 +330,10 @@ export function FormsList({
                                                     <Eye className="h-4 w-4 mr-2" />
                                                     Preview
                                                 </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleCreateWidget(form)}>
+                                                    <ExternalLink className="h-4 w-4 mr-2" />
+                                                    Create Widget
+                                                </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
                                                 <DropdownMenuItem onClick={() => handleCopyForm(form)}>
                                                     <Copy className="h-4 w-4 mr-2" />
@@ -402,6 +422,21 @@ export function FormsList({
                 onConfirm={confirmDelete}
                 isLoading={false}
             />
+
+            {/* Widget Creation Modal */}
+            {selectedFormForWidget && (
+                <WidgetCreationModal
+                    formId={selectedFormForWidget.id}
+                    formTitle={selectedFormForWidget.title}
+                    tenantSlug={currentTenantSlug || ""}
+                    isOpen={widgetModalOpen}
+                    onClose={() => {
+                        setWidgetModalOpen(false);
+                        setSelectedFormForWidget(null);
+                    }}
+                    onWidgetCreated={handleWidgetCreated}
+                />
+            )}
         </>
     );
 }

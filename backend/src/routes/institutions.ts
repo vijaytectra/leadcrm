@@ -374,7 +374,7 @@ router.post(
           },
         },
       });
-      console.log("institution", institution);
+
       // Create admin user for the institution
       const adminPassword = generateSecurePassword();
 
@@ -382,13 +382,13 @@ router.post(
       let adminEmail =
         institutionData.email || `${institution.slug}@example.com`;
       let emailCounter = 1;
-      console.log("adminEmail", adminEmail);
+
       // Check if email already exists and generate unique one if needed
       while (true) {
         const existingUser = await prisma.user.findUnique({
           where: { email: adminEmail },
         });
-        console.log("existingUser", existingUser);
+   
         if (!existingUser) {
           break; // Email is unique, we can use it
         }
@@ -403,7 +403,7 @@ router.post(
         }
         emailCounter++;
       }
-      console.log("adminEmail", adminEmail);
+  
       let adminUser;
       try {
         adminUser = await prisma.user.create({

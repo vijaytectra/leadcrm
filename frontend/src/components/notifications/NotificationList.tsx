@@ -115,7 +115,6 @@ export function NotificationList({
             </Card>
         );
     }
-    console.log(notifications);
     return (
         <div className="space-y-3">
             {showSelection && onSelectAll && (

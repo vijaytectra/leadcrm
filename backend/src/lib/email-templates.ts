@@ -227,6 +227,147 @@ export const SYSTEM_EMAIL_TEMPLATES = {
       },
     ],
   },
+  ADMISSION_FORM_ACCESS: {
+    name: "Admission Form Access",
+    subject: "Complete Your Application - {{institutionName}}",
+    category: EmailTemplateCategory.ADMISSION,
+    variables: [
+      {
+        name: "studentName",
+        type: "string",
+        required: true,
+        description: "Student's name",
+      },
+      {
+        name: "institutionName",
+        type: "string",
+        required: true,
+        description: "Institution name",
+      },
+      {
+        name: "formTitle",
+        type: "string",
+        required: true,
+        description: "Admission form title",
+      },
+      {
+        name: "formUrl",
+        type: "string",
+        required: true,
+        description: "Form access URL",
+      },
+      {
+        name: "deadline",
+        type: "date",
+        required: false,
+        description: "Form submission deadline",
+      },
+      {
+        name: "instructions",
+        type: "string",
+        required: false,
+        description: "Additional instructions",
+      },
+    ],
+  },
+  ADMISSION_FORM_REMINDER: {
+    name: "Admission Form Reminder",
+    subject: "Reminder: Complete Your Application - {{institutionName}}",
+    category: EmailTemplateCategory.ADMISSION,
+    variables: [
+      {
+        name: "studentName",
+        type: "string",
+        required: true,
+        description: "Student's name",
+      },
+      {
+        name: "institutionName",
+        type: "string",
+        required: true,
+        description: "Institution name",
+      },
+      {
+        name: "formTitle",
+        type: "string",
+        required: true,
+        description: "Admission form title",
+      },
+      {
+        name: "formUrl",
+        type: "string",
+        required: true,
+        description: "Form access URL",
+      },
+      {
+        name: "deadline",
+        type: "date",
+        required: false,
+        description: "Form submission deadline",
+      },
+      {
+        name: "progressPercentage",
+        type: "number",
+        required: false,
+        description: "Form completion percentage",
+      },
+      {
+        name: "remainingFields",
+        type: "object",
+        required: false,
+        description: "List of remaining fields to complete",
+      },
+    ],
+  },
+  ADMISSION_FORM_SUBMITTED: {
+    name: "Admission Form Submitted",
+    subject: "Application Submitted Successfully - {{institutionName}}",
+    category: EmailTemplateCategory.ADMISSION,
+    variables: [
+      {
+        name: "studentName",
+        type: "string",
+        required: true,
+        description: "Student's name",
+      },
+      {
+        name: "institutionName",
+        type: "string",
+        required: true,
+        description: "Institution name",
+      },
+      {
+        name: "formTitle",
+        type: "string",
+        required: true,
+        description: "Admission form title",
+      },
+      {
+        name: "submissionId",
+        type: "string",
+        required: true,
+        description: "Form submission ID",
+      },
+      {
+        name: "submissionDate",
+        type: "date",
+        required: true,
+        description: "Submission date",
+      },
+      {
+        name: "nextSteps",
+        type: "string",
+        required: false,
+        description: "Next steps information",
+      },
+      {
+        name: "contactInfo",
+        type: "object",
+        required: false,
+        description: "Contact information for follow-up",
+      },
+    ],
+  },
 } as const;
 
 // Template variable substitution utility
@@ -297,6 +438,186 @@ export function generateUserCredentialsEmail(
       <p>Please change your password after first login.</p>
     `,
     text: `Welcome to ${institutionName}!\n\nHello ${userName},\n\nYour user account has been created.\n\nLogin Credentials:\nEmail: ${userEmail}\nPassword: ${userPassword}\n\nLogin: ${loginUrl}\n\nPlease change your password after first login.`,
+  };
+}
+
+export function generateAdmissionFormAccessEmail(
+  studentName: string,
+  institutionName: string,
+  formTitle: string,
+  formUrl: string,
+  deadline?: Date,
+  instructions?: string
+): { subject: string; html: string; text: string } {
+  const deadlineText = deadline
+    ? `<p><strong>Deadline:</strong> ${deadline.toLocaleDateString()}</p>`
+    : "";
+
+  const instructionsText = instructions
+    ? `<div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+         <h3>Important Instructions:</h3>
+         <p>${instructions}</p>
+       </div>`
+    : "";
+
+  return {
+    subject: `Complete Your Application - ${institutionName}`,
+    html: `
+      <h2>Complete Your Application</h2>
+      <p>Hello ${studentName},</p>
+      <p>Thank you for your interest in <strong>${institutionName}</strong>!</p>
+      <p>You can now complete your admission application using the form below:</p>
+      
+      <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+        <h3>${formTitle}</h3>
+        <p>Click the button below to access your application form:</p>
+        <a href="${formUrl}" style="background: #1976d2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">
+          Complete Application Form
+        </a>
+      </div>
+      
+      ${deadlineText}
+      ${instructionsText}
+      
+      <p><strong>Important:</strong> Please complete all required fields and submit your application before the deadline.</p>
+      <p>If you have any questions, please don't hesitate to contact our admissions team.</p>
+    `,
+    text: `Complete Your Application\n\nHello ${studentName},\n\nThank you for your interest in ${institutionName}!\n\nYou can now complete your admission application:\n\nForm: ${formTitle}\nAccess: ${formUrl}\n${
+      deadline ? `Deadline: ${deadline.toLocaleDateString()}` : ""
+    }\n\n${
+      instructions ? `Instructions: ${instructions}` : ""
+    }\n\nPlease complete all required fields and submit your application before the deadline.\n\nIf you have any questions, please don't hesitate to contact our admissions team.`,
+  };
+}
+
+export function generateAdmissionFormReminderEmail(
+  studentName: string,
+  institutionName: string,
+  formTitle: string,
+  formUrl: string,
+  deadline?: Date,
+  progressPercentage?: number,
+  remainingFields?: string[]
+): { subject: string; html: string; text: string } {
+  const deadlineText = deadline
+    ? `<p><strong>Deadline:</strong> ${deadline.toLocaleDateString()}</p>`
+    : "";
+
+  const progressText =
+    progressPercentage !== undefined
+      ? `<p><strong>Progress:</strong> ${progressPercentage}% complete</p>`
+      : "";
+
+  const remainingFieldsText =
+    remainingFields && remainingFields.length > 0
+      ? `<div style="background: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0;">
+         <h4>Remaining Fields to Complete:</h4>
+         <ul>
+           ${remainingFields.map((field) => `<li>${field}</li>`).join("")}
+         </ul>
+       </div>`
+      : "";
+
+  return {
+    subject: `Reminder: Complete Your Application - ${institutionName}`,
+    html: `
+      <h2>Application Reminder</h2>
+      <p>Hello ${studentName},</p>
+      <p>This is a friendly reminder that your admission application for <strong>${institutionName}</strong> is still pending completion.</p>
+      
+      <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+        <h3>${formTitle}</h3>
+        <p>Continue where you left off:</p>
+        <a href="${formUrl}" style="background: #1976d2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">
+          Continue Application
+        </a>
+      </div>
+      
+      ${progressText}
+      ${deadlineText}
+      ${remainingFieldsText}
+      
+      <p><strong>Don't miss out!</strong> Complete your application to secure your spot.</p>
+    `,
+    text: `Application Reminder\n\nHello ${studentName},\n\nThis is a friendly reminder that your admission application for ${institutionName} is still pending completion.\n\nForm: ${formTitle}\nAccess: ${formUrl}\n${
+      progressPercentage !== undefined
+        ? `Progress: ${progressPercentage}% complete`
+        : ""
+    }\n${deadline ? `Deadline: ${deadline.toLocaleDateString()}` : ""}\n\n${
+      remainingFields && remainingFields.length > 0
+        ? `Remaining fields: ${remainingFields.join(", ")}`
+        : ""
+    }\n\nDon't miss out! Complete your application to secure your spot.`,
+  };
+}
+
+export function generateAdmissionFormSubmittedEmail(
+  studentName: string,
+  institutionName: string,
+  formTitle: string,
+  submissionId: string,
+  submissionDate: Date,
+  nextSteps?: string,
+  contactInfo?: { phone?: string; email?: string; address?: string }
+): { subject: string; html: string; text: string } {
+  const nextStepsText = nextSteps
+    ? `<div style="background: #d4edda; padding: 15px; border-radius: 5px; margin: 20px 0;">
+         <h3>Next Steps:</h3>
+         <p>${nextSteps}</p>
+       </div>`
+    : "";
+
+  const contactInfoText = contactInfo
+    ? `<div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+         <h3>Contact Information:</h3>
+         ${
+           contactInfo.phone
+             ? `<p><strong>Phone:</strong> ${contactInfo.phone}</p>`
+             : ""
+         }
+         ${
+           contactInfo.email
+             ? `<p><strong>Email:</strong> <a href="mailto:${contactInfo.email}">${contactInfo.email}</a></p>`
+             : ""
+         }
+         ${
+           contactInfo.address
+             ? `<p><strong>Address:</strong> ${contactInfo.address}</p>`
+             : ""
+         }
+       </div>`
+    : "";
+
+  return {
+    subject: `Application Submitted Successfully - ${institutionName}`,
+    html: `
+      <h2>Application Submitted Successfully!</h2>
+      <p>Hello ${studentName},</p>
+      <p>Congratulations! Your admission application for <strong>${institutionName}</strong> has been successfully submitted.</p>
+      
+      <div style="background: #d4edda; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        <h3>Submission Details</h3>
+        <p><strong>Form:</strong> ${formTitle}</p>
+        <p><strong>Submission ID:</strong> ${submissionId}</p>
+        <p><strong>Date Submitted:</strong> ${submissionDate.toLocaleDateString()}</p>
+      </div>
+      
+      ${nextStepsText}
+      ${contactInfoText}
+      
+      <p>We will review your application and get back to you soon. Thank you for choosing ${institutionName}!</p>
+    `,
+    text: `Application Submitted Successfully!\n\nHello ${studentName},\n\nCongratulations! Your admission application for ${institutionName} has been successfully submitted.\n\nSubmission Details:\nForm: ${formTitle}\nSubmission ID: ${submissionId}\nDate Submitted: ${submissionDate.toLocaleDateString()}\n\n${
+      nextSteps ? `Next Steps:\n${nextSteps}` : ""
+    }\n\n${
+      contactInfo
+        ? `Contact Information:\n${
+            contactInfo.phone ? `Phone: ${contactInfo.phone}` : ""
+          }\n${contactInfo.email ? `Email: ${contactInfo.email}` : ""}\n${
+            contactInfo.address ? `Address: ${contactInfo.address}` : ""
+          }`
+        : ""
+    }\n\nWe will review your application and get back to you soon. Thank you for choosing ${institutionName}!`,
   };
 }
 

@@ -269,7 +269,15 @@ export class FieldMappingService {
   /**
    * Map form data to standardized lead fields
    */
-  static mapFormDataToLead(formData: Record<string, any>): {
+  static mapFormDataToLead(
+    formData: Record<string, any>,
+    fieldMetadata?: Array<{
+      id: string;
+      label: string;
+      type: string;
+      required: boolean;
+    }>
+  ): {
     mappedData: Record<string, any>;
     unmappedFields: Record<string, any>;
     mappingLog: string[];
@@ -288,7 +296,24 @@ export class FieldMappingService {
         continue; // Skip empty values
       }
 
-      const mappedField = this.findMappedField(fieldName);
+      let mappedField = null;
+
+      // If we have field metadata, use it for better mapping
+      if (fieldMetadata) {
+        const fieldInfo = fieldMetadata.find((f) => f.id === fieldName);
+        if (fieldInfo) {
+          mappedField = this.findMappedFieldByLabel(
+            fieldInfo.label,
+            fieldInfo.type
+          );
+        }
+      }
+
+      // Fallback to field name mapping
+      if (!mappedField) {
+        mappedField = this.findMappedField(fieldName);
+      }
+
       if (mappedField) {
         mappedData[mappedField] = this.transformValue(fieldValue, mappedField);
         delete unmappedFields[fieldName];
@@ -297,6 +322,47 @@ export class FieldMappingService {
     }
 
     return { mappedData, unmappedFields, mappingLog };
+  }
+
+  /**
+   * Find the mapped field for a given field label and type
+   */
+  private static findMappedFieldByLabel(
+    label: string,
+    type: string
+  ): string | null {
+    const normalizedLabel = label.toLowerCase().replace(/[_\s-]/g, "");
+
+    // Check against common patterns
+    for (const [targetField, patterns] of Object.entries(
+      COMMON_FIELD_PATTERNS
+    )) {
+      for (const pattern of patterns) {
+        if (normalizedLabel.includes(pattern.toLowerCase())) {
+          return targetField;
+        }
+      }
+    }
+
+    // Type-based mapping
+    if (type === "email" || normalizedLabel.includes("email")) {
+      return "email";
+    }
+    if (
+      type === "tel" ||
+      normalizedLabel.includes("phone") ||
+      normalizedLabel.includes("mobile")
+    ) {
+      return "phone";
+    }
+    if (
+      normalizedLabel.includes("name") ||
+      normalizedLabel.includes("fullname")
+    ) {
+      return "name";
+    }
+
+    return null;
   }
 
   /**

@@ -42,29 +42,32 @@ const createFormSchema = z.object({
   settings: z.object({}).passthrough().optional(),
 });
 
-const updateFormSchema = z.object({
-  title: z.string().min(1, "Title is required").optional(),
-  description: z.string().optional(),
-  isActive: z.boolean().optional(),
-  isPublished: z.boolean().optional(),
-  requiresPayment: z.boolean().optional(),
-  paymentAmount: z.number().optional(),
-  allowMultipleSubmissions: z.boolean().optional(),
-  maxSubmissions: z.number().optional(),
-  submissionDeadline: z
-    .string()
-    .datetime()
-    .transform((val) => new Date(val))
-    .optional(),
-  settings: z.object({}).passthrough().optional(),
-});
+const updateFormSchema = z
+  .object({
+    title: z.string().min(1, "Title is required").optional(),
+    description: z.string().optional().nullable(),
+    isActive: z.boolean().optional(),
+    isPublished: z.boolean().optional(),
+    requiresPayment: z.boolean().optional(),
+    paymentAmount: z.number().optional(),
+    allowMultipleSubmissions: z.boolean().optional(),
+    maxSubmissions: z.number().optional().nullable(),
+    submissionDeadline: z
+      .string()
+      .datetime()
+      .transform((val) => new Date(val))
+      .optional()
+      .nullable(),
+    settings: z.object({}).passthrough().optional(),
+  })
+  .passthrough(); // Allow additional fields to pass through
 
 const createFieldSchema = z
   .object({
     type: z.string().min(1, "Field type is required"),
     label: z.string().min(1, "Label is required"),
-    placeholder: z.string().optional(),
-    description: z.string().optional(),
+    placeholder: z.string().optional().nullable(),
+    description: z.string().optional().nullable(),
     required: z.boolean().optional().default(false),
     order: z.number().optional().default(0),
     width: z
@@ -103,8 +106,8 @@ const updateFieldSchema = z
   .object({
     type: z.string().min(1, "Field type is required").optional(),
     label: z.string().min(1, "Label is required").optional(),
-    placeholder: z.string().optional(),
-    description: z.string().optional(),
+    placeholder: z.string().optional().nullable(),
+    description: z.string().optional().nullable(),
     required: z.boolean().optional(),
     order: z.number().optional(),
     width: z.enum(["full", "half", "third", "quarter"]).optional(),
@@ -156,7 +159,6 @@ router.post(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-    
       const tenantSlug = req.params.tenant;
 
       if (!tenantSlug) {
@@ -230,7 +232,6 @@ router.get(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-  
       const tenantSlug = req.params.tenant;
 
       if (!tenantSlug) {
@@ -307,7 +308,6 @@ router.get(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-     
       const { formId, tenant } = req.params;
       const tenantSlug = tenant;
 
@@ -358,7 +358,6 @@ router.put(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-     
       const { formId, tenant } = req.params;
       const tenantSlug = tenant;
 
@@ -393,10 +392,15 @@ router.put(
 
       const formData = validation.data;
 
+      // Filter out null values to match the service interface
+      const cleanFormData = Object.fromEntries(
+        Object.entries(formData).filter(([_, value]) => value !== null)
+      );
+
       const form = await formBuilderService.updateForm(
         formId,
         tenantRecord.id,
-        formData
+        cleanFormData
       );
 
       // Log form update
@@ -497,7 +501,6 @@ router.post(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-   
       const { formId, tenant } = req.params;
       const tenantSlug = tenant;
 
@@ -532,13 +535,18 @@ router.post(
 
       const fieldData = validation.data;
 
+      // Filter out null values to match the service interface
+      const cleanFieldData = Object.fromEntries(
+        Object.entries(fieldData).filter(([_, value]) => value !== null)
+      );
+
       const field = await formBuilderService.createField(
         formId,
         tenantRecord.id,
         {
-          ...fieldData,
+          ...cleanFieldData,
           type: fieldData.type as any,
-        }
+        } as any
       );
 
       // Log field creation
@@ -579,7 +587,6 @@ router.get(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-     
       const { formId, tenant } = req.params;
       const tenantSlug = tenant;
 
@@ -636,7 +643,6 @@ router.put(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-
       const { formId, fieldId, tenant } = req.params;
       const tenantSlug = tenant;
 
@@ -671,15 +677,20 @@ router.put(
 
       const fieldData = validation.data;
 
+      // Filter out null values to match the service interface
+      const cleanFieldData = Object.fromEntries(
+        Object.entries(fieldData).filter(([_, value]) => value !== null)
+      );
+
       const field = await formBuilderService.updateField(
         fieldId,
         formId,
         tenantRecord.id,
         {
-          ...fieldData,
+          ...cleanFieldData,
           id: fieldId,
           type: fieldData.type as any,
-        }
+        } as any
       );
 
       // Log field update
@@ -720,7 +731,6 @@ router.delete(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-    
       const { formId, fieldId, tenant } = req.params;
       const tenantSlug = tenant;
 
@@ -931,7 +941,6 @@ router.post(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-     
       const { formId, tenant } = req.params;
       const tenantSlug = tenant;
 
@@ -1000,7 +1009,6 @@ router.get(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
- 
       const { formId, tenant } = req.params;
       const tenantSlug = tenant;
 
@@ -1057,7 +1065,6 @@ router.put(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-     
       const { formId, stepId, tenant } = req.params;
       const tenantSlug = tenant;
 
@@ -1127,7 +1134,6 @@ router.delete(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-  
       const { formId, stepId, tenant } = req.params;
       const tenantSlug = tenant;
 
@@ -1188,7 +1194,6 @@ router.post(
   requireRole(["INSTITUTION_ADMIN"]),
   async (req: AuthedRequest, res: Response) => {
     try {
-    
       const { formId, tenant } = req.params;
       const tenantSlug = tenant;
 

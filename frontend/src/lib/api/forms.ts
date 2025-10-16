@@ -167,18 +167,28 @@ export const formsApi = {
 
   // Widget Management
   async createWidget(
+    tenantSlug: string,
     formId: string,
     data: {
       name: string;
-      type: WidgetType;
-      settings: Record<string, unknown>;
+      styling: {
+        theme: string;
+        primaryColor: string;
+        borderRadius: number;
+        width: string;
+        height: string;
+      };
     },
     options?: ApiRequestOptions
   ): Promise<FormResponse> {
-    return apiPostClientNew<FormResponse>(`/forms/${formId}/widgets`, data, {
-      token: "true",
-      ...options,
-    });
+    return apiPostClientNew<FormResponse>(
+      `/${tenantSlug}/forms/${formId}/widgets`,
+      data,
+      {
+        token: "true",
+        ...options,
+      }
+    );
   },
 
   // Analytics

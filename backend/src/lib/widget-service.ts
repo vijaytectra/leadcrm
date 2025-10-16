@@ -7,7 +7,17 @@ import {
   WidgetViewRequest,
   WidgetSubmissionRequest,
 } from "../types/widget";
-import { FormBuilderError } from "../types/form-builder";
+import { FormBuilderError as FormBuilderErrorType } from "../types/form-builder";
+
+class FormBuilderError extends Error {
+  public code: string;
+
+  constructor({ code, message }: { code: string; message: string }) {
+    super(message);
+    this.code = code;
+    this.name = "FormBuilderError";
+  }
+}
 
 export class WidgetService {
   /**
@@ -40,8 +50,8 @@ export class WidgetService {
         .toString(36)
         .substr(2, 9)}`;
       const embedCode = this.generateEmbedCode(widgetId, config.styling);
-      const previewUrl = `${process.env.FRONTEND_URL}/widgets/${widgetId}`;
-      const publicUrl = `${process.env.API_BASE_URL}/api/public/widgets/${widgetId}`;
+      const previewUrl = `${process.env.FRONTEND_URL}/institution-admin/forms/${formId}/widgets?formId=${formId}`;
+      const publicUrl = `${process.env.FRONTEND_URL}/widgets/${widgetId}`;
 
       // Create widget in database
       const widget = await prisma.formWidget.create({
@@ -116,51 +126,51 @@ export class WidgetService {
         id: field.id,
         type: field.type,
         label: field.label,
-        placeholder: field.placeholder,
-        description: field.description,
+        placeholder: field.placeholder || undefined,
+        description: field.description || undefined,
         required: field.required,
         order: field.order,
         width: field.width,
         validation: {
           required: field.required,
-          minLength: field.validation?.minLength,
-          maxLength: field.validation?.maxLength,
-          pattern: field.validation?.pattern,
+          minLength: (field.validation as any)?.minLength,
+          maxLength: (field.validation as any)?.maxLength,
+          pattern: (field.validation as any)?.pattern,
         },
         conditionalLogic: {
-          enabled: field.conditionalLogic?.enabled || false,
-          conditions: field.conditionalLogic?.conditions || [],
-          actions: field.conditionalLogic?.actions || [],
+          enabled: (field.conditionalLogic as any)?.enabled || false,
+          conditions: (field.conditionalLogic as any)?.conditions || [],
+          actions: (field.conditionalLogic as any)?.actions || [],
         },
-        options: field.options || {},
+        options: (field.options as any) || {},
       }));
 
       // Transform steps for public consumption
       const publicSteps = form.steps.map((step) => ({
         id: step.id,
         title: step.title,
-        description: step.description,
+        description: step.description || undefined,
         order: step.order,
         isActive: step.isActive,
         isPayment: step.isPayment,
-        paymentAmount: step.paymentAmount,
-        fields: step.fields,
+        paymentAmount: step.paymentAmount || undefined,
+        fields: (step.fields as string[]) || [],
         conditions: step.conditions,
       }));
 
       return {
         id: form.id,
         title: form.title,
-        description: form.description,
+        description: form.description || undefined,
         fields: publicFields,
         steps: publicSteps,
         settings: {
           theme: {
-            primaryColor: widget.settings?.primaryColor || "#3b82f6",
-            borderRadius: widget.settings?.borderRadius || 8,
+            primaryColor: (widget.settings as any)?.primaryColor || "#3b82f6",
+            borderRadius: (widget.settings as any)?.borderRadius || 8,
           },
           layout: {
-            width: widget.settings?.width || "100%",
+            width: (widget.settings as any)?.width || "100%",
             alignment: "center",
           },
         },
@@ -320,8 +330,8 @@ export class WidgetService {
         type: widget.type,
         settings: widget.settings as any,
         embedCode: widget.embedCode,
-        previewUrl: `${process.env.FRONTEND_URL}/widgets/${widget.id}`,
-        publicUrl: `${process.env.API_BASE_URL}/api/public/widgets/${widget.id}`,
+        previewUrl: `${process.env.FRONTEND_URL}/institution-admin/forms/${widget.formId}/widgets?formId=${widget.formId}`,
+        publicUrl: `${process.env.FRONTEND_URL}/widgets/${widget.id}`,
         isActive: widget.isActive,
         createdAt: widget.createdAt,
         updatedAt: widget.updatedAt,
@@ -376,8 +386,8 @@ export class WidgetService {
         type: updatedWidget.type,
         settings: updatedWidget.settings as any,
         embedCode: updatedWidget.embedCode,
-        previewUrl: `${process.env.FRONTEND_URL}/widgets/${updatedWidget.id}`,
-        publicUrl: `${process.env.API_BASE_URL}/api/public/widgets/${updatedWidget.id}`,
+        previewUrl: `${process.env.FRONTEND_URL}/institution-admin/forms/${updatedWidget.formId}/widgets?formId=${updatedWidget.formId}`,
+        publicUrl: `${process.env.FRONTEND_URL}/widgets/${updatedWidget.id}`,
         isActive: updatedWidget.isActive,
         createdAt: updatedWidget.createdAt,
         updatedAt: updatedWidget.updatedAt,
@@ -440,4 +450,3 @@ export class WidgetService {
 }
 
 export const widgetService = new WidgetService();
-
